@@ -337,6 +337,7 @@ async function gql(query, variables = {}) {
 }
 
 async function callGas(orders) {
+  // Appel via proxy Vercel
   const res = await fetch(state.proxyUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
