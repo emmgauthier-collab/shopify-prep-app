@@ -486,6 +486,27 @@ async function renderCustomTab() {
   catch(err) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`; }
 }
 
+function getOrderStatus(tags) {
+  // Cherche print_YYYYMMDD
+  const printTag = tags.find(t => /^print_\d{8}$/.test(t));
+  if (printTag) {
+    const d = printTag.replace('print_','');
+    return { label: `✅ Imprimé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'success' };
+  }
+  // Cherche TODOPRINT
+  if (tags.includes('TODOPRINT')) return { label: '🖨️ Impression à lancer', tone: 'warning' };
+  // Cherche order_YYYYMMDD
+  const orderTag = tags.find(t => /^order_\d{8}$/.test(t));
+  if (orderTag) {
+    const d = orderTag.replace('order_','');
+    return { label: `📦 Commandé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'info' };
+  }
+  // Cherche TOORDER
+  if (tags.includes('TOORDER')) return { label: '⏳ À commander fournisseur', tone: 'warning' };
+  // Aucune balise
+  return { label: '🆕 Nouvelle commande', tone: 'info' };
+}
+
 function renderOrderView() {
   const c = document.getElementById('content');
   const order = state.orders[state.currentIndex] || null;
@@ -529,6 +550,7 @@ function renderOrderView() {
       <span class="badge badge-info">${orderDate}</span>
       <span class="badge badge-${ageTone}">${ageInDays}j — ${ageLabel}</span>
       <span class="badge badge-info">${totalQty} article${totalQty>1?'s':''}</span>
+      ${(() => { const s = getOrderStatus(order.tags); const colors = {success:'var(--success-bg)',warning:'var(--warning-bg)',info:'var(--info-bg)'}; const borders = {success:'#95c9b4',warning:'#f1c84b',info:'var(--border)'}; const texts = {success:'var(--success)',warning:'var(--warning)',info:'var(--text)'}; return `<span class="badge" style="background:${colors[s.tone]};border-color:${borders[s.tone]};color:${texts[s.tone]}">${s.label}</span>`; })()}
       <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="btn" style="margin-left:auto;font-size:12px;padding:4px 10px;">🔗 Voir dans Shopify</a>
     </div>
     ${hasNote ? `<div class="alert alert-critical" style="margin-bottom:8px;">⚠️ <strong>Note : </strong><span class="alert-text">${order.note}</span></div>` : ''}
@@ -992,14 +1014,21 @@ async function generatePrintZip() {
 
 async function validatePrintOrders() {
   const btn = event.target; btn.disabled = true; btn.textContent = 'Suppression en cours...';
+  const today = new Date();
+  const printTag = `print_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const removeMut = `mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
+  const addMut = `mutation($id:ID!,$tags:[String!]!){tagsAdd(id:$id,tags:$tags){node{id}userErrors{message}}}`;
   let ok=0, errors=[];
   for (const id of state.printZipOrderIds) {
-    try { await gql(removeMut, {id, tags:['TODOPRINT']}); ok++; }
+    try {
+      await gql(removeMut, {id, tags:['TODOPRINT']});
+      await gql(addMut, {id, tags:[printTag]});
+      ok++;
+    }
     catch(e) { errors.push(id); }
   }
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
-  else showToast(`✅ TODOPRINT supprimé sur ${ok} commande(s)`);
+  else showToast(`✅ ${ok} commande(s) archivées — tag ${printTag} ajouté`);
   await renderPrintTab();
 }
 
