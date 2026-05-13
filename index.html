@@ -800,7 +800,7 @@ function renderPrintView() {
           <div class="step-number ${state.printZipDone ? 'done' : ''}">1</div>
           <div>
             <div class="step-title">Sélectionner les commandes à préparer</div>
-            <div class="step-desc">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
+            <div class="step-desc" id="print-step1-desc">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
           </div>
         </div>
         <div class="step-body">
@@ -821,7 +821,7 @@ function renderPrintView() {
                 return s + designs.length + jsonUrls.length;
               }, 0);
               return `<div class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
-                <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder('${o.id}', this.checked)" />
+                <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
                 <div class="print-order-info">
                   <div class="print-order-name">${o.name} <span class="badge badge-info">${totalQty} art.</span> <span class="badge badge-info">${ageInDays}j</span></div>
                   <div class="print-order-detail">${customer||'—'} · ${o.lineItems.edges.length} ligne${o.lineItems.edges.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
@@ -908,17 +908,24 @@ function extractPngSvgFromJson(jsonText) {
 function togglePrintOrder(orderId, checked) {
   if (checked) state.printSelected.add(orderId);
   else state.printSelected.delete(orderId);
+  // Mise à jour visuelle de la ligne
   const item = document.getElementById(`print-item-${orderId}`);
   if (item) item.classList.toggle('deselected', !checked);
-  // Mise à jour compteur dans le header
-  document.querySelectorAll('.step-header .step-desc').forEach((desc, i) => {
-    if (i === 0) desc.textContent = `${state.printOrders.length} commande${state.printOrders.length>1?'s':''} avec balise TODOPRINT — ${state.printSelected.size} sélectionnée${state.printSelected.size>1?'s':''}`;
-  });
-  // Mise à jour du compteur dans le bouton
+  // Mise à jour du compteur partout
+  updatePrintCounter();
+}
+
+function updatePrintCounter() {
+  const n = state.printSelected.size;
+  const total = state.printOrders.length;
+  // Header étape 1
+  const desc = document.getElementById('print-step1-desc');
+  if (desc) desc.textContent = `${total} commande${total>1?'s':''} avec balise TODOPRINT — ${n} sélectionnée${n>1?'s':''}`;
+  // Bouton générer
   const zipCount = document.getElementById('zip-count');
-  if (zipCount) zipCount.textContent = state.printSelected.size;
+  if (zipCount) zipCount.textContent = n;
   const genBtn = document.getElementById('generate-zip-btn');
-  if (genBtn) genBtn.disabled = state.printSelected.size === 0;
+  if (genBtn) genBtn.disabled = n === 0;
 }
 
 function printSelectAll() { state.printOrders.forEach(o => state.printSelected.add(o.id)); renderPrintView(); }
