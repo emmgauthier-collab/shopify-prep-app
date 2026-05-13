@@ -56,7 +56,8 @@ export default async function handler(req, res) {
       console.log('Calling GAS:', GAS_URL.substring(0, 50));
       const gasRes = await fetch(GAS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ secret: GAS_SECRET, orders: body.orders }),
       });
       console.log('GAS response status:', gasRes.status);
