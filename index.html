@@ -7,164 +7,120 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #f6f6f7;
-      --surface: #ffffff;
-      --border: #e1e3e5;
-      --text: #202223;
-      --text-sub: #6d7175;
-      --primary: #008060;
-      --primary-hover: #006e52;
-      --critical: #d82c0d;
-      --critical-bg: #fff4f4;
-      --critical-border: #fead9a;
-      --warning: #b98900;
-      --warning-bg: #fff5ea;
-      --success: #008060;
-      --success-bg: #f1f8f5;
-      --info-bg: #f4f6f8;
-      --radius: 8px;
-      --shadow: 0 1px 3px rgba(0,0,0,.1);
-      --header-height: 56px;
+      --bg: #f6f6f7; --surface: #fff; --border: #e1e3e5; --text: #202223; --text-sub: #6d7175;
+      --primary: #008060; --primary-hover: #006e52; --critical: #d82c0d;
+      --critical-bg: #fff4f4; --critical-border: #fead9a;
+      --warning: #b98900; --warning-bg: #fff5ea;
+      --success: #008060; --success-bg: #f1f8f5; --info-bg: #f4f6f8;
+      --radius: 8px; --shadow: 0 1px 3px rgba(0,0,0,.1); --header-height: 56px;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
     #app { display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* ── Top bar ── */
     #topbar { position: sticky; top: 0; z-index: 200; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; height: var(--header-height); display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
     #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; }
-    #token-status { font-size: 12px; padding: 3px 10px; border-radius: 12px; }
-    #token-status.ok { background: var(--success-bg); color: var(--success); }
-    #token-status.warn { background: var(--warning-bg); color: var(--warning); }
-    #token-status.error { background: var(--critical-bg); color: var(--critical); }
 
-    /* ── Tabs ── */
     .tabs { display: flex; gap: 4px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; overflow-x: auto; }
     .tab-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: var(--text-sub); border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
     .tab-btn .badge { display: inline-block; background: var(--critical); color: #fff; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 4px; line-height: 18px; }
 
-    /* ── Content ── */
     #content { flex: 1; padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
 
-    /* ── Cards ── */
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
     .card + .card { margin-top: 12px; }
 
-    /* ── Dashboard grid ── */
     .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: box-shadow .15s, transform .1s; box-shadow: var(--shadow); }
     .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.15); transform: translateY(-1px); }
     .stat-card .stat-label { font-size: 13px; color: var(--text-sub); margin-bottom: 4px; }
-    .stat-card .stat-value { font-size: 28px; font-weight: 700; color: var(--text); }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; }
     .stat-card .stat-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
     .stat-card.urgent { border-color: var(--critical); background: var(--critical-bg); }
     .stat-card.urgent .stat-value { color: var(--critical); }
 
-    /* ── Sticky order header ── */
     #order-sticky { position: sticky; top: var(--header-height); z-index: 100; background: var(--surface); border-bottom: 2px solid var(--border); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .order-sticky-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
     .order-sticky-top h2 { font-size: 18px; font-weight: 700; }
 
-    /* ── À préparer ── */
     .prep-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .prep-label { font-size: 12px; color: var(--text-sub); font-weight: 600; margin-right: 4px; }
     .prep-item { background: var(--info-bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 13px; white-space: nowrap; }
-    .prep-item strong { color: var(--text); }
 
-    /* ── Nav bar ── */
     .nav-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .nav-bar select { flex: 1; min-width: 160px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; background: var(--surface); cursor: pointer; }
     .nav-bar .counter { color: var(--text-sub); font-size: 13px; white-space: nowrap; }
 
-    /* ── Buttons ── */
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s, border-color .15s; white-space: nowrap; text-decoration: none; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s; white-space: nowrap; text-decoration: none; }
     .btn:hover { background: #f6f6f7; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
     .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
     .btn-critical { background: var(--critical); color: #fff; border-color: var(--critical); }
-    .btn-critical:hover { background: #b52208; }
     .btn-lg { padding: 12px 24px; font-size: 16px; font-weight: 600; width: 100%; justify-content: center; }
     .btn-warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); }
-    .btn-warning.active { background: var(--warning); color: #fff; }
 
-    /* ── Badges ── */
-    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
     .badge-critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
     .badge-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid #f1c84b; }
     .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
     .badge-info { background: var(--info-bg); color: var(--text); border: 1px solid var(--border); }
 
-    /* ── Alerts ── */
     .alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius); margin-bottom: 12px; }
-    .alert-critical { background: var(--critical-bg); border: 1px solid var(--critical-border); color: var(--critical); }
-    .alert-success { background: var(--success-bg); border: 1px solid #95c9b4; color: var(--success); }
-    .alert-warning { background: var(--warning-bg); border: 1px solid #f1c84b; color: var(--warning); }
-    .alert strong { font-weight: 600; }
+    .alert-critical { background: var(--critical-bg); border: 1px solid var(--critical-border); }
+    .alert-critical strong { color: var(--critical); }
     .alert .alert-text { color: var(--text); }
 
-    /* ── Line item ── */
     .lineitem-grid { display: grid; grid-template-columns: 56px 1fr 120px; gap: 16px; align-items: start; }
     .qty-cell { text-align: center; }
-    .qty-cell .qty-num { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
-    .qty-cell .qty-label { font-size: 11px; color: var(--text-sub); }
-    .info-cell .product-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-    .info-cell .product-variant { color: var(--text-sub); margin-bottom: 4px; }
-    .info-cell .product-sku { color: var(--text-sub); font-size: 12px; }
-    .info-cell .attr-list { margin-top: 6px; }
-    .info-cell .attr-item { font-size: 12px; color: var(--text-sub); }
-    .info-cell .dl-link { font-size: 13px; color: var(--primary); text-decoration: none; margin-top: 6px; display: inline-block; }
-    .info-cell .dl-link:hover { text-decoration: underline; }
-    .img-cell { cursor: zoom-in; }
-    .img-cell img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); object-fit: contain; aspect-ratio: 1/1; display: block; }
+    .qty-num { font-size: 28px; font-weight: 700; line-height: 1; }
+    .qty-label { font-size: 11px; color: var(--text-sub); }
+    .product-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .product-variant, .product-sku { color: var(--text-sub); font-size: 13px; margin-bottom: 2px; }
+    .attr-item { font-size: 12px; color: var(--text-sub); }
+    .dl-link { font-size: 13px; color: var(--primary); text-decoration: none; margin-top: 6px; display: inline-block; }
+    .dl-link:hover { text-decoration: underline; }
+    .img-cell img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); object-fit: contain; aspect-ratio: 1/1; display: block; cursor: zoom-in; }
 
-    /* ── Image modal ── */
     #img-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 9999; align-items: center; justify-content: center; cursor: pointer; }
     #img-modal.open { display: flex; }
     #img-modal img { max-width: 92vw; max-height: 92vh; border-radius: 10px; object-fit: contain; cursor: default; box-shadow: 0 8px 32px rgba(0,0,0,.5); }
     #img-modal-close { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 28px; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-    #img-modal-close:hover { background: rgba(255,255,255,.35); }
 
-    /* ── Settings modal ── */
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
     .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); }
     .settings-box h2 { font-size: 18px; margin-bottom: 6px; }
-    .settings-box .settings-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
+    .settings-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
-    .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; background: var(--surface); }
+    .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; }
     .form-group input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .settings-hint { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
 
-    /* ── Spinner ── */
     .spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; gap: 12px; color: var(--text-sub); }
     .spinner-ring { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .empty { text-align: center; padding: 48px; color: var(--text-sub); }
-    hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
     kbd { background: var(--info-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: monospace; }
     .export-section { display: flex; flex-direction: column; gap: 12px; }
     .history-table { width: 100%; border-collapse: collapse; }
     .history-table th, .history-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14px; }
-    .history-table th { font-weight: 600; background: var(--bg); color: var(--text-sub); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+    .history-table th { font-weight: 600; background: var(--bg); color: var(--text-sub); font-size: 12px; text-transform: uppercase; }
     .history-table tr:last-child td { border-bottom: none; }
     .history-table tr:hover td { background: var(--bg); }
 
-    /* ── Scroll to top ── */
     #scroll-top { position: fixed; bottom: 24px; right: 24px; width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,128,96,.4); display: none; align-items: center; justify-content: center; z-index: 300; }
     #scroll-top.visible { display: flex; }
-    #scroll-top:hover { background: var(--primary-hover); }
 
-    /* ── Toast ── */
     #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: all .25s; z-index: 500; pointer-events: none; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 600px) {
       .lineitem-grid { grid-template-columns: 48px 1fr 80px; gap: 10px; }
-      .qty-cell .qty-num { font-size: 22px; }
+      .qty-num { font-size: 22px; }
       #content { padding: 10px; }
       .dashboard-grid { grid-template-columns: 1fr 1fr; }
     }
@@ -173,47 +129,32 @@
 <body>
 <div id="app">
 
-  <!-- Image modal -->
   <div id="img-modal" onclick="closeImgModal()">
     <button id="img-modal-close" onclick="closeImgModal()">✕</button>
     <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()" />
   </div>
 
-  <!-- Settings modal -->
   <div id="settings-modal">
     <div class="settings-box">
       <h2>⚙️ Configuration</h2>
-      <p class="settings-desc">Renseigne les credentials de ton app depuis le <strong>Partner Dashboard → ton app → Settings</strong></p>
+      <p class="settings-desc">Renseigne l'URL de ton proxy Vercel. C'est la seule info nécessaire côté client.</p>
       <div class="form-group">
-        <label>Domaine boutique Shopify</label>
-        <input id="cfg-shop" type="text" placeholder="ma-boutique.myshopify.com" />
-        <div class="settings-hint">Sans https://, juste le domaine .myshopify.com</div>
-      </div>
-      <div class="form-group">
-        <label>Client ID</label>
-        <input id="cfg-client-id" type="text" placeholder="coefcd789..." />
-        <div class="settings-hint">Visible dans Partner Dashboard → ton app → Settings</div>
-      </div>
-      <div class="form-group">
-        <label>Client Secret</label>
-        <input id="cfg-client-secret" type="password" placeholder="shpss_..." />
-        <div class="settings-hint">Visible dans Partner Dashboard → ton app → Settings → "Reveal"</div>
+        <label>URL du proxy Vercel</label>
+        <input id="cfg-proxy-url" type="text" placeholder="https://mon-app.vercel.app/api/shopify" />
+        <div class="settings-hint">L'URL de ta fonction Vercel déployée</div>
       </div>
       <div style="display:flex;gap:8px;margin-top:20px;">
-        <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder et connecter</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
         <button class="btn" onclick="closeSettings()">Annuler</button>
       </div>
     </div>
   </div>
 
-  <!-- Top bar -->
   <div id="topbar">
     <h1>🎨 Assistant personnalisation</h1>
-    <span id="token-status" class="token-status"></span>
     <button class="btn" onclick="openSettings()" title="Paramètres">⚙️</button>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
     <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="badge" style="display:none"></span></button>
@@ -225,155 +166,64 @@
   <div id="content"></div>
 </div>
 
-<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Retour en haut">↑</button>
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════
 const state = {
   activeTab: 'dashboard',
-  shop: '',
-  clientId: '',
-  clientSecret: '',
-  accessToken: '',
-  tokenExpiresAt: 0,
+  proxyUrl: '',
   orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false,
-  toorderOrders: [],
-  imbretexUrl: null, imbretexFilename: '',
-  completeUrl: null, completeFilename: '',
-  historyTags: [],
+  toorderOrders: [], historyTags: [],
 };
 
 const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customization_id'];
 
-// ════════════════════════════════════════════
-// SETTINGS & TOKEN
-// ════════════════════════════════════════════
-function loadSettings() {
-  state.shop = localStorage.getItem('shop') || '';
-  state.clientId = localStorage.getItem('clientId') || '';
-  state.clientSecret = localStorage.getItem('clientSecret') || '';
-  state.accessToken = localStorage.getItem('accessToken') || '';
-  state.tokenExpiresAt = parseInt(localStorage.getItem('tokenExpiresAt') || '0');
-}
-
+// ── Settings ──
+function loadSettings() { state.proxyUrl = localStorage.getItem('proxyUrl') || ''; }
 function saveSettings() {
-  const shop = document.getElementById('cfg-shop').value.trim().replace(/^https?:\/\//, '');
-  const clientId = document.getElementById('cfg-client-id').value.trim();
-  const clientSecret = document.getElementById('cfg-client-secret').value.trim();
-  if (!shop || !clientId || !clientSecret) { showToast('⚠️ Remplis tous les champs', 'warning'); return; }
-  localStorage.setItem('shop', shop);
-  localStorage.setItem('clientId', clientId);
-  localStorage.setItem('clientSecret', clientSecret);
-  // Reset token to force refresh
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('tokenExpiresAt');
-  state.shop = shop;
-  state.clientId = clientId;
-  state.clientSecret = clientSecret;
-  state.accessToken = '';
-  state.tokenExpiresAt = 0;
+  const url = document.getElementById('cfg-proxy-url').value.trim();
+  if (!url) { showToast('⚠️ Remplis l\'URL', 'warning'); return; }
+  localStorage.setItem('proxyUrl', url);
+  state.proxyUrl = url;
   closeSettings();
+  showToast('✅ Configuration sauvegardée');
   switchTab(state.activeTab);
 }
-
-function openSettings() {
-  document.getElementById('cfg-shop').value = state.shop;
-  document.getElementById('cfg-client-id').value = state.clientId;
-  document.getElementById('cfg-client-secret').value = state.clientSecret;
-  document.getElementById('settings-modal').classList.add('open');
-}
+function openSettings() { document.getElementById('cfg-proxy-url').value = state.proxyUrl; document.getElementById('settings-modal').classList.add('open'); }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
 
-function updateTokenStatus(status, msg) {
-  const el = document.getElementById('token-status');
-  el.className = `token-status ${status}`;
-  el.textContent = msg;
-}
-
-// ════════════════════════════════════════════
-// AUTO TOKEN RENEWAL
-// ════════════════════════════════════════════
-async function getValidToken() {
-  // Token encore valide (5 min de marge)
-  if (state.accessToken && Date.now() < state.tokenExpiresAt - 300000) {
-    return state.accessToken;
-  }
-
-  // Renouvellement automatique
-  updateTokenStatus('warn', '🔄 Renouvellement token...');
-  const shop = state.shop.replace(/^https?:\/\//, '').split('/')[0];
-
-  const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: state.clientId,
-      client_secret: state.clientSecret,
-    }).toString(),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    updateTokenStatus('error', '❌ Token invalide');
-    throw new Error(`Erreur OAuth: ${res.status} — ${err}`);
-  }
-
-  const data = await res.json();
-  state.accessToken = data.access_token;
-  // expires_in en secondes, on stocke le timestamp d'expiration
-  state.tokenExpiresAt = Date.now() + (data.expires_in * 1000);
-  localStorage.setItem('accessToken', state.accessToken);
-  localStorage.setItem('tokenExpiresAt', String(state.tokenExpiresAt));
-
-  const expiresIn = Math.round(data.expires_in / 3600);
-  updateTokenStatus('ok', `✅ Token valide ~${expiresIn}h`);
-  return state.accessToken;
-}
-
-// ════════════════════════════════════════════
-// GRAPHQL
-// ════════════════════════════════════════════
+// ── GraphQL via proxy ──
 async function gql(query, variables = {}) {
-  const token = await getValidToken();
-  const shop = state.shop.replace(/^https?:\/\//, '').split('/')[0];
-  const res = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+  const res = await fetch(state.proxyUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables }),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  if (!res.ok) throw new Error(`Proxy error ${res.status}: ${res.statusText}`);
   const json = await res.json();
   if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join(', '));
   return json.data;
 }
 
-// ════════════════════════════════════════════
-// TABS
-// ════════════════════════════════════════════
+// ── Tabs ──
 function switchTab(tab) {
   state.activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  if (!state.shop || !state.clientId || !state.clientSecret) {
+  if (!state.proxyUrl) {
     document.getElementById('content').innerHTML = `
       <div class="empty">
         <div style="font-size:48px;margin-bottom:16px;">⚙️</div>
         <div style="font-size:18px;font-weight:600;margin-bottom:8px;">Configuration requise</div>
-        <div style="color:var(--text-sub);margin-bottom:20px;">Renseigne ton domaine Shopify, Client ID et Client Secret</div>
-        <button class="btn btn-primary" onclick="openSettings()">Configurer maintenant</button>
+        <div style="color:var(--text-sub);margin-bottom:20px;">Renseigne l'URL de ton proxy Vercel</div>
+        <button class="btn btn-primary" onclick="openSettings()">Configurer</button>
       </div>`;
     return;
   }
-  const fns = { dashboard: renderDashboard, custom: renderCustomTab, imbretex: renderImbretexTab, complete: renderCompleteTab, history: renderHistoryTab };
-  fns[tab]?.();
+  ({ dashboard: renderDashboard, custom: renderCustomTab, imbretex: renderImbretexTab, complete: renderCompleteTab, history: renderHistoryTab })[tab]?.();
 }
 
-// ════════════════════════════════════════════
-// TOAST / SCROLL / IMAGE MODAL
-// ════════════════════════════════════════════
+// ── Toast / Scroll / Image ──
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -381,24 +231,11 @@ function showToast(msg, type = 'success') {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
+window.addEventListener('scroll', () => document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200));
+function openImgModal(url) { document.getElementById('img-modal-src').src = url; document.getElementById('img-modal').classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeImgModal() { document.getElementById('img-modal').classList.remove('open'); document.body.style.overflow = ''; }
 
-window.addEventListener('scroll', () => {
-  document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200);
-});
-
-function openImgModal(url) {
-  document.getElementById('img-modal-src').src = url;
-  document.getElementById('img-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeImgModal() {
-  document.getElementById('img-modal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// ════════════════════════════════════════════
-// KEYBOARD SHORTCUTS
-// ════════════════════════════════════════════
+// ── Keyboard shortcuts ──
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeImgModal(); return; }
   if (state.activeTab !== 'custom') return;
@@ -408,9 +245,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'k') { e.preventDefault(); nextOrder(); }
 });
 
-// ════════════════════════════════════════════
-// DASHBOARD
-// ════════════════════════════════════════════
+// ── Dashboard ──
 async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
@@ -423,52 +258,28 @@ async function renderDashboard() {
     }`);
     const counts = { custom: data.custom.count, toorder: data.toorder.count, todoprint: data.todoprint.count, urgent: data.urgent.count };
     const badge = document.getElementById('tab-custom-badge');
-    if (counts.urgent > 0) { badge.textContent = counts.urgent; badge.style.display = ''; }
-    else badge.style.display = 'none';
-
+    badge.style.display = counts.urgent > 0 ? '' : 'none';
+    if (counts.urgent > 0) badge.textContent = counts.urgent;
     c.innerHTML = `
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
       </div>
       <div class="dashboard-grid">
-        <div class="stat-card" onclick="goToCustom(false)">
-          <div class="stat-label">Commandes custom</div>
-          <div class="stat-value">${counts.custom}</div>
-          <div class="stat-sub">À traiter</div>
-        </div>
-        <div class="stat-card" onclick="switchTab('imbretex')">
-          <div class="stat-label">Import fournisseur</div>
-          <div class="stat-value">${counts.toorder}</div>
-          <div class="stat-sub">Balise TOORDER</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Préparation print</div>
-          <div class="stat-value">${counts.todoprint}</div>
-          <div class="stat-sub">Balise TODOPRINT</div>
-        </div>
-        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)">
-          <div class="stat-label">Commandes urgentes</div>
-          <div class="stat-value">${counts.urgent}</div>
-          <div class="stat-sub">Balise urgent / URGENT</div>
-        </div>
+        <div class="stat-card" onclick="goToCustom(false)"><div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div></div>
+        <div class="stat-card" onclick="switchTab('imbretex')"><div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div></div>
+        <div class="stat-card"><div class="stat-label">Préparation print</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
+        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
       </div>`;
   } catch(err) {
-    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>
-      <button class="btn" style="margin-top:8px;" onclick="openSettings()">⚙️ Vérifier la configuration</button>`;
+    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div><button class="btn" style="margin-top:8px" onclick="openSettings()">⚙️ Vérifier la config</button>`;
   }
 }
-
 function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); }
 
-// ════════════════════════════════════════════
-// CUSTOM ORDERS
-// ════════════════════════════════════════════
-const ORDER_FIELDS = `id name createdAt note tags
-  customer { firstName lastName }
-  lineItems(first: 250) { edges { node {
-    id title quantity
-    variant {
-      title
+// ── Custom orders ──
+const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName }
+  lineItems(first: 250) { edges { node { id title quantity
+    variant { title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
       imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value }
     }
@@ -477,18 +288,15 @@ const ORDER_FIELDS = `id name createdAt note tags
 
 async function fetchCustomOrders(cursor = null, direction = 'forward', urgent = false) {
   const base = 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)';
-  const q = urgent ? `${base} AND (tag:urgent OR tag:URGENT)` : base;
   const data = await gql(`query($first: Int, $after: String, $last: Int, $before: String, $q: String!) {
     orders(first: $first, after: $after, last: $last, before: $before, query: $q) {
       edges { node { ${ORDER_FIELDS} } }
       pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
     }
   }`, {
-    first: direction === 'forward' ? 10 : null,
-    after: direction === 'forward' ? cursor : null,
-    last: direction !== 'forward' ? 10 : null,
-    before: direction !== 'forward' ? cursor : null,
-    q,
+    first: direction === 'forward' ? 10 : null, after: direction === 'forward' ? cursor : null,
+    last: direction !== 'forward' ? 10 : null, before: direction !== 'forward' ? cursor : null,
+    q: urgent ? `${base} AND (tag:urgent OR tag:URGENT)` : base,
   });
   state.orders = data.orders.edges.map(e => e.node);
   state.pageInfo = data.orders.pageInfo;
@@ -496,14 +304,9 @@ async function fetchCustomOrders(cursor = null, direction = 'forward', urgent = 
 }
 
 async function renderCustomTab() {
-  const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try {
-    await fetchCustomOrders(null, 'forward', state.filterUrgent);
-    renderOrderView();
-  } catch(err) {
-    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`;
-  }
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
+  catch(err) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`; }
 }
 
 function renderOrderView() {
@@ -511,66 +314,51 @@ function renderOrderView() {
   const order = state.orders[state.currentIndex] || null;
   const hasPrev = state.currentIndex > 0 || state.pageInfo?.hasPreviousPage;
   const hasNext = state.currentIndex < state.orders.length - 1 || state.pageInfo?.hasNextPage;
-
-  const selectOptions = state.orders.map((o, i) => {
-    const urgent = o.tags.some(t => t === 'urgent' || t === 'URGENT');
-    const hasNote = !!(o.note?.trim());
-    return `<option value="${i}" ${i === state.currentIndex ? 'selected' : ''}>${o.name}${urgent ? ' 🚨' : ''}${hasNote ? ' 📝' : ''}</option>`;
-  }).join('');
-
-  const counter = state.orders.length === 0 ? 'Aucune commande'
-    : `${state.currentIndex + 1} / ${state.orders.length}${state.pageInfo?.hasNextPage ? '+' : ''}`;
+  const counter = state.orders.length === 0 ? 'Aucune commande' : `${state.currentIndex + 1} / ${state.orders.length}${state.pageInfo?.hasNextPage ? '+' : ''}`;
 
   let html = `<div class="nav-bar">
     <button class="btn" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédent <kbd>J</kbd></button>
-    ${state.orders.length > 0 ? `<select onchange="jumpToOrder(this.value)">${selectOptions}</select>` : ''}
+    ${state.orders.length > 0 ? `<select onchange="jumpToOrder(this.value)">${state.orders.map((o, i) => {
+      const urgent = o.tags.some(t => t==='urgent'||t==='URGENT');
+      const note = !!(o.note?.trim());
+      return `<option value="${i}" ${i===state.currentIndex?'selected':''}>${o.name}${urgent?' 🚨':''}${note?' 📝':''}</option>`;
+    }).join('')}</select>` : ''}
     <span class="counter">${counter}</span>
     <button class="btn" onclick="nextOrder()" ${!hasNext ? 'disabled' : ''}>Suivant <kbd>K</kbd> →</button>
-    <button class="btn ${state.filterUrgent ? 'btn-critical' : 'btn-warning'}" onclick="toggleUrgentFilter()">
-      🚨 Urgent${state.filterUrgent ? ' ✕' : ''}
-    </button>
+    <button class="btn ${state.filterUrgent ? 'btn-critical' : 'btn-warning'}" onclick="toggleUrgentFilter()">🚨 Urgent${state.filterUrgent?' ✕':''}</button>
     ${state.filterUrgent ? '<span class="badge badge-critical">Filtre actif</span>' : ''}
   </div>`;
 
-  if (state.orders.length === 0) {
-    html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente trouvée.' : 'Aucune commande custom à traiter.'}</div>`;
-    c.innerHTML = html;
-    return;
-  }
+  if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; return; }
   if (!order) { c.innerHTML = html; return; }
 
-  const isUrgent = order.tags.some(t => t === 'urgent' || t === 'URGENT');
+  const isUrgent = order.tags.some(t => t==='urgent'||t==='URGENT');
   const hasNote = !!(order.note?.trim());
   const customerName = order.customer ? `${order.customer.firstName||''} ${order.customer.lastName||''}`.trim() : '';
   const orderDate = new Date(order.createdAt).toLocaleDateString('fr-FR');
-  const totalQty = order.lineItems.edges.reduce((s, {node:li}) => s + li.quantity, 0);
+  const totalQty = order.lineItems.edges.reduce((s,{node:li}) => s+li.quantity, 0);
   const ageInDays = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 86400000);
   const ageTone = ageInDays < 5 ? 'success' : ageInDays <= 10 ? 'warning' : 'critical';
   const ageLabel = ageInDays < 5 ? 'Récente' : ageInDays <= 10 ? 'En retard' : 'Critique';
-
   const prepItems = order.lineItems.edges.map(({node:li}) => {
-    const v = li.variant?.title;
-    const showV = v && v !== 'Default Title';
-    return `<span class="prep-item"><strong>${li.quantity}×</strong> ${li.title}${showV ? ` — ${v}` : ''}</span>`;
+    const v = li.variant?.title; const sv = v && v!=='Default Title';
+    return `<span class="prep-item"><strong>${li.quantity}×</strong> ${li.title}${sv?` — ${v}`:''}</span>`;
   }).join('');
 
   html += `<div id="order-sticky">
     <div class="order-sticky-top">
       <h2>${order.name}</h2>
       ${isUrgent ? '<span class="badge badge-critical">🚨 URGENT</span>' : ''}
-      <span class="badge badge-info">${customerName || '-'}</span>
+      <span class="badge badge-info">${customerName||'-'}</span>
       <span class="badge badge-info">${orderDate}</span>
       <span class="badge badge-${ageTone}">${ageInDays}j — ${ageLabel}</span>
-      <span class="badge badge-info">${totalQty} article${totalQty > 1 ? 's' : ''}</span>
+      <span class="badge badge-info">${totalQty} article${totalQty>1?'s':''}</span>
     </div>
     ${hasNote ? `<div class="alert alert-critical" style="margin-bottom:8px;">⚠️ <strong>Note : </strong><span class="alert-text">${order.note}</span></div>` : ''}
-    <div class="prep-list">
-      <span class="prep-label">À préparer :</span>
-      ${prepItems}
-    </div>
-  </div>`;
+    <div class="prep-list"><span class="prep-label">À préparer :</span>${prepItems}</div>
+  </div>
+  <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
-  html += `<div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
   for (const {node:li} of order.lineItems.edges) {
     const liId = li.id.split('/').pop();
     const variant = li.variant?.title || '';
@@ -580,38 +368,20 @@ function renderOrderView() {
     const imageUrl = imgAttr?.value || teeinblue || null;
     const sku = li.variant?.imbretexSku?.value || null;
     const visibleAttrs = li.customAttributes.filter(a => !HIDDEN_KEYS.includes(a.key));
-
-    html += `<div class="card">
-      <div class="lineitem-grid">
-        <div class="qty-cell">
-          <div class="qty-num">${li.quantity}</div>
-          <div class="qty-label">Qté</div>
-        </div>
-        <div class="info-cell">
-          <div class="product-title">${li.title}</div>
-          ${showVariant ? `<div class="product-variant">${variant}</div>` : ''}
-          ${sku ? `<div class="product-sku">SKU: ${sku}</div>` : ''}
-          ${visibleAttrs.length > 0 ? `<div class="attr-list">${visibleAttrs.map(a => `<div class="attr-item">${a.key}: ${a.value}</div>`).join('')}</div>` : ''}
-          ${imageUrl ? `<a href="${imageUrl}" class="dl-link" target="_blank" download>⬇ Télécharger l'image</a>` : ''}
-        </div>
-        <div class="img-cell">
-          ${imageUrl
-            ? `<img src="${imageUrl}" alt="${li.title}" onclick="openImgModal('${imageUrl}')" loading="lazy" />`
-            : '<div style="color:var(--text-sub);font-size:12px;text-align:center;padding:8px;">Pas d\'image</div>'}
-        </div>
+    html += `<div class="card"><div class="lineitem-grid">
+      <div class="qty-cell"><div class="qty-num">${li.quantity}</div><div class="qty-label">Qté</div></div>
+      <div>
+        <div class="product-title">${li.title}</div>
+        ${showVariant ? `<div class="product-variant">${variant}</div>` : ''}
+        ${sku ? `<div class="product-sku">SKU: ${sku}</div>` : ''}
+        ${visibleAttrs.map(a => `<div class="attr-item">${a.key}: ${a.value}</div>`).join('')}
+        ${imageUrl ? `<a href="${imageUrl}" class="dl-link" target="_blank" download>⬇ Télécharger l'image</a>` : ''}
       </div>
-    </div>`;
+      <div class="img-cell">${imageUrl ? `<img src="${imageUrl}" alt="${li.title}" onclick="openImgModal('${imageUrl}')" loading="lazy"/>` : ''}</div>
+    </div></div>`;
   }
   html += `</div>`;
-
-  if (hasNext) {
-    html += `<div style="margin-top:20px;">
-      <button class="btn btn-primary btn-lg" onclick="nextOrderAndScroll()">
-        Commande suivante → <kbd style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff;">K</kbd>
-      </button>
-    </div>`;
-  }
-
+  if (hasNext) html += `<div style="margin-top:20px;"><button class="btn btn-primary btn-lg" onclick="nextOrderAndScroll()">Commande suivante → <kbd style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff;">K</kbd></button></div>`;
   c.innerHTML = html;
 }
 
@@ -619,23 +389,20 @@ async function prevOrder() {
   if (state.currentIndex > 0) { state.currentIndex--; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
   else if (state.pageInfo?.hasPreviousPage) {
     document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-    try { await fetchCustomOrders(state.pageInfo.startCursor, 'backward', state.filterUrgent); state.currentIndex = state.orders.length - 1; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
-    catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+    try { await fetchCustomOrders(state.pageInfo.startCursor, 'backward', state.filterUrgent); state.currentIndex = state.orders.length-1; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
+    catch(e) { showToast('Erreur: '+e.message, 'error'); }
   }
 }
-
 async function nextOrder() {
-  if (state.currentIndex < state.orders.length - 1) { state.currentIndex++; renderOrderView(); }
+  if (state.currentIndex < state.orders.length-1) { state.currentIndex++; renderOrderView(); }
   else if (state.pageInfo?.hasNextPage) {
     document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
     try { await fetchCustomOrders(state.pageInfo.endCursor, 'forward', state.filterUrgent); renderOrderView(); }
-    catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+    catch(e) { showToast('Erreur: '+e.message, 'error'); }
   }
 }
-
 async function nextOrderAndScroll() { await nextOrder(); window.scrollTo({top:0,behavior:'smooth'}); }
 function jumpToOrder(idx) { state.currentIndex = parseInt(idx); renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
-
 async function toggleUrgentFilter() {
   state.filterUrgent = !state.filterUrgent;
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
@@ -643,234 +410,100 @@ async function toggleUrgentFilter() {
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
-// ════════════════════════════════════════════
-// TOORDER
-// ════════════════════════════════════════════
+// ── TOORDER ──
 async function fetchToOrderOrders() {
-  let orders = [], hasNext = true, cursor = null;
+  let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
-    const data = await gql(`query($first: Int!, $after: String, $q: String!) {
-      orders(first: $first, after: $after, query: $q) {
-        edges { node { id name createdAt note customer { firstName lastName }
-          lineItems(first: 250) { edges { node { id title quantity
-            variant { title imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value } }
-          }}}
-          tags
-        }}
-        pageInfo { hasNextPage endCursor }
-      }
-    }`, { first: 250, after: cursor, q: 'tag:TOORDER AND status:open' });
-    orders.push(...data.orders.edges.map(e => e.node));
-    hasNext = data.orders.pageInfo.hasNextPage;
-    cursor = data.orders.pageInfo.endCursor;
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
+    orders.push(...data.orders.edges.map(e=>e.node));
+    hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
   return orders;
 }
 
 async function renderImbretexTab() {
-  const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { state.toorderOrders = await fetchToOrderOrders(); renderImbretexView(); }
-  catch(e) { c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  try { state.toorderOrders = await fetchToOrderOrders(); document.getElementById('content').innerHTML = `<div class="card export-section"><div>${state.toorderOrders.length} commande(s) avec balise TOORDER</div>${state.toorderOrders.length>0?`<button class="btn btn-primary" onclick="generateImbretex()">Générer export IMBRETEX</button><div id="imbretex-dl"></div>`:''}</div>`; }
+  catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
-function renderImbretexView() {
-  document.getElementById('content').innerHTML = `<div class="card export-section">
-    <div>${state.toorderOrders.length} commande(s) avec balise TOORDER</div>
-    ${state.toorderOrders.length > 0 ? `
-      <button class="btn btn-primary" onclick="generateImbretex()">Générer export IMBRETEX</button>
-      <div id="imbretex-dl"></div>` : ''}
-  </div>`;
-}
-
-function generateImbretex(orders = state.toorderOrders, dateOverride = null) {
-  const skuMap = new Map();
-  orders.forEach(o => o.lineItems.edges.forEach(({node:li}) => {
-    const sku = li.variant?.imbretexSku?.value;
-    if (sku) skuMap.set(sku, (skuMap.get(sku) || 0) + li.quantity);
-  }));
-  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)), parseInt(dateOverride.substring(4,6))-1, parseInt(dateOverride.substring(6,8))) : new Date();
-  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const dossier = `custom_${dateStr.replace(/-/g,'')}`;
-  let csv = 'REFERENCE ARTICLE;QUANTITE;DOSSIER (FACULTATIF)\n';
-  skuMap.forEach((qty, sku) => { csv += `${sku};${qty};${dossier}\n`; });
-  const url = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
-  const filename = `commande-imbretex-${dateStr}.csv`;
-  const dl = document.getElementById('imbretex-dl');
-  if (dl) dl.innerHTML = `<a class="btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a>`;
-  return { url, filename };
+function generateImbretex(orders=state.toorderOrders, dateOverride=null) {
+  const skuMap=new Map();
+  orders.forEach(o=>o.lineItems.edges.forEach(({node:li})=>{const sku=li.variant?.imbretexSku?.value;if(sku)skuMap.set(sku,(skuMap.get(sku)||0)+li.quantity);}));
+  const today=dateOverride?new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))):new Date();
+  const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  let csv='REFERENCE ARTICLE;QUANTITE;DOSSIER (FACULTATIF)\n';
+  skuMap.forEach((qty,sku)=>{csv+=`${sku};${qty};custom_${dateStr.replace(/-/g,'')}\n`;});
+  const url=`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
+  const filename=`commande-imbretex-${dateStr}.csv`;
+  const dl=document.getElementById('imbretex-dl');
+  if(dl)dl.innerHTML=`<a class="btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a>`;
+  return {url,filename};
 }
 
 async function renderCompleteTab() {
-  const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { state.toorderOrders = await fetchToOrderOrders(); renderCompleteView(); }
-  catch(e) { c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  try { state.toorderOrders=await fetchToOrderOrders(); document.getElementById('content').innerHTML=`<div class="card export-section"><div>${state.toorderOrders.length} commande(s) avec balise TOORDER</div>${state.toorderOrders.length>0?`<div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn" onclick="generateComplete()">Générer export complet</button><div id="complete-dl"></div><button class="btn btn-primary" onclick="markOrdersDone()">✅ Commande fournisseur OK</button></div>`:''}</div>`; }
+  catch(e) { document.getElementById('content').innerHTML=`<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
-function renderCompleteView() {
-  document.getElementById('content').innerHTML = `<div class="card export-section">
-    <div>${state.toorderOrders.length} commande(s) avec balise TOORDER</div>
-    ${state.toorderOrders.length > 0 ? `
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn" onclick="generateComplete()">Générer export complet</button>
-        <div id="complete-dl"></div>
-        <button class="btn btn-primary" onclick="markOrdersDone()">✅ Commande fournisseur OK</button>
-      </div>` : ''}
-  </div>`;
-}
-
-function generateComplete(orders = state.toorderOrders, dateOverride = null) {
-  let csv = 'Numéro commande;Date;Client;Produit;Variant;Quantité;imbretex_sku;Notes commande\n';
-  orders.forEach(o => {
-    const date = new Date(o.createdAt).toLocaleDateString('fr-FR');
-    const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
-    const notes = (o.note||'').replace(/;/g,',').replace(/\n/g,' ');
-    o.lineItems.edges.forEach(({node:li}) => {
-      csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`;
-    });
-  });
-  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)), parseInt(dateOverride.substring(4,6))-1, parseInt(dateOverride.substring(6,8))) : new Date();
-  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const url = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
-  const filename = `resume-commandes-${dateStr}.csv`;
-  const dl = document.getElementById('complete-dl');
-  if (dl) dl.innerHTML = `<a class="btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a>`;
-  return { url, filename };
+function generateComplete(orders=state.toorderOrders,dateOverride=null) {
+  let csv='Numéro commande;Date;Client;Produit;Variant;Quantité;imbretex_sku;Notes commande\n';
+  orders.forEach(o=>{const date=new Date(o.createdAt).toLocaleDateString('fr-FR');const customer=o.customer?`${o.customer.firstName||''} ${o.customer.lastName||''}`.trim():'';const notes=(o.note||'').replace(/;/g,',').replace(/\n/g,' ');o.lineItems.edges.forEach(({node:li})=>{csv+=`${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`;});});
+  const today=dateOverride?new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))):new Date();
+  const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const url=`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
+  const filename=`resume-commandes-${dateStr}.csv`;
+  const dl=document.getElementById('complete-dl');
+  if(dl)dl.innerHTML=`<a class="btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a>`;
+  return {url,filename};
 }
 
 async function markOrdersDone() {
-  if (!state.toorderOrders.length) return;
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = 'En cours...';
-  const today = new Date();
-  const newTag = `order_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-  const removeMut = `mutation($id: ID!, $tags: [String!]!) { tagsRemove(id: $id, tags: $tags) { node { id } userErrors { message } } }`;
-  const addMut = `mutation($id: ID!, $tags: [String!]!) { tagsAdd(id: $id, tags: $tags) { node { id } userErrors { message } } }`;
-  let ok = 0, errors = [];
-  for (const o of state.toorderOrders) {
-    try { await gql(removeMut, {id: o.id, tags: ['TOORDER']}); await gql(addMut, {id: o.id, tags: [newTag]}); ok++; }
-    catch(e) { errors.push(o.name); }
-  }
-  if (errors.length) showToast(`⚠️ Erreurs sur: ${errors.join(', ')}`, 'warning');
-  else showToast(`✅ ${ok} commande(s) traitée(s)`);
+  if(!state.toorderOrders.length)return;
+  const btn=event.target; btn.disabled=true; btn.textContent='En cours...';
+  const today=new Date();
+  const newTag=`order_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  const removeMut=`mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
+  const addMut=`mutation($id:ID!,$tags:[String!]!){tagsAdd(id:$id,tags:$tags){node{id}userErrors{message}}}`;
+  let ok=0,errors=[];
+  for(const o of state.toorderOrders){try{await gql(removeMut,{id:o.id,tags:['TOORDER']});await gql(addMut,{id:o.id,tags:[newTag]});ok++;}catch(e){errors.push(o.name);}}
+  if(errors.length)showToast(`⚠️ Erreurs: ${errors.join(', ')}`,'warning');else showToast(`✅ ${ok} commande(s) traitée(s)`);
   await renderCompleteTab();
 }
 
-// ════════════════════════════════════════════
-// HISTORY
-// ════════════════════════════════════════════
+// ── History ──
 async function renderHistoryTab() {
-  const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  document.getElementById('content').innerHTML=`<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    let orders = [], hasNext = true, cursor = null;
-    while (hasNext) {
-      const data = await gql(`query($first: Int!, $after: String) {
-        orders(first: $first, after: $after) {
-          edges { node { id tags } }
-          pageInfo { hasNextPage endCursor }
-        }
-      }`, { first: 250, after: cursor });
-      orders.push(...data.orders.edges.map(e => e.node));
-      hasNext = data.orders.pageInfo.hasNextPage;
-      cursor = data.orders.pageInfo.endCursor;
-    }
-    const tagMap = new Map();
-    orders.forEach(o => o.tags.forEach(t => { if (t.startsWith('order_')) tagMap.set(t, (tagMap.get(t)||0)+1); }));
-    state.historyTags = [...tagMap.entries()].map(([tag, count]) => {
-      const d = tag.replace('order_','');
-      return d.length === 8 ? { tag, count, date: `${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}` } : null;
-    }).filter(Boolean).sort((a,b) => b.tag.localeCompare(a.tag));
-
-    if (!state.historyTags.length) { c.innerHTML = `<div class="empty">Aucun historique trouvé.</div>`; return; }
-
-    c.innerHTML = `<div class="card" style="padding:0;overflow:hidden;">
-      <table class="history-table">
-        <thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead>
-        <tbody>${state.historyTags.map(h => `
-          <tr>
-            <td><strong>${h.date}</strong></td>
-            <td>${h.count}</td>
-            <td>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn" onclick="regenImbretex('${h.tag}')">Régénérer IMBRETEX</button>
-                <button class="btn" onclick="regenComplete('${h.tag}')">Régénérer complet</button>
-              </div>
-              <div id="dl-${h.tag.replace('order_','')}"></div>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-  } catch(e) { c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
+    let orders=[],hasNext=true,cursor=null;
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String){orders(first:$first,after:$after){edges{node{id tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
+    const tagMap=new Map();
+    orders.forEach(o=>o.tags.forEach(t=>{if(t.startsWith('order_'))tagMap.set(t,(tagMap.get(t)||0)+1);}));
+    state.historyTags=[...tagMap.entries()].map(([tag,count])=>{const d=tag.replace('order_','');return d.length===8?{tag,count,date:`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`}:null;}).filter(Boolean).sort((a,b)=>b.tag.localeCompare(a.tag));
+    if(!state.historyTags.length){document.getElementById('content').innerHTML=`<div class="empty">Aucun historique trouvé.</div>`;return;}
+    document.getElementById('content').innerHTML=`<div class="card" style="padding:0;overflow:hidden;"><table class="history-table"><thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead><tbody>${state.historyTags.map(h=>`<tr><td><strong>${h.date}</strong></td><td>${h.count}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn" onclick="regenImbretex('${h.tag}')">Régénérer IMBRETEX</button><button class="btn" onclick="regenComplete('${h.tag}')">Régénérer complet</button></div><div id="dl-${h.tag.replace('order_','')}"></div></td></tr>`).join('')}</tbody></table></div>`;
+  } catch(e){document.getElementById('content').innerHTML=`<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;}
 }
 
 async function fetchOrdersByTag(tag) {
-  let orders = [], hasNext = true, cursor = null;
-  while (hasNext) {
-    const data = await gql(`query($first: Int!, $after: String, $q: String!) {
-      orders(first: $first, after: $after, query: $q) {
-        edges { node { id name createdAt note customer { firstName lastName }
-          lineItems(first: 250) { edges { node { id title quantity
-            variant { title imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value } }
-          }}} tags
-        }}
-        pageInfo { hasNextPage endCursor }
-      }
-    }`, { first: 250, after: cursor, q: `tag:${tag} AND status:open` });
-    orders.push(...data.orders.edges.map(e => e.node));
-    hasNext = data.orders.pageInfo.hasNextPage;
-    cursor = data.orders.pageInfo.endCursor;
-  }
+  let orders=[],hasNext=true,cursor=null;
+  while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag} AND status:open`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
   return orders;
 }
 
-async function regenImbretex(tag) {
-  try {
-    const orders = await fetchOrdersByTag(tag);
-    const dateStr = tag.replace('order_','');
-    const {url, filename} = generateImbretex(orders, dateStr);
-    document.getElementById(`dl-${dateStr}`).innerHTML = `<a class="btn" href="${url}" download="${filename}" style="margin-top:4px;">⬇ ${filename}</a>`;
-    showToast('✅ Export IMBRETEX généré');
-  } catch(e) { showToast('Erreur: '+e.message, 'error'); }
-}
+async function regenImbretex(tag){try{const orders=await fetchOrdersByTag(tag);const dateStr=tag.replace('order_','');const{url,filename}=generateImbretex(orders,dateStr);document.getElementById(`dl-${dateStr}`).innerHTML=`<a class="btn" href="${url}" download="${filename}" style="margin-top:4px;">⬇ ${filename}</a>`;showToast('✅ Export IMBRETEX généré');}catch(e){showToast('Erreur: '+e.message,'error');}}
+async function regenComplete(tag){try{const orders=await fetchOrdersByTag(tag);const dateStr=tag.replace('order_','');const{url,filename}=generateComplete(orders,dateStr);document.getElementById(`dl-${dateStr}`).innerHTML=`<a class="btn" href="${url}" download="${filename}" style="margin-top:4px;">⬇ ${filename}</a>`;showToast('✅ Export complet généré');}catch(e){showToast('Erreur: '+e.message,'error');}}
 
-async function regenComplete(tag) {
-  try {
-    const orders = await fetchOrdersByTag(tag);
-    const dateStr = tag.replace('order_','');
-    const {url, filename} = generateComplete(orders, dateStr);
-    document.getElementById(`dl-${dateStr}`).innerHTML = `<a class="btn" href="${url}" download="${filename}" style="margin-top:4px;">⬇ ${filename}</a>`;
-    showToast('✅ Export complet généré');
-  } catch(e) { showToast('Erreur: '+e.message, 'error'); }
-}
-
-// ════════════════════════════════════════════
-// AUTO-REFRESH ON FOCUS
-// ════════════════════════════════════════════
+// ── Auto-refresh ──
 window.addEventListener('focus', () => {
-  if (state.activeTab === 'custom' && state.shop && state.clientId) {
-    fetchCustomOrders(null, 'forward', state.filterUrgent).then(() => renderOrderView()).catch(() => {});
-  }
+  if (state.activeTab==='custom'&&state.proxyUrl) fetchCustomOrders(null,'forward',state.filterUrgent).then(()=>renderOrderView()).catch(()=>{});
 });
 
-// ════════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════════
+// ── Init ──
 loadSettings();
-if (!state.shop || !state.clientId || !state.clientSecret) {
-  setTimeout(openSettings, 300);
-} else {
-  // Affiche le statut du token au démarrage
-  if (state.accessToken && Date.now() < state.tokenExpiresAt - 300000) {
-    const remaining = Math.round((state.tokenExpiresAt - Date.now()) / 3600000);
-    updateTokenStatus('ok', `✅ Token valide ~${remaining}h`);
-  } else {
-    updateTokenStatus('warn', '🔄 Token expiré, renouvellement...');
-  }
-  renderDashboard();
-}
+if (!state.proxyUrl) setTimeout(openSettings, 300);
+else renderDashboard();
 </script>
 </body>
 </html>
