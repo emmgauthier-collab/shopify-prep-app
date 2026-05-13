@@ -42,21 +42,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { query, variables, action } = req.body;
+    const body = req.body || {};
+    const { query, variables, action } = body;
+
+    console.log('action:', action, 'GAS_URL:', !!GAS_URL, 'GAS_SECRET:', !!GAS_SECRET);
 
     // ── Action spéciale : déléguer au GAS pour générer le ZIP ──
     if (action === 'generateZip') {
       if (!GAS_URL || !GAS_SECRET) {
-        res.status(500).json({ error: 'GAS_URL ou GAS_SECRET non configuré' });
+        res.status(500).json({ error: `GAS_URL ou GAS_SECRET non configuré — GAS_URL:${!!GAS_URL} GAS_SECRET:${!!GAS_SECRET}` });
         return;
       }
+      console.log('Calling GAS:', GAS_URL.substring(0, 50));
       const gasRes = await fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret: GAS_SECRET, orders: req.body.orders }),
+        body: JSON.stringify({ secret: GAS_SECRET, orders: body.orders }),
       });
+      console.log('GAS response status:', gasRes.status);
       if (!gasRes.ok) {
         const txt = await gasRes.text();
+        console.log('GAS error body:', txt.substring(0, 300));
         res.status(500).json({ error: `GAS error ${gasRes.status}: ${txt.substring(0, 200)}` });
         return;
       }
