@@ -234,7 +234,7 @@ const state = {
   activeTab: 'dashboard',
   proxyUrl: '', appPassword: '', shop: '',
   isLoggedIn: false,
-  orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false,
+  orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false, currentCursor: null, currentDirection: 'forward',
   supplierOrders: [], supplierSnapshot: [],
   // Print tab
   printOrders: [],       // commandes TODOPRINT avec métafields teeinblue
@@ -349,7 +349,8 @@ function switchTab(tab) {
     document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
     return;
   }
-  ({ dashboard: renderDashboard, custom: renderCustomTab, supplier: renderSupplierTab, print: renderPrintTab })[tab]?.();
+  if (tab === 'custom') renderCustomTab(true);
+  else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab })[tab]?.();
 }
 
 // ════════════════════════════════════════════
@@ -478,33 +479,59 @@ async function fetchCustomOrders(cursor = null, direction = 'forward', urgent = 
   state.orders = data.orders.edges.map(e => e.node);
   state.pageInfo = data.orders.pageInfo;
   state.currentIndex = 0;
+  // Sauvegarde le curseur courant pour pouvoir revenir sur la même page
+  state.currentCursor = cursor;
+  state.currentDirection = direction;
 }
 
-async function renderCustomTab() {
+async function renderCustomTab(restorePage = false) {
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
+  try {
+    // Si on revient sur le tab, recharge la même page
+    const cursor = restorePage ? state.currentCursor : null;
+    const direction = restorePage ? state.currentDirection : 'forward';
+    const savedId = restorePage ? state.orders[state.currentIndex]?.id : null;
+    await fetchCustomOrders(cursor, direction, state.filterUrgent);
+    if (savedId) { const idx = state.orders.findIndex(o => o.id === savedId); if (idx !== -1) state.currentIndex = idx; }
+    renderOrderView();
+  }
   catch(err) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`; }
 }
 
-function getOrderStatus(tags) {
-  // Cherche print_YYYYMMDD
+function getOrderStatusBadges(tags) {
+  const badges = [];
+
+  // ── Statut impression ──
   const printTag = tags.find(t => /^print_\d{8}$/.test(t));
   if (printTag) {
     const d = printTag.replace('print_','');
-    return { label: `✅ Imprimé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'success' };
+    badges.push({ label: `✅ Imprimé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'success' });
+  } else if (tags.includes('TODOPRINT')) {
+    badges.push({ label: '🖨️ Impression à lancer', tone: 'warning' });
   }
-  // Cherche TODOPRINT
-  if (tags.includes('TODOPRINT')) return { label: '🖨️ Impression à lancer', tone: 'warning' };
-  // Cherche order_YYYYMMDD
+
+  // ── Statut commande fournisseur ──
   const orderTag = tags.find(t => /^order_\d{8}$/.test(t));
   if (orderTag) {
     const d = orderTag.replace('order_','');
-    return { label: `📦 Commandé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'info' };
+    badges.push({ label: `📦 Commandé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'info' });
+  } else if (tags.includes('TOORDER')) {
+    badges.push({ label: '⏳ À commander fournisseur', tone: 'warning' });
   }
-  // Cherche TOORDER
-  if (tags.includes('TOORDER')) return { label: '⏳ À commander fournisseur', tone: 'warning' };
-  // Aucune balise
-  return { label: '🆕 Nouvelle commande', tone: 'info' };
+
+  // Si aucun statut
+  if (badges.length === 0) badges.push({ label: '🆕 Nouvelle commande', tone: 'info' });
+
+  return badges;
+}
+
+function renderStatusBadges(tags) {
+  const colors = { success: 'var(--success-bg)', warning: 'var(--warning-bg)', info: 'var(--info-bg)' };
+  const borders = { success: '#95c9b4', warning: '#f1c84b', info: 'var(--border)' };
+  const texts = { success: 'var(--success)', warning: 'var(--warning)', info: 'var(--text)' };
+  return getOrderStatusBadges(tags).map(s =>
+    `<span class="badge" style="background:${colors[s.tone]};border-color:${borders[s.tone]};color:${texts[s.tone]}">${s.label}</span>`
+  ).join('');
 }
 
 function renderOrderView() {
@@ -550,7 +577,7 @@ function renderOrderView() {
       <span class="badge badge-info">${orderDate}</span>
       <span class="badge badge-${ageTone}">${ageInDays}j — ${ageLabel}</span>
       <span class="badge badge-info">${totalQty} article${totalQty>1?'s':''}</span>
-      ${(() => { const s = getOrderStatus(order.tags); const colors = {success:'var(--success-bg)',warning:'var(--warning-bg)',info:'var(--info-bg)'}; const borders = {success:'#95c9b4',warning:'#f1c84b',info:'var(--border)'}; const texts = {success:'var(--success)',warning:'var(--warning)',info:'var(--text)'}; return `<span class="badge" style="background:${colors[s.tone]};border-color:${borders[s.tone]};color:${texts[s.tone]}">${s.label}</span>`; })()}
+      ${renderStatusBadges(order.tags)}
       <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="btn" style="margin-left:auto;font-size:12px;padding:4px 10px;">🔗 Voir dans Shopify</a>
     </div>
     ${hasNote ? `<div class="alert alert-critical" style="margin-bottom:8px;">⚠️ <strong>Note : </strong><span class="alert-text">${order.note}</span></div>` : ''}
@@ -611,7 +638,8 @@ async function toggleUrgentFilter() {
 window.addEventListener('focus', () => {
   if (state.activeTab !== 'custom' || !state.proxyUrl || !state.isLoggedIn) return;
   const savedId = state.orders[state.currentIndex]?.id;
-  fetchCustomOrders(null, 'forward', state.filterUrgent).then(() => {
+  // Recharge la même page grâce au curseur sauvegardé
+  fetchCustomOrders(state.currentCursor, state.currentDirection, state.filterUrgent).then(() => {
     if (savedId) { const idx = state.orders.findIndex(o => o.id === savedId); if (idx !== -1) state.currentIndex = idx; }
     renderOrderView();
   }).catch(() => {});
