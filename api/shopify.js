@@ -1,6 +1,6 @@
 // api/shopify.js — Proxy Vercel
 // Les secrets sont dans les variables d'environnement Vercel, jamais dans le code
- 
+
 const SHOP = process.env.SHOPIFY_SHOP; // ex: rwwear.myshopify.com
 const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
