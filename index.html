@@ -779,8 +779,6 @@ async function renderPrintTab() {
 function renderPrintView() {
   const c = document.getElementById('content');
   const orders = state.printOrders;
-  const gasConfigured = !!state.gasUrl;
-
   if (!orders.length) {
     c.innerHTML = `<div class="empty">Aucune commande avec la balise TODOPRINT.</div>`;
     return;
@@ -845,9 +843,7 @@ function renderPrintView() {
           </div>
         </div>
         <div class="step-body">
-          ${!gasConfigured ? `
-            <div class="alert alert-warning">⚠️ <strong>Google Apps Script non configuré</strong><span class="alert-text"> — configure l'URL GAS dans les paramètres ⚙️</span></div>
-          ` : selectedCount === 0 ? `
+          ${selectedCount === 0 ? `
             <div style="color:var(--text-sub);font-size:13px;">Sélectionne au moins une commande à l'étape 1.</div>
           ` : `
             <div id="zip-generate-zone">
