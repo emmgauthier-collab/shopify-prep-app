@@ -852,7 +852,7 @@ function renderPrintView() {
           ` : `
             <div id="zip-generate-zone">
               <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
-                🗜️ Générer le ZIP (${selectedCount} commande${selectedCount>1?'s':''})
+                🗜️ Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})
               </button>
             </div>
           `}
@@ -914,13 +914,11 @@ function togglePrintOrder(orderId, checked) {
   document.querySelectorAll('.step-header .step-desc').forEach((desc, i) => {
     if (i === 0) desc.textContent = `${state.printOrders.length} commande${state.printOrders.length>1?'s':''} avec balise TODOPRINT — ${state.printSelected.size} sélectionnée${state.printSelected.size>1?'s':''}`;
   });
-  // Mise à jour du bouton générer
+  // Mise à jour du compteur dans le bouton
+  const zipCount = document.getElementById('zip-count');
+  if (zipCount) zipCount.textContent = state.printSelected.size;
   const genBtn = document.getElementById('generate-zip-btn');
-  if (genBtn) {
-    const n = state.printSelected.size;
-    genBtn.textContent = `🗜️ Générer le ZIP (${n} commande${n>1?'s':''})`;
-    genBtn.disabled = n === 0;
-  }
+  if (genBtn) genBtn.disabled = state.printSelected.size === 0;
 }
 
 function printSelectAll() { state.printOrders.forEach(o => state.printSelected.add(o.id)); renderPrintView(); }
