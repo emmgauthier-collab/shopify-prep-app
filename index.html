@@ -34,7 +34,9 @@
     .tab-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: var(--text-sub); border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
-    .tab-btn .badge { display: inline-block; background: var(--critical); color: #fff; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 4px; line-height: 18px; }
+    .tab-btn .badge { display: inline-block; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 4px; line-height: 18px; }
+    .tab-badge-urgent { background: var(--critical); color: #fff; }
+    .tab-badge-total { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
 
     #content { flex: 1; padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
@@ -226,9 +228,9 @@
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
-    <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur</button>
-    <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression</button>
+    <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="tab-badge-urgent badge" style="display:none"></span><span id="tab-custom-badge-total" class="tab-badge-total badge" style="display:none"></span></button>
+    <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur <span id="tab-supplier-badge" class="tab-badge-total badge" style="display:none"></span></button>
+    <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
   </div>
 
   <div id="content"></div>
@@ -405,9 +407,23 @@ async function renderDashboard() {
     ]);
 
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
-    const badge = document.getElementById('tab-custom-badge');
-    badge.style.display = counts.urgent > 0 ? '' : 'none';
-    if (counts.urgent > 0) badge.textContent = counts.urgent;
+    // ── Badges tous les onglets ──
+    const badgeUrgent = document.getElementById('tab-custom-badge');
+    const badgeTotal = document.getElementById('tab-custom-badge-total');
+    const badgeSupplier = document.getElementById('tab-supplier-badge');
+    const badgePrint = document.getElementById('tab-print-badge');
+    // Urgent (rouge)
+    badgeUrgent.style.display = counts.urgent > 0 ? '' : 'none';
+    if (counts.urgent > 0) badgeUrgent.textContent = counts.urgent;
+    // Total custom (vert)
+    badgeTotal.style.display = counts.custom > 0 ? '' : 'none';
+    if (counts.custom > 0) badgeTotal.textContent = counts.custom;
+    // Fournisseur (vert)
+    badgeSupplier.style.display = counts.toorder > 0 ? '' : 'none';
+    if (counts.toorder > 0) badgeSupplier.textContent = counts.toorder;
+    // Impression (vert)
+    badgePrint.style.display = counts.todoprint > 0 ? '' : 'none';
+    if (counts.todoprint > 0) badgePrint.textContent = counts.todoprint;
 
     const ordersWithNotes = notesData.orders.edges.map(e => e.node).filter(o => o.note?.trim());
     const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
@@ -755,9 +771,6 @@ async function renderPrintTab() {
               id title quantity
               variant{title}
               customAttributes{key value}
-              allDesigns: metafield(namespace:"teeinblue",key:"all_designs"){value}
-              customizationJson: metafield(namespace:"teeinblue",key:"customization_json"){value}
-              customizationImage: metafield(namespace:"teeinblue",key:"customization_image"){value}
             }}}
           }}
           pageInfo{hasNextPage endCursor}
@@ -814,8 +827,8 @@ function renderPrintView() {
               const totalQty = o.lineItems.edges.reduce((s,{node:li})=>s+li.quantity,0);
               // Compte les fichiers disponibles
               const fileCount = o.lineItems.edges.reduce((s,{node:li}) => {
-                const designs = (li.allDesigns?.value||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
-                const jsonUrls = extractPngSvgFromJson(li.customizationJson?.value||'');
+                const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
+                const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
                 return s + designs.length + jsonUrls.length;
               }, 0);
               return `<div class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
@@ -928,13 +941,13 @@ async function generatePrintZip() {
   const gasOrders = [];
   for (const order of selectedOrders) {
     for (const {node:li} of order.lineItems.edges) {
-      const designUrls = (li.allDesigns?.value||'').split(/[\s,]+/).filter(u => u.startsWith('http'));
+      const liAttrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designUrls = (liAttrs['All designs']||'').split(/[\s,]+/).filter(u => u.startsWith('http'));
       gasOrders.push({
         orderName: order.name,
         quantity: li.quantity,
         note: order.note || '',
         designUrls,
-        customizationJson: li.customizationJson?.value || '',
+        customizationJson: liAttrs['Customization JSON'] || '',
       });
     }
   }
