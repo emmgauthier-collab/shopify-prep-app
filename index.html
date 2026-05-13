@@ -924,7 +924,10 @@ async function generatePrintZip() {
   const gasOrders = [];
   for (const order of selectedOrders) {
     for (const {node:li} of order.lineItems.edges) {
-      const liAttrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designUrls = (liAttrs['All designs']||'').split(/[\s,]+/).filter(u => u.startsWith('http'));
+      const liAttrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value]));
+      console.log('Line item attrs keys:', Object.keys(liAttrs));
+      console.log('All designs value:', liAttrs['All designs']?.substring(0, 80));
+      const designUrls = (liAttrs['All designs']||'').split(/[\s,]+/).filter(u => u.startsWith('http'));
       gasOrders.push({
         orderName: order.name,
         quantity: li.quantity,
@@ -934,6 +937,7 @@ async function generatePrintZip() {
       });
     }
   }
+  console.log('gasOrders count:', gasOrders.length, 'total designUrls:', gasOrders.reduce((s,o)=>s+o.designUrls.length,0));
 
   try {
     const result = await callGas(gasOrders);
