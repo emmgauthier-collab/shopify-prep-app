@@ -45,7 +45,8 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const { query, variables, action } = body;
 
-    console.log('action:', action, 'GAS_URL:', !!GAS_URL, 'GAS_SECRET:', !!GAS_SECRET);
+    console.log('action:', action, 'GAS_URL:', !!GAS_URL, 'GAS_SECRET:', !!GAS_SECRET, 'GAS_SECRET_preview:', GAS_SECRET ? GAS_SECRET.substring(0,4) : 'EMPTY');
+    console.log('body keys:', Object.keys(body), 'orders count:', body.orders?.length);
 
     // ── Action spéciale : déléguer au GAS pour générer le ZIP ──
     if (action === 'generateZip') {
