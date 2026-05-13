@@ -232,7 +232,7 @@
 <script>
 const state = {
   activeTab: 'dashboard',
-  proxyUrl: '', appPassword: '',
+  proxyUrl: '', appPassword: '', shop: '',
   isLoggedIn: false,
   orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false,
   supplierOrders: [], supplierSnapshot: [],
@@ -251,6 +251,9 @@ const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customizati
 function loadSettings() {
   state.proxyUrl = localStorage.getItem('proxyUrl') || '';
   state.appPassword = localStorage.getItem('appPassword') || '';
+  // Extraire le shop depuis l'URL proxy
+  const proxyHost = (localStorage.getItem('proxyUrl') || '').replace('https://','').split('/')[0];
+  state.shop = localStorage.getItem('shop') || proxyHost.replace('.vercel.app','') || '';
 
   state.isLoggedIn = sessionStorage.getItem('loggedIn') === '1';
 }
@@ -526,6 +529,7 @@ function renderOrderView() {
       <span class="badge badge-info">${orderDate}</span>
       <span class="badge badge-${ageTone}">${ageInDays}j — ${ageLabel}</span>
       <span class="badge badge-info">${totalQty} article${totalQty>1?'s':''}</span>
+      <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="btn" style="margin-left:auto;font-size:12px;padding:4px 10px;">🔗 Voir dans Shopify</a>
     </div>
     ${hasNote ? `<div class="alert alert-critical" style="margin-bottom:8px;">⚠️ <strong>Note : </strong><span class="alert-text">${order.note}</span></div>` : ''}
     <div class="prep-list"><span class="prep-label">À préparer :</span>${prepItems}</div>
@@ -847,7 +851,7 @@ function renderPrintView() {
             <div style="color:var(--text-sub);font-size:13px;">Sélectionne au moins une commande à l'étape 1.</div>
           ` : `
             <div id="zip-generate-zone">
-              <button class="btn btn-primary" onclick="generatePrintZip()">
+              <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
                 🗜️ Générer le ZIP (${selectedCount} commande${selectedCount>1?'s':''})
               </button>
             </div>
@@ -906,9 +910,17 @@ function togglePrintOrder(orderId, checked) {
   else state.printSelected.delete(orderId);
   const item = document.getElementById(`print-item-${orderId}`);
   if (item) item.classList.toggle('deselected', !checked);
-  // Mise à jour compteur
-  const desc = document.querySelector('.step-header .step-desc');
-  if (desc) desc.textContent = `${state.printOrders.length} commande${state.printOrders.length>1?'s':''} avec balise TODOPRINT — ${state.printSelected.size} sélectionnée${state.printSelected.size>1?'s':''}`;
+  // Mise à jour compteur dans le header
+  document.querySelectorAll('.step-header .step-desc').forEach((desc, i) => {
+    if (i === 0) desc.textContent = `${state.printOrders.length} commande${state.printOrders.length>1?'s':''} avec balise TODOPRINT — ${state.printSelected.size} sélectionnée${state.printSelected.size>1?'s':''}`;
+  });
+  // Mise à jour du bouton générer
+  const genBtn = document.getElementById('generate-zip-btn');
+  if (genBtn) {
+    const n = state.printSelected.size;
+    genBtn.textContent = `🗜️ Générer le ZIP (${n} commande${n>1?'s':''})`;
+    genBtn.disabled = n === 0;
+  }
 }
 
 function printSelectAll() { state.printOrders.forEach(o => state.printSelected.add(o.id)); renderPrintView(); }
