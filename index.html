@@ -17,6 +17,16 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
     #app { display: flex; flex-direction: column; min-height: 100vh; }
 
+    /* ── Login ── */
+    #login-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9000; align-items: center; justify-content: center; }
+    #login-screen.show { display: flex; }
+    .login-box { background: var(--surface); border-radius: 12px; padding: 40px; width: min(400px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.15); text-align: center; }
+    .login-box h1 { font-size: 24px; margin-bottom: 8px; }
+    .login-box p { color: var(--text-sub); margin-bottom: 28px; font-size: 14px; }
+    .login-box input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 16px; margin-bottom: 12px; text-align: center; letter-spacing: 2px; }
+    .login-box input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    .login-error { color: var(--critical); font-size: 13px; margin-top: 8px; display: none; }
+
     #topbar { position: sticky; top: 0; z-index: 200; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; height: var(--header-height); display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
     #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; }
 
@@ -30,8 +40,9 @@
 
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
     .card + .card { margin-top: 12px; }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: box-shadow .15s, transform .1s; box-shadow: var(--shadow); }
     .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.15); transform: translateY(-1px); }
     .stat-card .stat-label { font-size: 13px; color: var(--text-sub); margin-bottom: 4px; }
@@ -39,6 +50,12 @@
     .stat-card .stat-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
     .stat-card.urgent { border-color: var(--critical); background: var(--critical-bg); }
     .stat-card.urgent .stat-value { color: var(--critical); }
+
+    .notes-list { display: flex; flex-direction: column; gap: 8px; }
+    .note-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: var(--radius); }
+    .note-order { font-weight: 700; font-size: 13px; color: var(--critical); white-space: nowrap; }
+    .note-text { flex: 1; font-size: 13px; color: var(--text); }
+    .note-age { font-size: 11px; white-space: nowrap; }
 
     #order-sticky { position: sticky; top: var(--header-height); z-index: 100; background: var(--surface); border-bottom: 2px solid var(--border); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .order-sticky-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
@@ -70,6 +87,8 @@
     .alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius); margin-bottom: 12px; }
     .alert-critical { background: var(--critical-bg); border: 1px solid var(--critical-border); }
     .alert-critical strong { color: var(--critical); }
+    .alert-warning { background: var(--warning-bg); border: 1px solid #f1c84b; }
+    .alert-warning strong { color: var(--warning); }
     .alert .alert-text { color: var(--text); }
 
     .lineitem-grid { display: grid; grid-template-columns: 56px 1fr 120px; gap: 16px; align-items: start; }
@@ -80,8 +99,21 @@
     .product-variant, .product-sku { color: var(--text-sub); font-size: 13px; margin-bottom: 2px; }
     .attr-item { font-size: 12px; color: var(--text-sub); }
     .dl-link { font-size: 13px; color: var(--primary); text-decoration: none; margin-top: 6px; display: inline-block; }
-    .dl-link:hover { text-decoration: underline; }
     .img-cell img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); object-fit: contain; aspect-ratio: 1/1; display: block; cursor: zoom-in; }
+
+    /* Supplier workflow */
+    .workflow-steps { display: flex; flex-direction: column; gap: 16px; }
+    .step { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .step-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .step-number { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-number.done { background: var(--success); }
+    .step-number.locked { background: var(--border); color: var(--text-sub); }
+    .step-title { font-weight: 600; font-size: 15px; }
+    .step-desc { font-size: 13px; color: var(--text-sub); }
+    .step-body { padding: 16px; background: var(--surface); }
+    .step-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .order-count-badge { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; font-size: 13px; margin-bottom: 12px; }
+    .order-count-badge strong { font-size: 18px; color: var(--primary); }
 
     #img-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 9999; align-items: center; justify-content: center; cursor: pointer; }
     #img-modal.open { display: flex; }
@@ -91,8 +123,7 @@
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
     .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); }
-    .settings-box h2 { font-size: 18px; margin-bottom: 6px; }
-    .settings-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
+    .settings-box h2 { font-size: 18px; margin-bottom: 16px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
     .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; }
@@ -105,7 +136,6 @@
 
     .empty { text-align: center; padding: 48px; color: var(--text-sub); }
     kbd { background: var(--info-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: monospace; }
-    .export-section { display: flex; flex-direction: column; gap: 12px; }
     .history-table { width: 100%; border-collapse: collapse; }
     .history-table th, .history-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14px; }
     .history-table th { font-weight: 600; background: var(--bg); color: var(--text-sub); font-size: 12px; text-transform: uppercase; }
@@ -114,7 +144,6 @@
 
     #scroll-top { position: fixed; bottom: 24px; right: 24px; width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,128,96,.4); display: none; align-items: center; justify-content: center; z-index: 300; }
     #scroll-top.visible { display: flex; }
-
     #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: all .25s; z-index: 500; pointer-events: none; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -129,19 +158,35 @@
 <body>
 <div id="app">
 
+  <!-- Login -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1>🎨 Assistant perso</h1>
+      <p>Accès réservé — entre le mot de passe</p>
+      <input id="login-input" type="password" placeholder="••••••••" onkeydown="if(e.key==='Enter')tryLogin()" />
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="tryLogin()">Connexion</button>
+      <div id="login-error" class="login-error">Mot de passe incorrect</div>
+    </div>
+  </div>
+
+  <!-- Image modal -->
   <div id="img-modal" onclick="closeImgModal()">
     <button id="img-modal-close" onclick="closeImgModal()">✕</button>
     <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()" />
   </div>
 
+  <!-- Settings modal -->
   <div id="settings-modal">
     <div class="settings-box">
       <h2>⚙️ Configuration</h2>
-      <p class="settings-desc">Renseigne l'URL de ton proxy Vercel. C'est la seule info nécessaire côté client.</p>
       <div class="form-group">
         <label>URL du proxy Vercel</label>
-        <input id="cfg-proxy-url" type="text" placeholder="https://mon-app.vercel.app/api/shopify" />
-        <div class="settings-hint">L'URL de ta fonction Vercel déployée</div>
+        <input id="cfg-proxy-url" type="text" placeholder="https://shopify-prep-app.vercel.app/api/shopify" />
+      </div>
+      <div class="form-group">
+        <label>Mot de passe app</label>
+        <input id="cfg-password" type="password" placeholder="••••••••" />
+        <div class="settings-hint">Doit correspondre à APP_PASSWORD dans Vercel</div>
       </div>
       <div style="display:flex;gap:8px;margin-top:20px;">
         <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
@@ -152,15 +197,14 @@
 
   <div id="topbar">
     <h1>🎨 Assistant personnalisation</h1>
-    <button class="btn" onclick="openSettings()" title="Paramètres">⚙️</button>
+    <button class="btn" onclick="openSettings()">⚙️</button>
+    <button class="btn" onclick="logout()" title="Déconnexion">🔒</button>
   </div>
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
     <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="imbretex" onclick="switchTab('imbretex')">Export IMBRETEX</button>
-    <button class="tab-btn" data-tab="complete" onclick="switchTab('complete')">Export complet</button>
-    <button class="tab-btn" data-tab="history" onclick="switchTab('history')">Historique</button>
+    <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur</button>
   </div>
 
   <div id="content"></div>
@@ -173,34 +217,92 @@
 const state = {
   activeTab: 'dashboard',
   proxyUrl: '',
+  appPassword: '',
+  isLoggedIn: false,
   orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false,
-  toorderOrders: [], historyTags: [],
+  supplierOrders: [], supplierSnapshot: [],
 };
 
 const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customization_id'];
 
+// ════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════
+function loadSettings() {
+  state.proxyUrl = localStorage.getItem('proxyUrl') || '';
+  state.appPassword = localStorage.getItem('appPassword') || '';
+  state.isLoggedIn = sessionStorage.getItem('loggedIn') === '1';
+}
+
+function checkAuth() {
+  if (!state.isLoggedIn) {
+    document.getElementById('login-screen').classList.add('show');
+    return false;
+  }
+  return true;
+}
+
+async function tryLogin() {
+  const input = document.getElementById('login-input');
+  const pwd = input.value.trim();
+  if (!pwd) return;
+
+  // Vérifie le mot de passe via le proxy
+  try {
+    const res = await fetch(state.proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Password': pwd },
+      body: JSON.stringify({ query: '{ shop { name } }', variables: {} }),
+    });
+    if (res.status === 401) {
+      document.getElementById('login-error').style.display = 'block';
+      input.value = '';
+      return;
+    }
+    // Succès
+    state.appPassword = pwd;
+    localStorage.setItem('appPassword', pwd);
+    sessionStorage.setItem('loggedIn', '1');
+    state.isLoggedIn = true;
+    document.getElementById('login-screen').classList.remove('show');
+    document.getElementById('login-error').style.display = 'none';
+    renderDashboard();
+  } catch(e) {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').textContent = 'Erreur de connexion';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('loggedIn');
+  state.isLoggedIn = false;
+  document.getElementById('login-screen').classList.add('show');
+  document.getElementById('login-input').value = '';
+}
+
 // ── Settings ──
-function loadSettings() { state.proxyUrl = localStorage.getItem('proxyUrl') || ''; }
 function saveSettings() {
   const url = document.getElementById('cfg-proxy-url').value.trim();
+  const pwd = document.getElementById('cfg-password').value.trim();
   if (!url) { showToast('⚠️ Remplis l\'URL', 'warning'); return; }
   localStorage.setItem('proxyUrl', url);
+  if (pwd) { localStorage.setItem('appPassword', pwd); state.appPassword = pwd; }
   state.proxyUrl = url;
   closeSettings();
   showToast('✅ Configuration sauvegardée');
-  switchTab(state.activeTab);
 }
-function openSettings() { document.getElementById('cfg-proxy-url').value = state.proxyUrl; document.getElementById('settings-modal').classList.add('open'); }
+function openSettings() { document.getElementById('cfg-proxy-url').value = state.proxyUrl; document.getElementById('cfg-password').value = ''; document.getElementById('settings-modal').classList.add('open'); }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
 
-// ── GraphQL via proxy ──
+// ── GraphQL ──
 async function gql(query, variables = {}) {
   const res = await fetch(state.proxyUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
     body: JSON.stringify({ query, variables }),
   });
-  if (!res.ok) throw new Error(`Proxy error ${res.status}: ${res.statusText}`);
+  if (res.status === 401) { logout(); throw new Error('Session expirée, reconnecte-toi'); }
+  if (!res.ok) throw new Error(`Proxy error ${res.status}`);
   const json = await res.json();
   if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join(', '));
   return json.data;
@@ -208,22 +310,17 @@ async function gql(query, variables = {}) {
 
 // ── Tabs ──
 function switchTab(tab) {
+  if (!checkAuth()) return;
   state.activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (!state.proxyUrl) {
-    document.getElementById('content').innerHTML = `
-      <div class="empty">
-        <div style="font-size:48px;margin-bottom:16px;">⚙️</div>
-        <div style="font-size:18px;font-weight:600;margin-bottom:8px;">Configuration requise</div>
-        <div style="color:var(--text-sub);margin-bottom:20px;">Renseigne l'URL de ton proxy Vercel</div>
-        <button class="btn btn-primary" onclick="openSettings()">Configurer</button>
-      </div>`;
+    document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
     return;
   }
-  ({ dashboard: renderDashboard, custom: renderCustomTab, imbretex: renderImbretexTab, complete: renderCompleteTab, history: renderHistoryTab })[tab]?.();
+  ({ dashboard: renderDashboard, custom: renderCustomTab, supplier: renderSupplierTab })[tab]?.();
 }
 
-// ── Toast / Scroll / Image ──
+// ── Utilities ──
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -235,7 +332,6 @@ window.addEventListener('scroll', () => document.getElementById('scroll-top').cl
 function openImgModal(url) { document.getElementById('img-modal-src').src = url; document.getElementById('img-modal').classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeImgModal() { document.getElementById('img-modal').classList.remove('open'); document.body.style.overflow = ''; }
 
-// ── Keyboard shortcuts ──
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeImgModal(); return; }
   if (state.activeTab !== 'custom') return;
@@ -245,38 +341,90 @@ document.addEventListener('keydown', e => {
   if (e.key === 'k') { e.preventDefault(); nextOrder(); }
 });
 
-// ── Dashboard ──
+// ── Enter sur login ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryLogin();
+  });
+});
+
+// ════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════
 async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    const data = await gql(`query {
-      custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
-      toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
-      todoprint: ordersCount(query: "tag:TODOPRINT AND status:open") { count }
-      urgent: ordersCount(query: "(tag:urgent OR tag:URGENT) AND status:open") { count }
-    }`);
-    const counts = { custom: data.custom.count, toorder: data.toorder.count, todoprint: data.todoprint.count, urgent: data.urgent.count };
+    const [countsData, notesData] = await Promise.all([
+      gql(`query {
+        custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
+        toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
+        todoprint: ordersCount(query: "tag:TODOPRINT AND status:open") { count }
+        urgent: ordersCount(query: "(tag:urgent OR tag:URGENT) AND status:open") { count }
+      }`),
+      gql(`query {
+        orders(first: 50, query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") {
+          edges { node { id name note createdAt customer { firstName lastName } } }
+        }
+      }`)
+    ]);
+
+    const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
     const badge = document.getElementById('tab-custom-badge');
     badge.style.display = counts.urgent > 0 ? '' : 'none';
     if (counts.urgent > 0) badge.textContent = counts.urgent;
+
+    const ordersWithNotes = notesData.orders.edges.map(e => e.node).filter(o => o.note?.trim());
+    const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+
+    const notesHtml = ordersWithNotes.length === 0
+      ? `<div style="color:var(--text-sub);font-size:13px;padding:4px 0;">Aucune commande avec note en cours ✅</div>`
+      : `<div class="notes-list">${ordersWithNotes.map(o => {
+          const age = ageD(o.createdAt);
+          const ageColor = age < 5 ? 'var(--success)' : age <= 10 ? 'var(--warning)' : 'var(--critical)';
+          const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
+          return `<div class="note-item">
+            <span class="note-order">${o.name}</span>
+            <span class="note-text">${customer ? `<strong>${customer}</strong> — ` : ''}${o.note}</span>
+            <span class="note-age" style="color:${ageColor}">${age}j</span>
+          </div>`;
+        }).join('')}</div>`;
+
     c.innerHTML = `
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
       </div>
       <div class="dashboard-grid">
-        <div class="stat-card" onclick="goToCustom(false)"><div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div></div>
-        <div class="stat-card" onclick="switchTab('imbretex')"><div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div></div>
-        <div class="stat-card"><div class="stat-label">Préparation print</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
-        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
+        <div class="stat-card" onclick="goToCustom(false)">
+          <div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div>
+        </div>
+        <div class="stat-card" onclick="switchTab('supplier')">
+          <div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Préparation print</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div>
+        </div>
+        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)">
+          <div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          📝 Notes sur commandes en cours
+          ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}
+        </div>
+        ${notesHtml}
       </div>`;
   } catch(err) {
-    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div><button class="btn" style="margin-top:8px" onclick="openSettings()">⚙️ Vérifier la config</button>`;
+    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`;
   }
 }
+
 function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); }
 
-// ── Custom orders ──
+// ════════════════════════════════════════════
+// CUSTOM ORDERS
+// ════════════════════════════════════════════
 const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName }
   lineItems(first: 250) { edges { node { id title quantity
     variant { title
@@ -319,9 +467,9 @@ function renderOrderView() {
   let html = `<div class="nav-bar">
     <button class="btn" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédent <kbd>J</kbd></button>
     ${state.orders.length > 0 ? `<select onchange="jumpToOrder(this.value)">${state.orders.map((o, i) => {
-      const urgent = o.tags.some(t => t==='urgent'||t==='URGENT');
+      const urg = o.tags.some(t => t==='urgent'||t==='URGENT');
       const note = !!(o.note?.trim());
-      return `<option value="${i}" ${i===state.currentIndex?'selected':''}>${o.name}${urgent?' 🚨':''}${note?' 📝':''}</option>`;
+      return `<option value="${i}" ${i===state.currentIndex?'selected':''}>${o.name}${urg?' 🚨':''}${note?' 📝':''}</option>`;
     }).join('')}</select>` : ''}
     <span class="counter">${counter}</span>
     <button class="btn" onclick="nextOrder()" ${!hasNext ? 'disabled' : ''}>Suivant <kbd>K</kbd> →</button>
@@ -360,7 +508,6 @@ function renderOrderView() {
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
   for (const {node:li} of order.lineItems.edges) {
-    const liId = li.id.split('/').pop();
     const variant = li.variant?.title || '';
     const showVariant = variant && variant !== 'Default Title';
     const imgAttr = li.customAttributes.find(a => a.key === '_customization_image');
@@ -410,7 +557,24 @@ async function toggleUrgentFilter() {
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
-// ── TOORDER ──
+// ── Auto-refresh au focus — garde la position ──
+window.addEventListener('focus', () => {
+  if (state.activeTab !== 'custom' || !state.proxyUrl || !state.isLoggedIn) return;
+  const savedIndex = state.currentIndex;
+  const savedOrderId = state.orders[savedIndex]?.id;
+  fetchCustomOrders(null, 'forward', state.filterUrgent).then(() => {
+    // Essaie de retrouver la même commande par ID
+    if (savedOrderId) {
+      const newIdx = state.orders.findIndex(o => o.id === savedOrderId);
+      if (newIdx !== -1) state.currentIndex = newIdx;
+    }
+    renderOrderView();
+  }).catch(() => {});
+});
+
+// ════════════════════════════════════════════
+// SUPPLIER TAB
+// ════════════════════════════════════════════
 async function fetchToOrderOrders() {
   let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
@@ -421,89 +585,213 @@ async function fetchToOrderOrders() {
   return orders;
 }
 
-async function renderImbretexTab() {
-  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { state.toorderOrders = await fetchToOrderOrders(); document.getElementById('content').innerHTML = `<div class="card export-section"><div>${state.toorderOrders.length} commande(s) avec balise TOORDER</div>${state.toorderOrders.length>0?`<button class="btn btn-primary" onclick="generateImbretex()">Générer export IMBRETEX</button><div id="imbretex-dl"></div>`:''}</div>`; }
-  catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
-}
-
-function generateImbretex(orders=state.toorderOrders, dateOverride=null) {
-  const skuMap=new Map();
-  orders.forEach(o=>o.lineItems.edges.forEach(({node:li})=>{const sku=li.variant?.imbretexSku?.value;if(sku)skuMap.set(sku,(skuMap.get(sku)||0)+li.quantity);}));
-  const today=dateOverride?new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))):new Date();
-  const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  let csv='REFERENCE ARTICLE;QUANTITE;DOSSIER (FACULTATIF)\n';
-  skuMap.forEach((qty,sku)=>{csv+=`${sku};${qty};custom_${dateStr.replace(/-/g,'')}\n`;});
-  const url=`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
-  const filename=`commande-imbretex-${dateStr}.csv`;
-  const dl=document.getElementById('imbretex-dl');
-  if(dl)dl.innerHTML=`<a class="btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a>`;
-  return {url,filename};
-}
-
-async function renderCompleteTab() {
-  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { state.toorderOrders=await fetchToOrderOrders(); document.getElementById('content').innerHTML=`<div class="card export-section"><div>${state.toorderOrders.length} commande(s) avec balise TOORDER</div>${state.toorderOrders.length>0?`<div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn" onclick="generateComplete()">Générer export complet</button><div id="complete-dl"></div><button class="btn btn-primary" onclick="markOrdersDone()">✅ Commande fournisseur OK</button></div>`:''}</div>`; }
-  catch(e) { document.getElementById('content').innerHTML=`<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
-}
-
-function generateComplete(orders=state.toorderOrders,dateOverride=null) {
-  let csv='Numéro commande;Date;Client;Produit;Variant;Quantité;imbretex_sku;Notes commande\n';
-  orders.forEach(o=>{const date=new Date(o.createdAt).toLocaleDateString('fr-FR');const customer=o.customer?`${o.customer.firstName||''} ${o.customer.lastName||''}`.trim():'';const notes=(o.note||'').replace(/;/g,',').replace(/\n/g,' ');o.lineItems.edges.forEach(({node:li})=>{csv+=`${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`;});});
-  const today=dateOverride?new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))):new Date();
-  const dateStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const url=`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
-  const filename=`resume-commandes-${dateStr}.csv`;
-  const dl=document.getElementById('complete-dl');
-  if(dl)dl.innerHTML=`<a class="btn" href="${url}" download="${filename}">⬇ Télécharger ${filename}</a>`;
-  return {url,filename};
-}
-
-async function markOrdersDone() {
-  if(!state.toorderOrders.length)return;
-  const btn=event.target; btn.disabled=true; btn.textContent='En cours...';
-  const today=new Date();
-  const newTag=`order_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-  const removeMut=`mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
-  const addMut=`mutation($id:ID!,$tags:[String!]!){tagsAdd(id:$id,tags:$tags){node{id}userErrors{message}}}`;
-  let ok=0,errors=[];
-  for(const o of state.toorderOrders){try{await gql(removeMut,{id:o.id,tags:['TOORDER']});await gql(addMut,{id:o.id,tags:[newTag]});ok++;}catch(e){errors.push(o.name);}}
-  if(errors.length)showToast(`⚠️ Erreurs: ${errors.join(', ')}`,'warning');else showToast(`✅ ${ok} commande(s) traitée(s)`);
-  await renderCompleteTab();
-}
-
-// ── History ──
-async function renderHistoryTab() {
-  document.getElementById('content').innerHTML=`<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+async function renderSupplierTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    let orders=[],hasNext=true,cursor=null;
-    while(hasNext){const data=await gql(`query($first:Int!,$after:String){orders(first:$first,after:$after){edges{node{id tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
-    const tagMap=new Map();
-    orders.forEach(o=>o.tags.forEach(t=>{if(t.startsWith('order_'))tagMap.set(t,(tagMap.get(t)||0)+1);}));
-    state.historyTags=[...tagMap.entries()].map(([tag,count])=>{const d=tag.replace('order_','');return d.length===8?{tag,count,date:`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`}:null;}).filter(Boolean).sort((a,b)=>b.tag.localeCompare(a.tag));
-    if(!state.historyTags.length){document.getElementById('content').innerHTML=`<div class="empty">Aucun historique trouvé.</div>`;return;}
-    document.getElementById('content').innerHTML=`<div class="card" style="padding:0;overflow:hidden;"><table class="history-table"><thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead><tbody>${state.historyTags.map(h=>`<tr><td><strong>${h.date}</strong></td><td>${h.count}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn" onclick="regenImbretex('${h.tag}')">Régénérer IMBRETEX</button><button class="btn" onclick="regenComplete('${h.tag}')">Régénérer complet</button></div><div id="dl-${h.tag.replace('order_','')}"></div></td></tr>`).join('')}</tbody></table></div>`;
-  } catch(e){document.getElementById('content').innerHTML=`<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;}
+    state.supplierOrders = await fetchToOrderOrders();
+    state.supplierSnapshot = [];
+    renderSupplierView();
+    loadHistory();
+  } catch(e) {
+    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
+  }
 }
 
-async function fetchOrdersByTag(tag) {
-  let orders=[],hasNext=true,cursor=null;
-  while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag} AND status:open`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
-  return orders;
+function renderSupplierView() {
+  const count = state.supplierOrders.length;
+  const step1Done = state.supplierSnapshot.length > 0;
+
+  document.getElementById('content').innerHTML = `
+    <div class="workflow-steps">
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number ${step1Done ? 'done' : ''}">1</div>
+          <div>
+            <div class="step-title">Télécharger les fichiers de commande</div>
+            <div class="step-desc">Génère les fichiers à intégrer dans le panier fournisseur</div>
+          </div>
+        </div>
+        <div class="step-body">
+          <div class="order-count-badge"><strong>${count}</strong> commande${count>1?'s':''} avec balise TOORDER</div>
+          ${count === 0
+            ? `<div style="color:var(--text-sub);font-size:13px;">Aucune commande à traiter.</div>`
+            : `<div class="step-actions">
+                <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">⬇ Export IMBRETEX</button>
+                <button class="btn" onclick="downloadAndSnapshot('complete')">⬇ Export complet</button>
+              </div>
+              ${step1Done ? `<div style="margin-top:10px;font-size:13px;color:var(--success);">✅ ${state.supplierSnapshot.length} commandes exportées — tu peux valider à l'étape 2</div>` : ''}`
+          }
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number ${!step1Done ? 'locked' : ''}">2</div>
+          <div>
+            <div class="step-title">Valider la commande fournisseur</div>
+            <div class="step-desc">Supprime TOORDER et archive uniquement les commandes exportées</div>
+          </div>
+        </div>
+        <div class="step-body">
+          ${!step1Done
+            ? `<div style="color:var(--text-sub);font-size:13px;">⚠️ Télécharge d'abord les fichiers à l'étape 1.</div>`
+            : `<div id="step2-preview">
+                <button class="btn" onclick="previewStep2()">🔍 Vérifier avant de valider</button>
+              </div>`
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title">📋 Historique des commandes fournisseur</div>
+      <div id="history-content"><div style="color:var(--text-sub);font-size:13px;">Chargement...</div></div>
+    </div>`;
 }
 
-async function regenImbretex(tag){try{const orders=await fetchOrdersByTag(tag);const dateStr=tag.replace('order_','');const{url,filename}=generateImbretex(orders,dateStr);document.getElementById(`dl-${dateStr}`).innerHTML=`<a class="btn" href="${url}" download="${filename}" style="margin-top:4px;">⬇ ${filename}</a>`;showToast('✅ Export IMBRETEX généré');}catch(e){showToast('Erreur: '+e.message,'error');}}
-async function regenComplete(tag){try{const orders=await fetchOrdersByTag(tag);const dateStr=tag.replace('order_','');const{url,filename}=generateComplete(orders,dateStr);document.getElementById(`dl-${dateStr}`).innerHTML=`<a class="btn" href="${url}" download="${filename}" style="margin-top:4px;">⬇ ${filename}</a>`;showToast('✅ Export complet généré');}catch(e){showToast('Erreur: '+e.message,'error');}}
+function downloadAndSnapshot(type) {
+  state.supplierSnapshot = state.supplierOrders.map(o => o.id);
+  const { url, filename } = type === 'imbretex' ? generateImbretex(state.supplierOrders) : generateComplete(state.supplierOrders);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  showToast(`✅ ${type === 'imbretex' ? 'Export IMBRETEX' : 'Export complet'} téléchargé`);
+  renderSupplierView();
+  loadHistory();
+}
 
-// ── Auto-refresh ──
-window.addEventListener('focus', () => {
-  if (state.activeTab==='custom'&&state.proxyUrl) fetchCustomOrders(null,'forward',state.filterUrgent).then(()=>renderOrderView()).catch(()=>{});
-});
+async function previewStep2() {
+  const preview = document.getElementById('step2-preview');
+  preview.innerHTML = `<div class="spinner" style="padding:16px;"><div class="spinner-ring"></div>Vérification...</div>`;
+  try {
+    const currentOrders = await fetchToOrderOrders();
+    const snapshotIds = new Set(state.supplierSnapshot);
+    const toValidate = currentOrders.filter(o => snapshotIds.has(o.id));
+    const newOrders = currentOrders.filter(o => !snapshotIds.has(o.id));
+
+    let html = '';
+    if (newOrders.length > 0) {
+      html += `<div class="alert alert-warning" style="margin-bottom:12px;">
+        ⚠️ <strong>${newOrders.length} nouvelle${newOrders.length>1?'s':''} commande${newOrders.length>1?'s':''}</strong>
+        <span class="alert-text"> arrivée${newOrders.length>1?'s':''} après l'export, exclue${newOrders.length>1?'s':''} : ${newOrders.map(o=>`<strong>${o.name}</strong>`).join(', ')}</span>
+      </div>`;
+    }
+    html += `<div style="margin-bottom:12px;font-size:14px;">
+      <strong>${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à valider :
+      ${toValidate.map(o=>`<span class="badge badge-info" style="margin:2px;">${o.name}</span>`).join('')}
+    </div>`;
+    if (toValidate.length > 0) {
+      html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>
+        ✅ Valider ${toValidate.length} commande${toValidate.length>1?'s':''}
+      </button>`;
+    } else {
+      html += `<div style="color:var(--text-sub);font-size:13px;">Aucune commande à valider.</div>`;
+    }
+    preview.innerHTML = html;
+  } catch(e) {
+    preview.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
+  }
+}
+
+async function validateSupplierOrders(orderIds) {
+  const btn = event.target; btn.disabled = true; btn.textContent = 'Validation...';
+  const today = new Date();
+  const newTag = `order_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  const removeMut = `mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
+  const addMut = `mutation($id:ID!,$tags:[String!]!){tagsAdd(id:$id,tags:$tags){node{id}userErrors{message}}}`;
+  let ok=0, errors=[];
+  for (const id of orderIds) {
+    try { await gql(removeMut,{id,tags:['TOORDER']}); await gql(addMut,{id,tags:[newTag]}); ok++; }
+    catch(e) { errors.push(id); }
+  }
+  if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
+  else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
+  state.supplierSnapshot = [];
+  state.supplierOrders = await fetchToOrderOrders();
+  renderSupplierView();
+  loadHistory();
+}
+
+function generateImbretex(orders, dateOverride = null) {
+  const skuMap = new Map();
+  orders.forEach(o => o.lineItems.edges.forEach(({node:li}) => {
+    const sku = li.variant?.imbretexSku?.value;
+    if (sku) skuMap.set(sku, (skuMap.get(sku)||0) + li.quantity);
+  }));
+  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)), parseInt(dateOverride.substring(4,6))-1, parseInt(dateOverride.substring(6,8))) : new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  let csv = 'REFERENCE ARTICLE;QUANTITE;DOSSIER (FACULTATIF)\n';
+  skuMap.forEach((qty, sku) => { csv += `${sku};${qty};custom_${dateStr.replace(/-/g,'')}\n`; });
+  return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `commande-imbretex-${dateStr}.csv` };
+}
+
+function generateComplete(orders, dateOverride = null) {
+  let csv = 'Numéro commande;Date;Client;Produit;Variant;Quantité;imbretex_sku;Notes commande\n';
+  orders.forEach(o => {
+    const date = new Date(o.createdAt).toLocaleDateString('fr-FR');
+    const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
+    const notes = (o.note||'').replace(/;/g,',').replace(/\n/g,' ');
+    o.lineItems.edges.forEach(({node:li}) => {
+      csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`;
+    });
+  });
+  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)), parseInt(dateOverride.substring(4,6))-1, parseInt(dateOverride.substring(6,8))) : new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `resume-commandes-${dateStr}.csv` };
+}
+
+async function loadHistory() {
+  const el = document.getElementById('history-content');
+  if (!el) return;
+  try {
+    let orders=[], hasNext=true, cursor=null;
+    while(hasNext){
+      const data = await gql(`query($first:Int!,$after:String){orders(first:$first,after:$after){edges{node{id tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor});
+      orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
+    }
+    const tagMap = new Map();
+    orders.forEach(o => o.tags.forEach(t => { if(t.startsWith('order_')) tagMap.set(t,(tagMap.get(t)||0)+1); }));
+    const tags = [...tagMap.entries()].map(([tag,count]) => {
+      const d = tag.replace('order_','');
+      return d.length===8 ? {tag,count,date:`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`} : null;
+    }).filter(Boolean).sort((a,b)=>b.tag.localeCompare(a.tag));
+
+    if (!tags.length) { el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Aucun historique.</div>`; return; }
+    el.innerHTML = `<table class="history-table">
+      <thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead>
+      <tbody>${tags.map(h=>`<tr>
+        <td><strong>${h.date}</strong></td><td>${h.count}</td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn" onclick="regenAndDownload('${h.tag}','imbretex')">↺ IMBRETEX</button>
+          <button class="btn" onclick="regenAndDownload('${h.tag}','complete')">↺ Complet</button>
+        </div></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } catch(e) { if(el) el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Erreur historique.</div>`; }
+}
+
+async function regenAndDownload(tag, type) {
+  try {
+    let orders=[], hasNext=true, cursor=null;
+    while(hasNext){
+      const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag} AND status:open`});
+      orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
+    }
+    const dateStr = tag.replace('order_','');
+    const {url, filename} = type==='imbretex' ? generateImbretex(orders, dateStr) : generateComplete(orders, dateStr);
+    const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+    showToast(`✅ Téléchargé`);
+  } catch(e) { showToast('Erreur: '+e.message,'error'); }
+}
 
 // ── Init ──
 loadSettings();
-if (!state.proxyUrl) setTimeout(openSettings, 300);
-else renderDashboard();
+if (!state.proxyUrl) {
+  setTimeout(openSettings, 300);
+} else if (!state.isLoggedIn) {
+  document.getElementById('login-screen').classList.add('show');
+} else {
+  renderDashboard();
+}
 </script>
 </body>
 </html>
