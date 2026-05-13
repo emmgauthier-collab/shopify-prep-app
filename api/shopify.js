@@ -3,6 +3,8 @@ const SHOP = process.env.SHOPIFY_SHOP;
 const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 const APP_PASSWORD = process.env.APP_PASSWORD;
+const GAS_URL = process.env.GAS_URL;       // URL du Google Apps Script déployé
+const GAS_SECRET = process.env.GAS_SECRET; // Secret partagé avec le GAS
 
 let cachedToken = null;
 let tokenExpiresAt = 0;
@@ -33,7 +35,6 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
-  // ── Vérification mot de passe ──
   const password = req.headers['x-app-password'];
   if (!APP_PASSWORD || !password || password !== APP_PASSWORD) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -41,8 +42,26 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { query, variables, action } = req.body;
+
+    // ── Action spéciale : déléguer au GAS pour générer le ZIP ──
+    if (action === 'generateZip') {
+      if (!GAS_URL || !GAS_SECRET) {
+        res.status(500).json({ error: 'GAS_URL ou GAS_SECRET non configuré' });
+        return;
+      }
+      const gasRes = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: GAS_SECRET, orders: req.body.orders }),
+      });
+      const gasData = await gasRes.json();
+      res.status(200).json(gasData);
+      return;
+    }
+
+    // ── Requête GraphQL standard ──
     const token = await getToken();
-    const { query, variables } = req.body;
     const shopifyRes = await fetch(`https://${SHOP}/admin/api/2025-01/graphql.json`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
