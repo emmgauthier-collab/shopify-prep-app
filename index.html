@@ -202,17 +202,7 @@
         <input id="cfg-password" type="password" placeholder="••••••••" />
         <div class="settings-hint">Correspond à APP_PASSWORD dans Vercel</div>
       </div>
-      <div class="settings-section">Google Apps Script (impression)</div>
-      <div class="form-group">
-        <label>URL du Google Apps Script</label>
-        <input id="cfg-gas-url" type="text" placeholder="https://script.google.com/macros/s/..." />
-        <div class="settings-hint">URL de déploiement de ton Web App GAS</div>
-      </div>
-      <div class="form-group">
-        <label>Secret GAS</label>
-        <input id="cfg-gas-secret" type="password" placeholder="••••••••" />
-        <div class="settings-hint">Correspond à GAS_SECRET dans les variables Vercel</div>
-      </div>
+
       <div style="display:flex;gap:8px;margin-top:20px;">
         <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
         <button class="btn" onclick="closeSettings()">Annuler</button>
@@ -242,7 +232,7 @@
 <script>
 const state = {
   activeTab: 'dashboard',
-  proxyUrl: '', appPassword: '', gasUrl: '', gasSecret: '',
+  proxyUrl: '', appPassword: '',
   isLoggedIn: false,
   orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false,
   supplierOrders: [], supplierSnapshot: [],
@@ -261,8 +251,7 @@ const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customizati
 function loadSettings() {
   state.proxyUrl = localStorage.getItem('proxyUrl') || '';
   state.appPassword = localStorage.getItem('appPassword') || '';
-  state.gasUrl = localStorage.getItem('gasUrl') || '';
-  state.gasSecret = localStorage.getItem('gasSecret') || '';
+
   state.isLoggedIn = sessionStorage.getItem('loggedIn') === '1';
 }
 
@@ -300,13 +289,11 @@ function logout() { sessionStorage.removeItem('loggedIn'); state.isLoggedIn = fa
 function saveSettings() {
   const url = document.getElementById('cfg-proxy-url').value.trim();
   const pwd = document.getElementById('cfg-password').value.trim();
-  const gasUrl = document.getElementById('cfg-gas-url').value.trim();
-  const gasSecret = document.getElementById('cfg-gas-secret').value.trim();
+
   if (!url) { showToast('⚠️ Remplis l\'URL proxy', 'warning'); return; }
   localStorage.setItem('proxyUrl', url); state.proxyUrl = url;
   if (pwd) { localStorage.setItem('appPassword', pwd); state.appPassword = pwd; }
-  if (gasUrl) { localStorage.setItem('gasUrl', gasUrl); state.gasUrl = gasUrl; }
-  if (gasSecret) { localStorage.setItem('gasSecret', gasSecret); state.gasSecret = gasSecret; }
+
   closeSettings();
   showToast('✅ Configuration sauvegardée');
 }
@@ -314,8 +301,7 @@ function saveSettings() {
 function openSettings() {
   document.getElementById('cfg-proxy-url').value = state.proxyUrl;
   document.getElementById('cfg-password').value = '';
-  document.getElementById('cfg-gas-url').value = state.gasUrl;
-  document.getElementById('cfg-gas-secret').value = '';
+
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
