@@ -925,19 +925,29 @@ async function generatePrintZip() {
   for (const order of selectedOrders) {
     for (const {node:li} of order.lineItems.edges) {
       const liAttrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value]));
-      console.log('Line item attrs keys:', Object.keys(liAttrs));
-      console.log('All designs value:', liAttrs['All designs']?.substring(0, 80));
-      const designUrls = (liAttrs['All designs']||'').split(/[\s,]+/).filter(u => u.startsWith('http'));
+      // Les URLs de design sont dans _tib_design_link_1, _tib_design_link_2, etc.
+      const designUrls = Object.entries(liAttrs)
+        .filter(([k]) => k.startsWith('_tib_design_link_'))
+        .map(([,v]) => v)
+        .filter(u => u && u.startsWith('http'));
+      // Les annexes PNG/SVG sont dans les valeurs qui sont des URLs (logos uploadés, etc.)
+      const annexeJson = JSON.stringify(
+        Object.entries(liAttrs)
+          .filter(([k,v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
+          .reduce((obj,[k,v]) => { obj[k]=v; return obj; }, {})
+      );
       gasOrders.push({
         orderName: order.name,
         quantity: li.quantity,
         note: order.note || '',
         designUrls,
-        customizationJson: liAttrs['Customization JSON'] || '',
+        customizationJson: annexeJson,
       });
     }
   }
   console.log('gasOrders count:', gasOrders.length, 'total designUrls:', gasOrders.reduce((s,o)=>s+o.designUrls.length,0));
+  // Debug first order
+  if (gasOrders[0]) console.log('First order designUrls:', gasOrders[0].designUrls);
 
   try {
     const result = await callGas(gasOrders);
