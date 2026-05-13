@@ -17,7 +17,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
     #app { display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* ── Login ── */
+    /* Login */
     #login-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9000; align-items: center; justify-content: center; }
     #login-screen.show { display: flex; }
     .login-box { background: var(--surface); border-radius: 12px; padding: 40px; width: min(400px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.15); text-align: center; }
@@ -37,7 +37,6 @@
     .tab-btn .badge { display: inline-block; background: var(--critical); color: #fff; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 4px; line-height: 18px; }
 
     #content { flex: 1; padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
-
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
     .card + .card { margin-top: 12px; }
     .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -60,7 +59,6 @@
     #order-sticky { position: sticky; top: var(--header-height); z-index: 100; background: var(--surface); border-bottom: 2px solid var(--border); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .order-sticky-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
     .order-sticky-top h2 { font-size: 18px; font-weight: 700; }
-
     .prep-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .prep-label { font-size: 12px; color: var(--text-sub); font-weight: 600; margin-right: 4px; }
     .prep-item { background: var(--info-bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 13px; white-space: nowrap; }
@@ -115,20 +113,36 @@
     .order-count-badge { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; font-size: 13px; margin-bottom: 12px; }
     .order-count-badge strong { font-size: 18px; color: var(--primary); }
 
+    /* Print tab */
+    .print-order-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .print-order-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: background .15s; }
+    .print-order-item:hover { background: var(--bg); }
+    .print-order-item input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+    .print-order-item.deselected { opacity: .5; }
+    .print-order-info { flex: 1; }
+    .print-order-name { font-weight: 700; font-size: 14px; }
+    .print-order-detail { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+    .print-order-note { font-size: 12px; color: var(--critical); margin-top: 4px; font-style: italic; }
+    .print-order-files { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+    .zip-result { background: var(--success-bg); border: 1px solid #95c9b4; border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+    .zip-result a { color: var(--primary); font-weight: 600; }
+
     #img-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 9999; align-items: center; justify-content: center; cursor: pointer; }
     #img-modal.open { display: flex; }
-    #img-modal img { max-width: 92vw; max-height: 92vh; border-radius: 10px; object-fit: contain; cursor: default; box-shadow: 0 8px 32px rgba(0,0,0,.5); }
+    #img-modal img { max-width: 92vw; max-height: 92vh; border-radius: 10px; object-fit: contain; cursor: default; }
     #img-modal-close { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 28px; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
-    .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); }
+    .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
     .settings-box h2 { font-size: 18px; margin-bottom: 16px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
     .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; }
     .form-group input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .settings-hint { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+    .settings-section { font-size: 12px; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: .5px; margin: 16px 0 8px; border-top: 1px solid var(--border); padding-top: 12px; }
 
     .spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; gap: 12px; color: var(--text-sub); }
     .spinner-ring { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
@@ -158,27 +172,25 @@
 <body>
 <div id="app">
 
-  <!-- Login -->
   <div id="login-screen">
     <div class="login-box">
       <h1>🎨 Assistant perso</h1>
       <p>Accès réservé — entre le mot de passe</p>
-      <input id="login-input" type="password" placeholder="••••••••" onkeydown="if(e.key==='Enter')tryLogin()" />
+      <input id="login-input" type="password" placeholder="••••••••" />
       <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="tryLogin()">Connexion</button>
       <div id="login-error" class="login-error">Mot de passe incorrect</div>
     </div>
   </div>
 
-  <!-- Image modal -->
   <div id="img-modal" onclick="closeImgModal()">
     <button id="img-modal-close" onclick="closeImgModal()">✕</button>
     <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()" />
   </div>
 
-  <!-- Settings modal -->
   <div id="settings-modal">
     <div class="settings-box">
       <h2>⚙️ Configuration</h2>
+      <div class="settings-section">Proxy Vercel</div>
       <div class="form-group">
         <label>URL du proxy Vercel</label>
         <input id="cfg-proxy-url" type="text" placeholder="https://shopify-prep-app.vercel.app/api/shopify" />
@@ -186,7 +198,18 @@
       <div class="form-group">
         <label>Mot de passe app</label>
         <input id="cfg-password" type="password" placeholder="••••••••" />
-        <div class="settings-hint">Doit correspondre à APP_PASSWORD dans Vercel</div>
+        <div class="settings-hint">Correspond à APP_PASSWORD dans Vercel</div>
+      </div>
+      <div class="settings-section">Google Apps Script (impression)</div>
+      <div class="form-group">
+        <label>URL du Google Apps Script</label>
+        <input id="cfg-gas-url" type="text" placeholder="https://script.google.com/macros/s/..." />
+        <div class="settings-hint">URL de déploiement de ton Web App GAS</div>
+      </div>
+      <div class="form-group">
+        <label>Secret GAS</label>
+        <input id="cfg-gas-secret" type="password" placeholder="••••••••" />
+        <div class="settings-hint">Correspond à GAS_SECRET dans les variables Vercel</div>
       </div>
       <div style="display:flex;gap:8px;margin-top:20px;">
         <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
@@ -205,6 +228,7 @@
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
     <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur</button>
+    <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression</button>
   </div>
 
   <div id="content"></div>
@@ -216,29 +240,32 @@
 <script>
 const state = {
   activeTab: 'dashboard',
-  proxyUrl: '',
-  appPassword: '',
+  proxyUrl: '', appPassword: '', gasUrl: '', gasSecret: '',
   isLoggedIn: false,
   orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false,
   supplierOrders: [], supplierSnapshot: [],
+  // Print tab
+  printOrders: [],       // commandes TODOPRINT avec métafields teeinblue
+  printSelected: new Set(), // IDs sélectionnés
+  printZipDone: false,
+  printZipOrderIds: [],  // IDs des commandes zippées (pour suppression tag)
 };
 
 const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customization_id'];
 
 // ════════════════════════════════════════════
-// AUTH
+// AUTH & SETTINGS
 // ════════════════════════════════════════════
 function loadSettings() {
   state.proxyUrl = localStorage.getItem('proxyUrl') || '';
   state.appPassword = localStorage.getItem('appPassword') || '';
+  state.gasUrl = localStorage.getItem('gasUrl') || '';
+  state.gasSecret = localStorage.getItem('gasSecret') || '';
   state.isLoggedIn = sessionStorage.getItem('loggedIn') === '1';
 }
 
 function checkAuth() {
-  if (!state.isLoggedIn) {
-    document.getElementById('login-screen').classList.add('show');
-    return false;
-  }
+  if (!state.isLoggedIn) { document.getElementById('login-screen').classList.add('show'); return false; }
   return true;
 }
 
@@ -246,20 +273,13 @@ async function tryLogin() {
   const input = document.getElementById('login-input');
   const pwd = input.value.trim();
   if (!pwd) return;
-
-  // Vérifie le mot de passe via le proxy
   try {
     const res = await fetch(state.proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-App-Password': pwd },
       body: JSON.stringify({ query: '{ shop { name } }', variables: {} }),
     });
-    if (res.status === 401) {
-      document.getElementById('login-error').style.display = 'block';
-      input.value = '';
-      return;
-    }
-    // Succès
+    if (res.status === 401) { document.getElementById('login-error').style.display = 'block'; input.value = ''; return; }
     state.appPassword = pwd;
     localStorage.setItem('appPassword', pwd);
     sessionStorage.setItem('loggedIn', '1');
@@ -269,46 +289,66 @@ async function tryLogin() {
     renderDashboard();
   } catch(e) {
     document.getElementById('login-error').style.display = 'block';
-    document.getElementById('login-error').textContent = 'Erreur de connexion';
+    document.getElementById('login-error').textContent = 'Erreur de connexion — vérifie l\'URL proxy';
   }
 }
 
-function logout() {
-  sessionStorage.removeItem('loggedIn');
-  state.isLoggedIn = false;
-  document.getElementById('login-screen').classList.add('show');
-  document.getElementById('login-input').value = '';
-}
+function logout() { sessionStorage.removeItem('loggedIn'); state.isLoggedIn = false; document.getElementById('login-screen').classList.add('show'); document.getElementById('login-input').value = ''; }
 
-// ── Settings ──
 function saveSettings() {
   const url = document.getElementById('cfg-proxy-url').value.trim();
   const pwd = document.getElementById('cfg-password').value.trim();
-  if (!url) { showToast('⚠️ Remplis l\'URL', 'warning'); return; }
-  localStorage.setItem('proxyUrl', url);
+  const gasUrl = document.getElementById('cfg-gas-url').value.trim();
+  const gasSecret = document.getElementById('cfg-gas-secret').value.trim();
+  if (!url) { showToast('⚠️ Remplis l\'URL proxy', 'warning'); return; }
+  localStorage.setItem('proxyUrl', url); state.proxyUrl = url;
   if (pwd) { localStorage.setItem('appPassword', pwd); state.appPassword = pwd; }
-  state.proxyUrl = url;
+  if (gasUrl) { localStorage.setItem('gasUrl', gasUrl); state.gasUrl = gasUrl; }
+  if (gasSecret) { localStorage.setItem('gasSecret', gasSecret); state.gasSecret = gasSecret; }
   closeSettings();
   showToast('✅ Configuration sauvegardée');
 }
-function openSettings() { document.getElementById('cfg-proxy-url').value = state.proxyUrl; document.getElementById('cfg-password').value = ''; document.getElementById('settings-modal').classList.add('open'); }
+
+function openSettings() {
+  document.getElementById('cfg-proxy-url').value = state.proxyUrl;
+  document.getElementById('cfg-password').value = '';
+  document.getElementById('cfg-gas-url').value = state.gasUrl;
+  document.getElementById('cfg-gas-secret').value = '';
+  document.getElementById('settings-modal').classList.add('open');
+}
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
 
-// ── GraphQL ──
+// ════════════════════════════════════════════
+// GRAPHQL
+// ════════════════════════════════════════════
 async function gql(query, variables = {}) {
   const res = await fetch(state.proxyUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
     body: JSON.stringify({ query, variables }),
   });
-  if (res.status === 401) { logout(); throw new Error('Session expirée, reconnecte-toi'); }
+  if (res.status === 401) { logout(); throw new Error('Session expirée'); }
   if (!res.ok) throw new Error(`Proxy error ${res.status}`);
   const json = await res.json();
   if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join(', '));
   return json.data;
 }
 
-// ── Tabs ──
+async function callGas(orders) {
+  const res = await fetch(state.proxyUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
+    body: JSON.stringify({ action: 'generateZip', orders }),
+  });
+  if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json;
+}
+
+// ════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════
 function switchTab(tab) {
   if (!checkAuth()) return;
   state.activeTab = tab;
@@ -317,21 +357,20 @@ function switchTab(tab) {
     document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
     return;
   }
-  ({ dashboard: renderDashboard, custom: renderCustomTab, supplier: renderSupplierTab })[tab]?.();
+  ({ dashboard: renderDashboard, custom: renderCustomTab, supplier: renderSupplierTab, print: renderPrintTab })[tab]?.();
 }
 
-// ── Utilities ──
+// ════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = type === 'warning' ? '#b98900' : type === 'error' ? '#d82c0d' : '#008060';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  t.textContent = msg; t.style.background = type === 'warning' ? '#b98900' : type === 'error' ? '#d82c0d' : '#008060';
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800);
 }
 window.addEventListener('scroll', () => document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200));
 function openImgModal(url) { document.getElementById('img-modal-src').src = url; document.getElementById('img-modal').classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeImgModal() { document.getElementById('img-modal').classList.remove('open'); document.body.style.overflow = ''; }
-
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeImgModal(); return; }
   if (state.activeTab !== 'custom') return;
@@ -340,12 +379,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'j') { e.preventDefault(); prevOrder(); }
   if (e.key === 'k') { e.preventDefault(); nextOrder(); }
 });
-
-// ── Enter sur login ──
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('login-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') tryLogin();
-  });
+  document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 });
 
 // ════════════════════════════════════════════
@@ -378,7 +413,7 @@ async function renderDashboard() {
     const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
     const notesHtml = ordersWithNotes.length === 0
-      ? `<div style="color:var(--text-sub);font-size:13px;padding:4px 0;">Aucune commande avec note en cours ✅</div>`
+      ? `<div style="color:var(--text-sub);font-size:13px;padding:4px 0;">Aucune note en cours ✅</div>`
       : `<div class="notes-list">${ordersWithNotes.map(o => {
           const age = ageD(o.createdAt);
           const ageColor = age < 5 ? 'var(--success)' : age <= 10 ? 'var(--warning)' : 'var(--critical)';
@@ -395,31 +430,19 @@ async function renderDashboard() {
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
       </div>
       <div class="dashboard-grid">
-        <div class="stat-card" onclick="goToCustom(false)">
-          <div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div>
-        </div>
-        <div class="stat-card" onclick="switchTab('supplier')">
-          <div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Préparation print</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div>
-        </div>
-        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)">
-          <div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div>
-        </div>
+        <div class="stat-card" onclick="goToCustom(false)"><div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div></div>
+        <div class="stat-card" onclick="switchTab('supplier')"><div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div></div>
+        <div class="stat-card" onclick="switchTab('print')"><div class="stat-label">Préparation impression</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
+        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
       </div>
       <div class="card">
-        <div class="card-title">
-          📝 Notes sur commandes en cours
-          ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}
-        </div>
+        <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
         ${notesHtml}
       </div>`;
   } catch(err) {
     c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`;
   }
 }
-
 function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); }
 
 // ════════════════════════════════════════════
@@ -467,8 +490,7 @@ function renderOrderView() {
   let html = `<div class="nav-bar">
     <button class="btn" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédent <kbd>J</kbd></button>
     ${state.orders.length > 0 ? `<select onchange="jumpToOrder(this.value)">${state.orders.map((o, i) => {
-      const urg = o.tags.some(t => t==='urgent'||t==='URGENT');
-      const note = !!(o.note?.trim());
+      const urg = o.tags.some(t => t==='urgent'||t==='URGENT'); const note = !!(o.note?.trim());
       return `<option value="${i}" ${i===state.currentIndex?'selected':''}>${o.name}${urg?' 🚨':''}${note?' 📝':''}</option>`;
     }).join('')}</select>` : ''}
     <span class="counter">${counter}</span>
@@ -557,17 +579,11 @@ async function toggleUrgentFilter() {
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
-// ── Auto-refresh au focus — garde la position ──
 window.addEventListener('focus', () => {
   if (state.activeTab !== 'custom' || !state.proxyUrl || !state.isLoggedIn) return;
-  const savedIndex = state.currentIndex;
-  const savedOrderId = state.orders[savedIndex]?.id;
+  const savedId = state.orders[state.currentIndex]?.id;
   fetchCustomOrders(null, 'forward', state.filterUrgent).then(() => {
-    // Essaie de retrouver la même commande par ID
-    if (savedOrderId) {
-      const newIdx = state.orders.findIndex(o => o.id === savedOrderId);
-      if (newIdx !== -1) state.currentIndex = newIdx;
-    }
+    if (savedId) { const idx = state.orders.findIndex(o => o.id === savedId); if (idx !== -1) state.currentIndex = idx; }
     renderOrderView();
   }).catch(() => {});
 });
@@ -579,8 +595,7 @@ async function fetchToOrderOrders() {
   let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
     const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
-    orders.push(...data.orders.edges.map(e=>e.node));
-    hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
+    orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
   return orders;
 }
@@ -588,62 +603,41 @@ async function fetchToOrderOrders() {
 async function renderSupplierTab() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try {
-    state.supplierOrders = await fetchToOrderOrders();
-    state.supplierSnapshot = [];
-    renderSupplierView();
-    loadHistory();
-  } catch(e) {
-    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
-  }
+  try { state.supplierOrders = await fetchToOrderOrders(); state.supplierSnapshot = []; renderSupplierView(); loadHistory(); }
+  catch(e) { c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
 function renderSupplierView() {
   const count = state.supplierOrders.length;
   const step1Done = state.supplierSnapshot.length > 0;
-
   document.getElementById('content').innerHTML = `
     <div class="workflow-steps">
       <div class="step">
         <div class="step-header">
           <div class="step-number ${step1Done ? 'done' : ''}">1</div>
-          <div>
-            <div class="step-title">Télécharger les fichiers de commande</div>
-            <div class="step-desc">Génère les fichiers à intégrer dans le panier fournisseur</div>
-          </div>
+          <div><div class="step-title">Télécharger les fichiers de commande</div><div class="step-desc">Génère les fichiers à intégrer dans le panier fournisseur</div></div>
         </div>
         <div class="step-body">
           <div class="order-count-badge"><strong>${count}</strong> commande${count>1?'s':''} avec balise TOORDER</div>
-          ${count === 0
-            ? `<div style="color:var(--text-sub);font-size:13px;">Aucune commande à traiter.</div>`
-            : `<div class="step-actions">
-                <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">⬇ Export IMBRETEX</button>
-                <button class="btn" onclick="downloadAndSnapshot('complete')">⬇ Export complet</button>
-              </div>
-              ${step1Done ? `<div style="margin-top:10px;font-size:13px;color:var(--success);">✅ ${state.supplierSnapshot.length} commandes exportées — tu peux valider à l'étape 2</div>` : ''}`
-          }
+          ${count === 0 ? `<div style="color:var(--text-sub);font-size:13px;">Aucune commande.</div>` : `
+          <div class="step-actions">
+            <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">⬇ Export IMBRETEX</button>
+            <button class="btn" onclick="downloadAndSnapshot('complete')">⬇ Export complet</button>
+          </div>
+          ${step1Done ? `<div style="margin-top:10px;font-size:13px;color:var(--success);">✅ ${state.supplierSnapshot.length} commandes exportées</div>` : ''}`}
         </div>
       </div>
-
       <div class="step">
         <div class="step-header">
           <div class="step-number ${!step1Done ? 'locked' : ''}">2</div>
-          <div>
-            <div class="step-title">Valider la commande fournisseur</div>
-            <div class="step-desc">Supprime TOORDER et archive uniquement les commandes exportées</div>
-          </div>
+          <div><div class="step-title">Valider la commande fournisseur</div><div class="step-desc">Supprime TOORDER, archive uniquement les commandes exportées</div></div>
         </div>
         <div class="step-body">
-          ${!step1Done
-            ? `<div style="color:var(--text-sub);font-size:13px;">⚠️ Télécharge d'abord les fichiers à l'étape 1.</div>`
-            : `<div id="step2-preview">
-                <button class="btn" onclick="previewStep2()">🔍 Vérifier avant de valider</button>
-              </div>`
-          }
+          ${!step1Done ? `<div style="color:var(--text-sub);font-size:13px;">⚠️ Télécharge d'abord les fichiers à l'étape 1.</div>`
+          : `<div id="step2-preview"><button class="btn" onclick="previewStep2()">🔍 Vérifier avant de valider</button></div>`}
         </div>
       </div>
     </div>
-
     <div class="card" style="margin-top:20px;">
       <div class="card-title">📋 Historique des commandes fournisseur</div>
       <div id="history-content"><div style="color:var(--text-sub);font-size:13px;">Chargement...</div></div>
@@ -655,8 +649,7 @@ function downloadAndSnapshot(type) {
   const { url, filename } = type === 'imbretex' ? generateImbretex(state.supplierOrders) : generateComplete(state.supplierOrders);
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
   showToast(`✅ ${type === 'imbretex' ? 'Export IMBRETEX' : 'Export complet'} téléchargé`);
-  renderSupplierView();
-  loadHistory();
+  renderSupplierView(); loadHistory();
 }
 
 async function previewStep2() {
@@ -667,29 +660,14 @@ async function previewStep2() {
     const snapshotIds = new Set(state.supplierSnapshot);
     const toValidate = currentOrders.filter(o => snapshotIds.has(o.id));
     const newOrders = currentOrders.filter(o => !snapshotIds.has(o.id));
-
     let html = '';
     if (newOrders.length > 0) {
-      html += `<div class="alert alert-warning" style="margin-bottom:12px;">
-        ⚠️ <strong>${newOrders.length} nouvelle${newOrders.length>1?'s':''} commande${newOrders.length>1?'s':''}</strong>
-        <span class="alert-text"> arrivée${newOrders.length>1?'s':''} après l'export, exclue${newOrders.length>1?'s':''} : ${newOrders.map(o=>`<strong>${o.name}</strong>`).join(', ')}</span>
-      </div>`;
+      html += `<div class="alert alert-warning" style="margin-bottom:12px;">⚠️ <strong>${newOrders.length} nouvelle${newOrders.length>1?'s':''} commande${newOrders.length>1?'s':''}</strong><span class="alert-text"> exclue${newOrders.length>1?'s':''} : ${newOrders.map(o=>`<strong>${o.name}</strong>`).join(', ')}</span></div>`;
     }
-    html += `<div style="margin-bottom:12px;font-size:14px;">
-      <strong>${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à valider :
-      ${toValidate.map(o=>`<span class="badge badge-info" style="margin:2px;">${o.name}</span>`).join('')}
-    </div>`;
-    if (toValidate.length > 0) {
-      html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>
-        ✅ Valider ${toValidate.length} commande${toValidate.length>1?'s':''}
-      </button>`;
-    } else {
-      html += `<div style="color:var(--text-sub);font-size:13px;">Aucune commande à valider.</div>`;
-    }
+    html += `<div style="margin-bottom:12px;font-size:14px;"><strong>${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à valider : ${toValidate.map(o=>`<span class="badge badge-info" style="margin:2px;">${o.name}</span>`).join('')}</div>`;
+    if (toValidate.length > 0) html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>✅ Valider ${toValidate.length} commande${toValidate.length>1?'s':''}</button>`;
     preview.innerHTML = html;
-  } catch(e) {
-    preview.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
-  }
+  } catch(e) { preview.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
 async function validateSupplierOrders(orderIds) {
@@ -705,22 +683,19 @@ async function validateSupplierOrders(orderIds) {
   }
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
-  state.supplierSnapshot = [];
-  state.supplierOrders = await fetchToOrderOrders();
-  renderSupplierView();
-  loadHistory();
+  state.supplierSnapshot = []; state.supplierOrders = await fetchToOrderOrders();
+  renderSupplierView(); loadHistory();
 }
 
 function generateImbretex(orders, dateOverride = null) {
   const skuMap = new Map();
   orders.forEach(o => o.lineItems.edges.forEach(({node:li}) => {
-    const sku = li.variant?.imbretexSku?.value;
-    if (sku) skuMap.set(sku, (skuMap.get(sku)||0) + li.quantity);
+    const sku = li.variant?.imbretexSku?.value; if (sku) skuMap.set(sku, (skuMap.get(sku)||0) + li.quantity);
   }));
-  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)), parseInt(dateOverride.substring(4,6))-1, parseInt(dateOverride.substring(6,8))) : new Date();
+  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   let csv = 'REFERENCE ARTICLE;QUANTITE;DOSSIER (FACULTATIF)\n';
-  skuMap.forEach((qty, sku) => { csv += `${sku};${qty};custom_${dateStr.replace(/-/g,'')}\n`; });
+  skuMap.forEach((qty,sku) => { csv += `${sku};${qty};custom_${dateStr.replace(/-/g,'')}\n`; });
   return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `commande-imbretex-${dateStr}.csv` };
 }
 
@@ -730,68 +705,282 @@ function generateComplete(orders, dateOverride = null) {
     const date = new Date(o.createdAt).toLocaleDateString('fr-FR');
     const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
     const notes = (o.note||'').replace(/;/g,',').replace(/\n/g,' ');
-    o.lineItems.edges.forEach(({node:li}) => {
-      csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`;
-    });
+    o.lineItems.edges.forEach(({node:li}) => { csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`; });
   });
-  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)), parseInt(dateOverride.substring(4,6))-1, parseInt(dateOverride.substring(6,8))) : new Date();
+  const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `resume-commandes-${dateStr}.csv` };
 }
 
 async function loadHistory() {
-  const el = document.getElementById('history-content');
-  if (!el) return;
+  const el = document.getElementById('history-content'); if (!el) return;
   try {
     let orders=[], hasNext=true, cursor=null;
-    while(hasNext){
-      const data = await gql(`query($first:Int!,$after:String){orders(first:$first,after:$after){edges{node{id tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor});
-      orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
-    }
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String){orders(first:$first,after:$after){edges{node{id tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
     const tagMap = new Map();
     orders.forEach(o => o.tags.forEach(t => { if(t.startsWith('order_')) tagMap.set(t,(tagMap.get(t)||0)+1); }));
-    const tags = [...tagMap.entries()].map(([tag,count]) => {
-      const d = tag.replace('order_','');
-      return d.length===8 ? {tag,count,date:`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`} : null;
-    }).filter(Boolean).sort((a,b)=>b.tag.localeCompare(a.tag));
-
+    const tags = [...tagMap.entries()].map(([tag,count]) => { const d=tag.replace('order_',''); return d.length===8?{tag,count,date:`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`}:null; }).filter(Boolean).sort((a,b)=>b.tag.localeCompare(a.tag));
     if (!tags.length) { el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Aucun historique.</div>`; return; }
-    el.innerHTML = `<table class="history-table">
-      <thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead>
-      <tbody>${tags.map(h=>`<tr>
-        <td><strong>${h.date}</strong></td><td>${h.count}</td>
-        <td><div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn" onclick="regenAndDownload('${h.tag}','imbretex')">↺ IMBRETEX</button>
-          <button class="btn" onclick="regenAndDownload('${h.tag}','complete')">↺ Complet</button>
-        </div></td>
-      </tr>`).join('')}</tbody>
-    </table>`;
+    el.innerHTML = `<table class="history-table"><thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead><tbody>${tags.map(h=>`<tr><td><strong>${h.date}</strong></td><td>${h.count}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn" onclick="regenAndDownload('${h.tag}','imbretex')">↺ IMBRETEX</button><button class="btn" onclick="regenAndDownload('${h.tag}','complete')">↺ Complet</button></div></td></tr>`).join('')}</tbody></table>`;
   } catch(e) { if(el) el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Erreur historique.</div>`; }
 }
 
 async function regenAndDownload(tag, type) {
   try {
     let orders=[], hasNext=true, cursor=null;
-    while(hasNext){
-      const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag} AND status:open`});
-      orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
-    }
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag} AND status:open`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
     const dateStr = tag.replace('order_','');
-    const {url, filename} = type==='imbretex' ? generateImbretex(orders, dateStr) : generateComplete(orders, dateStr);
-    const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+    const {url,filename} = type==='imbretex'?generateImbretex(orders,dateStr):generateComplete(orders,dateStr);
+    const a=document.createElement('a');a.href=url;a.download=filename;a.click();
     showToast(`✅ Téléchargé`);
   } catch(e) { showToast('Erreur: '+e.message,'error'); }
 }
 
+// ════════════════════════════════════════════
+// PRINT TAB — Préparation impression
+// ════════════════════════════════════════════
+async function renderPrintTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement des commandes TODOPRINT...</div>`;
+  try {
+    // Récupère les commandes TODOPRINT avec métafields teeinblue
+    let orders=[], hasNext=true, cursor=null;
+    while(hasNext) {
+      const data = await gql(`query($first:Int!,$after:String,$q:String!){
+        orders(first:$first,after:$after,query:$q){
+          edges{node{
+            id name createdAt note tags
+            customer{firstName lastName}
+            lineItems(first:250){edges{node{
+              id title quantity
+              variant{title}
+              customAttributes{key value}
+              allDesigns: metafield(namespace:"teeinblue",key:"all_designs"){value}
+              customizationJson: metafield(namespace:"teeinblue",key:"customization_json"){value}
+              customizationImage: metafield(namespace:"teeinblue",key:"customization_image"){value}
+            }}}
+          }}
+          pageInfo{hasNextPage endCursor}
+        }
+      }`, {first:50,after:cursor,q:'tag:TODOPRINT AND status:open'});
+      orders.push(...data.orders.edges.map(e=>e.node));
+      hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
+    }
+    state.printOrders = orders;
+    state.printSelected = new Set(orders.map(o => o.id));
+    state.printZipDone = false;
+    state.printZipOrderIds = [];
+    renderPrintView();
+  } catch(e) {
+    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
+  }
+}
+
+function renderPrintView() {
+  const c = document.getElementById('content');
+  const orders = state.printOrders;
+  const gasConfigured = !!state.gasUrl;
+
+  if (!orders.length) {
+    c.innerHTML = `<div class="empty">Aucune commande avec la balise TODOPRINT.</div>`;
+    return;
+  }
+
+  const selectedCount = state.printSelected.size;
+  const ordersWithNotes = orders.filter(o => o.note?.trim() && state.printSelected.has(o.id));
+
+  let html = `
+    <div class="workflow-steps">
+
+      <!-- ÉTAPE 1 : Sélection -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number ${state.printZipDone ? 'done' : ''}">1</div>
+          <div>
+            <div class="step-title">Sélectionner les commandes à préparer</div>
+            <div class="step-desc">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
+          </div>
+        </div>
+        <div class="step-body">
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button class="btn" onclick="printSelectAll()">✅ Tout sélectionner</button>
+            <button class="btn" onclick="printDeselectAll()">☐ Tout désélectionner</button>
+          </div>
+          <div class="print-order-list">
+            ${orders.map(o => {
+              const isSelected = state.printSelected.has(o.id);
+              const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
+              const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
+              const totalQty = o.lineItems.edges.reduce((s,{node:li})=>s+li.quantity,0);
+              // Compte les fichiers disponibles
+              const fileCount = o.lineItems.edges.reduce((s,{node:li}) => {
+                const designs = (li.allDesigns?.value||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
+                const jsonUrls = extractPngSvgFromJson(li.customizationJson?.value||'');
+                return s + designs.length + jsonUrls.length;
+              }, 0);
+              return `<div class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
+                <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder('${o.id}', this.checked)" />
+                <div class="print-order-info">
+                  <div class="print-order-name">${o.name} <span class="badge badge-info">${totalQty} art.</span> <span class="badge badge-info">${ageInDays}j</span></div>
+                  <div class="print-order-detail">${customer||'—'} · ${o.lineItems.edges.length} ligne${o.lineItems.edges.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
+                  ${o.note?.trim() ? `<div class="print-order-note">📝 ${o.note}</div>` : ''}
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+          ${ordersWithNotes.length > 0 ? `
+          <div class="alert alert-warning" style="margin-top:12px;">
+            📝 <strong>${ordersWithNotes.length} commande${ordersWithNotes.length>1?'s':''} avec note</strong> — incluses dans le notes.txt du ZIP
+          </div>` : ''}
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 : Génération ZIP -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number ${state.printZipDone ? 'done' : selectedCount === 0 ? 'locked' : ''}">2</div>
+          <div>
+            <div class="step-title">Générer le ZIP</div>
+            <div class="step-desc">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive</div>
+          </div>
+        </div>
+        <div class="step-body">
+          ${!gasConfigured ? `
+            <div class="alert alert-warning">⚠️ <strong>Google Apps Script non configuré</strong><span class="alert-text"> — configure l'URL GAS dans les paramètres ⚙️</span></div>
+          ` : selectedCount === 0 ? `
+            <div style="color:var(--text-sub);font-size:13px;">Sélectionne au moins une commande à l'étape 1.</div>
+          ` : `
+            <div id="zip-generate-zone">
+              <button class="btn btn-primary" onclick="generatePrintZip()">
+                🗜️ Générer le ZIP (${selectedCount} commande${selectedCount>1?'s':''})
+              </button>
+            </div>
+          `}
+          <div id="zip-result-zone"></div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 3 : Validation -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number ${!state.printZipDone ? 'locked' : ''}">3</div>
+          <div>
+            <div class="step-title">Valider — supprimer la balise TODOPRINT</div>
+            <div class="step-desc">Supprime TODOPRINT uniquement sur les commandes zippées</div>
+          </div>
+        </div>
+        <div class="step-body">
+          ${!state.printZipDone ? `
+            <div style="color:var(--text-sub);font-size:13px;">⚠️ Génère d'abord le ZIP à l'étape 2.</div>
+          ` : `
+            <button class="btn btn-primary" onclick="validatePrintOrders()">
+              ✅ Supprimer TODOPRINT (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})
+            </button>
+          `}
+        </div>
+      </div>
+
+    </div>`;
+
+  c.innerHTML = html;
+}
+
+function extractPngSvgFromJson(jsonText) {
+  if (!jsonText) return [];
+  try {
+    const obj = JSON.parse(jsonText);
+    const found = [];
+    (function walk(v) {
+      if (!v) return;
+      if (typeof v === 'string' && /^https?:\/\//i.test(v) && /\.(png|svg)(\?.*)?$/i.test(v)) found.push(v);
+      else if (Array.isArray(v)) v.forEach(walk);
+      else if (typeof v === 'object') Object.values(v).forEach(walk);
+    })(obj);
+    return [...new Set(found)];
+  } catch {
+    const re = /(https?:\/\/[^\s"'<>]+?\.(?:png|svg))(?:\?[^\s"'<>]*)?/ig;
+    const out=[]; let m;
+    while((m=re.exec(jsonText))!==null) out.push(m[0]);
+    return [...new Set(out)];
+  }
+}
+
+function togglePrintOrder(orderId, checked) {
+  if (checked) state.printSelected.add(orderId);
+  else state.printSelected.delete(orderId);
+  const item = document.getElementById(`print-item-${orderId}`);
+  if (item) item.classList.toggle('deselected', !checked);
+  // Mise à jour compteur
+  const desc = document.querySelector('.step-header .step-desc');
+  if (desc) desc.textContent = `${state.printOrders.length} commande${state.printOrders.length>1?'s':''} avec balise TODOPRINT — ${state.printSelected.size} sélectionnée${state.printSelected.size>1?'s':''}`;
+}
+
+function printSelectAll() { state.printOrders.forEach(o => state.printSelected.add(o.id)); renderPrintView(); }
+function printDeselectAll() { state.printSelected.clear(); renderPrintView(); }
+
+async function generatePrintZip() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ Génération en cours... (peut prendre 1-2 min)';
+
+  const selectedOrders = state.printOrders.filter(o => state.printSelected.has(o.id));
+
+  // Prépare les données pour le GAS
+  const gasOrders = [];
+  for (const order of selectedOrders) {
+    for (const {node:li} of order.lineItems.edges) {
+      const designUrls = (li.allDesigns?.value||'').split(/[\s,]+/).filter(u => u.startsWith('http'));
+      gasOrders.push({
+        orderName: order.name,
+        quantity: li.quantity,
+        note: order.note || '',
+        designUrls,
+        customizationJson: li.customizationJson?.value || '',
+      });
+    }
+  }
+
+  try {
+    const result = await callGas(gasOrders);
+    state.printZipDone = true;
+    state.printZipOrderIds = selectedOrders.map(o => o.id);
+
+    const zipLinks = result.zips.map(z =>
+      `<a href="${z.url}" target="_blank">📦 ${z.name}</a>`
+    ).join('<br/>');
+
+    document.getElementById('zip-result-zone').innerHTML = `
+      <div class="zip-result" style="margin-top:12px;">
+        <div style="font-weight:600;margin-bottom:8px;">✅ ZIP généré dans ton Drive !</div>
+        ${zipLinks}
+      </div>`;
+
+    // Affiche le bouton étape 3
+    renderPrintView();
+    showToast('✅ ZIP généré avec succès !');
+  } catch(e) {
+    btn.disabled = false; btn.textContent = `🗜️ Générer le ZIP (${state.printSelected.size} commande${state.printSelected.size>1?'s':''})`;
+    document.getElementById('zip-result-zone').innerHTML = `<div class="alert alert-critical" style="margin-top:8px;"><strong>Erreur :</strong> <span class="alert-text">${e.message}</span></div>`;
+  }
+}
+
+async function validatePrintOrders() {
+  const btn = event.target; btn.disabled = true; btn.textContent = 'Suppression en cours...';
+  const removeMut = `mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
+  let ok=0, errors=[];
+  for (const id of state.printZipOrderIds) {
+    try { await gql(removeMut, {id, tags:['TODOPRINT']}); ok++; }
+    catch(e) { errors.push(id); }
+  }
+  if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
+  else showToast(`✅ TODOPRINT supprimé sur ${ok} commande(s)`);
+  await renderPrintTab();
+}
+
 // ── Init ──
 loadSettings();
-if (!state.proxyUrl) {
-  setTimeout(openSettings, 300);
-} else if (!state.isLoggedIn) {
-  document.getElementById('login-screen').classList.add('show');
-} else {
-  renderDashboard();
-}
+if (!state.proxyUrl) setTimeout(openSettings, 300);
+else if (!state.isLoggedIn) document.getElementById('login-screen').classList.add('show');
+else renderDashboard();
 </script>
 </body>
 </html>
