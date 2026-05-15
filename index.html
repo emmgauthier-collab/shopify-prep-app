@@ -735,7 +735,7 @@ function renderSupplierView() {
 
 function renderSupplierNotes(orders) {
   const withNote = orders.filter(o => o.note && o.note.trim());
-  if (withNote.length === 0) return '';
+  if (withNote.length === 0) return '<div style="margin-top:12px;font-size:13px;color:var(--success);">✅ Aucune note sur ces commandes</div>';
   const rows = withNote.map(o => {
     const customer = `${o.customer?.firstName||''} ${o.customer?.lastName||''}`.trim() || '—';
     const note = o.note.replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -790,8 +790,18 @@ async function validateSupplierOrders(orderIds) {
   }
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
-  state.supplierSnapshot = []; state.supplierOrders = await fetchToOrderOrders();
-  renderSupplierView(); loadHistory();
+  state.supplierSnapshot = [];
+  // Recharge complète du tab pour refléter le nouvel état
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Mise à jour...</div>`;
+  state.supplierOrders = await fetchToOrderOrders();
+  // Mise à jour du badge
+  const badgeSupplier = document.getElementById('tab-supplier-badge');
+  if (badgeSupplier) {
+    if (state.supplierOrders.length > 0) { badgeSupplier.textContent = state.supplierOrders.length; badgeSupplier.style.display = ''; }
+    else { badgeSupplier.style.display = 'none'; }
+  }
+  renderSupplierView();
+  loadHistory();
 }
 
 function generateImbretex(orders, dateOverride = null) {
