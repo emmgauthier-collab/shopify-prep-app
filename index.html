@@ -1167,14 +1167,14 @@ document.addEventListener('visibilitychange', async () => {
 
   console.log('[confetti] vérif commande', order.name, order.id);
   try {
-    const data = await gql(`query($id:ID!){ order(id:$id){ id fulfillmentStatus tags } }`, { id: order.id });
+    const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
     const current = data?.order;
     console.log('[confetti] réponse Shopify', current);
     if (!current) return;
 
     const stillCustom = current.tags.includes('custom');
-    const fulfilled = ['fulfilled','partial'].includes(current.fulfillmentStatus?.toLowerCase());
-    console.log('[confetti] stillCustom:', stillCustom, '| fulfilled:', fulfilled, '| tags:', current.tags);
+    const fulfilled = ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
+    console.log('[confetti] stillCustom:', stillCustom, '| fulfilled:', fulfilled, '| status:', current.displayFulfillmentStatus, '| tags:', current.tags);
 
     if (!stillCustom || fulfilled) {
       launchConfetti();
