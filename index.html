@@ -672,15 +672,7 @@ async function toggleUrgentFilter() {
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
-window.addEventListener('focus', () => {
-  if (state.activeTab !== 'custom' || !state.proxyUrl || !state.isLoggedIn) return;
-  const savedId = state.orders[state.currentIndex]?.id;
-  // Recharge la même page grâce au curseur sauvegardé
-  fetchCustomOrders(state.currentCursor, state.currentDirection, state.filterUrgent).then(() => {
-    if (savedId) { const idx = state.orders.findIndex(o => o.id === savedId); if (idx !== -1) state.currentIndex = idx; }
-    renderOrderView();
-  }).catch(() => {});
-});
+// Note : le rechargement au retour de focus est géré par visibilitychange ci-dessous
 
 // ════════════════════════════════════════════
 // SUPPLIER TAB
