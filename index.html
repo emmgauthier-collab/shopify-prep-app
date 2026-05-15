@@ -169,6 +169,12 @@
       #content { padding: 10px; }
       .dashboard-grid { grid-template-columns: 1fr 1fr; }
     }
+  /* ── Confetti animation ── */
+  @keyframes confettiFall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
   /* ── Supplier notes block ── */
   .supplier-notes-block {
     margin-top: 14px;
@@ -1117,8 +1123,78 @@ async function validatePrintOrders() {
   }
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) archivées — tag ${printTag} ajouté`);
+  // Spinner pendant le rechargement
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Mise à jour...</div>`;
+  // Petit délai pour laisser Shopify indexer les tags
+  await new Promise(r => setTimeout(r, 2000));
+  state.printZipOrderIds = [];
+  state.printOrders = await fetchTodoPrintOrders();
+  // Mise à jour badge
+  const badgePrint = document.getElementById('tab-print-badge');
+  if (badgePrint) {
+    if (state.printOrders.length > 0) { badgePrint.textContent = state.printOrders.length; badgePrint.style.display = ''; }
+    else { badgePrint.style.display = 'none'; }
+  }
   await renderPrintTab();
 }
+
+// ════════════════════════════════════════════
+// CONFETTI + RETOUR DE FOCUS
+// ════════════════════════════════════════════
+function launchConfetti() {
+  const colors = ['#C0392B','#E74C3C','#F39C12','#27AE60','#2980B9','#8E44AD','#F1C40F','#1ABC9C'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position:fixed; top:-10px; left:${Math.random()*100}vw;
+      width:${6+Math.random()*8}px; height:${6+Math.random()*8}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      pointer-events:none; z-index:9999;
+      animation:confettiFall ${1.2+Math.random()*1.5}s ease-in forwards;
+      animation-delay:${Math.random()*.4}s;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible') return;
+  if (state.activeTab !== 'custom') return;
+  if (!state.orders.length || !state.isLoggedIn || !state.proxyUrl) return;
+
+  const order = state.orders[state.currentIndex];
+  if (!order) return;
+
+  try {
+    // Vérifie si la commande est encore "à traiter" côté Shopify
+    const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
+    const current = data?.order;
+    if (!current) return;
+
+    const stillCustom = current.tags.includes('custom');
+    const fulfilled = ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
+
+    if (!stillCustom || fulfilled) {
+      // Commande traitée — confettis + passer à la suivante
+      launchConfetti();
+      showToast('🎉 Commande traitée — suivante !');
+
+      // Retirer la commande de la liste locale
+      state.orders = state.orders.filter(o => o.id !== order.id);
+
+      setTimeout(() => {
+        if (!state.orders.length) { renderCustomTab(); return; }
+        if (state.currentIndex >= state.orders.length) state.currentIndex = state.orders.length - 1;
+        renderOrderView();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 400);
+    }
+  } catch(e) {
+    // Silencieux — pas de perturbation si la vérif échoue
+  }
+});
 
 // ── Init ──
 loadSettings();
