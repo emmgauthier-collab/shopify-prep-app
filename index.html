@@ -169,6 +169,37 @@
       #content { padding: 10px; }
       .dashboard-grid { grid-template-columns: 1fr 1fr; }
     }
+  /* ── Supplier notes block ── */
+  .supplier-notes-block {
+    margin-top: 14px;
+    border: 1px solid #f1c84b;
+    border-radius: 6px;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  .supplier-notes-header {
+    background: #fdf8ec;
+    color: #7a5600;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1c84b;
+  }
+  .supplier-note-row {
+    display: grid;
+    grid-template-columns: 70px 160px 1fr;
+    gap: 10px;
+    align-items: baseline;
+    padding: 9px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    background: #fffdf5;
+  }
+  .supplier-note-row:last-child { border-bottom: none; }
+  .supplier-note-order { font-weight: 700; color: var(--text); white-space: nowrap; }
+  .supplier-note-client { color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .supplier-note-text { color: #7a5600; line-height: 1.5; }
+
   </style>
 </head>
 <body>
@@ -681,6 +712,7 @@ function renderSupplierView() {
             <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">⬇ Export IMBRETEX</button>
             <button class="btn" onclick="downloadAndSnapshot('complete')">⬇ Export complet</button>
           </div>
+          ${renderSupplierNotes(state.supplierOrders)}
           ${step1Done ? `<div style="margin-top:10px;font-size:13px;color:var(--success);">✅ ${state.supplierSnapshot.length} commandes exportées</div>` : ''}`}
         </div>
       </div>
@@ -699,6 +731,24 @@ function renderSupplierView() {
       <div class="card-title">📋 Historique des commandes fournisseur</div>
       <div id="history-content"><div style="color:var(--text-sub);font-size:13px;">Chargement...</div></div>
     </div>`;
+}
+
+function renderSupplierNotes(orders) {
+  const withNote = orders.filter(o => o.note && o.note.trim());
+  if (withNote.length === 0) return '';
+  const rows = withNote.map(o => {
+    const customer = `${o.customer?.firstName||''} ${o.customer?.lastName||''}`.trim() || '—';
+    const note = o.note.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="supplier-note-row">
+      <span class="supplier-note-order">${o.name}</span>
+      <span class="supplier-note-client">${customer}</span>
+      <span class="supplier-note-text">${note}</span>
+    </div>`;
+  }).join('');
+  return `<div class="supplier-notes-block">
+    <div class="supplier-notes-header">⚠️ ${withNote.length} commande${withNote.length>1?'s':''} avec note — à prendre en compte</div>
+    ${rows}
+  </div>`;
 }
 
 function downloadAndSnapshot(type) {
