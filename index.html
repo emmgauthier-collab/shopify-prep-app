@@ -1156,25 +1156,22 @@ function launchConfetti() {
   }
 }
 
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState !== 'visible') return;
+// Vérifie si la commande courante est traitée — confettis si oui
+async function checkCurrentOrderDone() {
   if (state.activeTab !== 'custom') return;
   if (!state.isLoggedIn || !state.proxyUrl) return;
-  if (!state.orders.length) { console.log('[confetti] orders vide, skip'); return; }
+  if (!state.orders.length) return;
 
   const order = state.orders[state.currentIndex];
-  if (!order) { console.log('[confetti] order null à index', state.currentIndex); return; }
+  if (!order) return;
 
-  console.log('[confetti] vérif commande', order.name, order.id);
   try {
     const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
     const current = data?.order;
-    console.log('[confetti] réponse Shopify', current);
     if (!current) return;
 
     const stillCustom = current.tags.includes('custom');
     const fulfilled = ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
-    console.log('[confetti] stillCustom:', stillCustom, '| fulfilled:', fulfilled, '| status:', current.displayFulfillmentStatus, '| tags:', current.tags);
 
     if (!stillCustom || fulfilled) {
       launchConfetti();
@@ -1188,8 +1185,18 @@ document.addEventListener('visibilitychange', async () => {
       }, 400);
     }
   } catch(e) {
-    console.error('[confetti] erreur:', e.message);
+    // Silencieux
   }
+}
+
+// Onglet normal (alt+tab, clic sur barre des tâches)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkCurrentOrderDone();
+});
+
+// Onglet fractionné / split view (le focus window change sans visibilitychange)
+window.addEventListener('focus', () => {
+  checkCurrentOrderDone();
 });
 
 // ── Init ──
