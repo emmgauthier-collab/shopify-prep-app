@@ -386,7 +386,12 @@ function switchTab(tab) {
     document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
     return;
   }
-  if (tab === 'custom') renderCustomTab(true);
+  if (tab === 'custom') {
+    // Si on a déjà des commandes en mémoire, on re-render sans recharger Shopify
+    if (state.orders.length > 0) renderOrderView();
+    else renderCustomTab(false);
+    return;
+  }
   else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab })[tab]?.();
 }
 
@@ -1154,28 +1159,27 @@ function launchConfetti() {
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
   if (state.activeTab !== 'custom') return;
-  if (!state.orders.length || !state.isLoggedIn || !state.proxyUrl) return;
+  if (!state.isLoggedIn || !state.proxyUrl) return;
+  if (!state.orders.length) { console.log('[confetti] orders vide, skip'); return; }
 
   const order = state.orders[state.currentIndex];
-  if (!order) return;
+  if (!order) { console.log('[confetti] order null à index', state.currentIndex); return; }
 
+  console.log('[confetti] vérif commande', order.name, order.id);
   try {
-    // Vérifie si la commande est encore "à traiter" côté Shopify
-    const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
+    const data = await gql(`query($id:ID!){ order(id:$id){ id fulfillmentStatus tags } }`, { id: order.id });
     const current = data?.order;
+    console.log('[confetti] réponse Shopify', current);
     if (!current) return;
 
     const stillCustom = current.tags.includes('custom');
-    const fulfilled = ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
+    const fulfilled = ['fulfilled','partial'].includes(current.fulfillmentStatus?.toLowerCase());
+    console.log('[confetti] stillCustom:', stillCustom, '| fulfilled:', fulfilled, '| tags:', current.tags);
 
     if (!stillCustom || fulfilled) {
-      // Commande traitée — confettis + passer à la suivante
       launchConfetti();
       showToast('🎉 Commande traitée — suivante !');
-
-      // Retirer la commande de la liste locale
       state.orders = state.orders.filter(o => o.id !== order.id);
-
       setTimeout(() => {
         if (!state.orders.length) { renderCustomTab(); return; }
         if (state.currentIndex >= state.orders.length) state.currentIndex = state.orders.length - 1;
@@ -1184,7 +1188,7 @@ document.addEventListener('visibilitychange', async () => {
       }, 400);
     }
   } catch(e) {
-    // Silencieux — pas de perturbation si la vérif échoue
+    console.error('[confetti] erreur:', e.message);
   }
 });
 
