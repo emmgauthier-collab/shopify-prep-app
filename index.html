@@ -848,7 +848,7 @@ async function loadHistory() {
 async function regenAndDownload(tag, type) {
   try {
     let orders=[], hasNext=true, cursor=null;
-    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag} AND status:open`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
     const dateStr = tag.replace('order_','');
     const {url,filename} = type==='imbretex'?generateImbretex(orders,dateStr):generateComplete(orders,dateStr);
     const a=document.createElement('a');a.href=url;a.download=filename;a.click();
