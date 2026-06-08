@@ -1477,7 +1477,7 @@ function renderGalleryUI() {
                 ${uniqueTags.map(t => `<button class="filter-tag-btn ${galleryState.activeFilter === t ? 'active' : ''}" onclick="setFilter('${t}')">${t}</button>`).join('')}
               </div>` : ''}
             ${filteredSaved.length === 0
-              ? `<div class="gallery-empty">${savedCount === 0 ? 'Aucun rendu publié pour l'instant' : 'Aucun rendu pour ce filtre'}</div>`
+              ? `<div class="gallery-empty">${savedCount === 0 ? 'Aucun rendu publié pour l\'instant' : 'Aucun rendu pour ce filtre'}</div>`
               : `<div class="saved-gallery-grid">
                   ${filteredSaved.map(item => {
                     const realIdx = galleryState.savedItems.indexOf(item);
