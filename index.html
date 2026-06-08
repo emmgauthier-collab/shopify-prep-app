@@ -1272,17 +1272,16 @@ else renderDashboard();
 // ════════════════════════════════════════════
 // GALERIE INSPIRATIONNELLE
 // ════════════════════════════════════════════
-
 const galleryState = {
-  browseOrders: [],        // commandes browsées avec images
-  lastDebug: null,
+  browseOrders: [],
   browseCursor: null,
   browseHasNext: false,
   browseLoading: false,
-  selection: [],           // { imageUrl, productHandle, productId, customizationId, title, tags:[] }
-  savedItems: [],          // items sauvegardés dans Shopify metafield
+  selection: [],           // { imageUrl, productHandle, productId, customizationId, title, niche, tags[] }
+  savedItems: [],
   savedLoaded: false,
   activeFilter: 'all',
+  lastDebug: null,
 };
 
 async function galleryApi(action, extra = {}) {
@@ -1307,7 +1306,6 @@ async function renderGalleryTab() {
   const c = document.getElementById('content');
   c.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement de la galerie…</div>`;
 
-  // Charger les items sauvegardés si pas encore fait
   if (!galleryState.savedLoaded) {
     try {
       const r = await galleryApi('get');
@@ -1319,7 +1317,6 @@ async function renderGalleryTab() {
     }
   }
 
-  // Charger les commandes si pas encore fait
   if (galleryState.browseOrders.length === 0 && !galleryState.browseLoading) {
     await loadMoreBrowseOrders();
   }
@@ -1335,11 +1332,8 @@ async function loadMoreBrowseOrders() {
     galleryState.browseOrders.push(...(r.orders || []));
     galleryState.browseCursor = r.pageInfo?.endCursor || null;
     galleryState.browseHasNext = r.pageInfo?.hasNextPage || false;
-    // Stocker debug pour affichage
     galleryState.lastDebug = r.debug || null;
-    if (r.debug) {
-      console.log('[Gallery debug]', r.debug);
-    }
+    if (r.debug) console.log('[Gallery debug]', r.debug);
   } catch(e) {
     console.error('Erreur chargement commandes:', e);
     galleryState.lastDebug = { error: e.message };
@@ -1348,15 +1342,20 @@ async function loadMoreBrowseOrders() {
 }
 
 function getImageAndCustId(li) {
-  const imgAttr = li.customAttributes?.find(
-    a => a.key === '_customization_image' || a.key === 'customization-image' || a.key === 'Customization Image'
-  );
-  const custIdAttr = li.customAttributes?.find(
-    a => a.key === '_customization_id' || a.key === 'customization-id'
-  );
-  const imageUrl = imgAttr?.value || null;
-  const customizationId = custIdAttr?.value || null;
+  // L'API enrichit déjà les line items avec _imageUrl et _customizationId
+  const imageUrl = li._imageUrl
+    || li.customAttributes?.find(a => ['_customization_image','customization-image','customization_image'].includes(a.key))?.value
+    || null;
+  const customizationId = li._customizationId
+    || li.customAttributes?.find(a => ['_customization_id','customization-id','customization_id'].includes(a.key))?.value
+    || null;
   return { imageUrl, customizationId };
+}
+
+function getNicheLabel(niche) {
+  if (niche === 'running') return { label: 'Running', color: '#1a73e8', bg: '#e8f0fe' };
+  if (niche === 'cf') return { label: 'CrossFit', color: '#d93025', bg: '#fce8e6' };
+  return null;
 }
 
 function isAlreadySaved(imageUrl) {
@@ -1373,7 +1372,7 @@ function renderGalleryUI() {
   const selCount = galleryState.selection.length;
   const allTags = getAllTags();
 
-  // Extraire toutes les images browsables des commandes
+  // Extraire toutes les images des commandes
   const allImages = [];
   galleryState.browseOrders.forEach(order => {
     order.lineItems.edges.forEach(({ node: li }) => {
@@ -1386,21 +1385,26 @@ function renderGalleryUI() {
         productId: li.variant?.product?.id || null,
         title: li.title,
         orderName: order.name,
+        niche: li._niche || null,
       });
     });
   });
 
-  // Tags existants pour suggestions
-  const tagsHtml = allTags.length > 0
-    ? `<div class="tag-suggestions">${allTags.map(t => `<button class="tag-sug-btn" onclick="addTagSuggestion('${t}')">${t}</button>`).join('')}</div>`
-    : '';
-
-  // Filtre de la galerie sauvegardée
+  const uniqueTags = [...new Set(galleryState.savedItems.flatMap(i => i.tags || []))].sort();
   const filteredSaved = galleryState.activeFilter === 'all'
     ? galleryState.savedItems
     : galleryState.savedItems.filter(i => i.tags?.includes(galleryState.activeFilter));
 
-  const uniqueTags = [...new Set(galleryState.savedItems.flatMap(i => i.tags || []))].sort();
+  // Suggestions niche pour la sélection en cours
+  function nicheTagSuggestions(item) {
+    const niche = item.niche;
+    const suggestions = [];
+    if (niche === 'running') suggestions.push('running');
+    if (niche === 'cf') suggestions.push('crossfit');
+    // Ajouter tags existants
+    allTags.filter(t => !(item.tags||[]).includes(t) && !suggestions.includes(t)).forEach(t => suggestions.push(t));
+    return suggestions;
+  }
 
   c.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
@@ -1411,7 +1415,7 @@ function renderGalleryUI() {
     </div>
 
     <div class="gallery-layout">
-      <!-- Colonne gauche : browser commandes -->
+      <!-- Colonne gauche -->
       <div>
         <div class="gallery-panel" style="margin-bottom:16px;">
           <div class="gallery-panel-header">
@@ -1419,39 +1423,45 @@ function renderGalleryUI() {
             <span style="font-size:12px;color:var(--text-sub)">${allImages.length} images trouvées</span>
           </div>
           <div class="gallery-panel-body">
-            ${allImages.length === 0
-              ? `<div class="gallery-empty">
-                  Aucune image teeinblue trouvée dans les commandes
-                  ${galleryState.lastDebug ? `
-                    <div style="margin-top:12px;font-size:11px;color:var(--text-sub);text-align:left;background:var(--bg);padding:10px;border-radius:6px;max-width:400px;margin-left:auto;margin-right:auto;">
-                      <strong>Debug :</strong><br>
-                      Commandes scannées : ${galleryState.lastDebug.totalOrders || 0}<br>
-                      Avec images : ${galleryState.lastDebug.ordersWithImages || 0}<br>
-                      ${galleryState.lastDebug.sampleAttrs?.length > 0 ? `Clés custom attrs (1ère commande) : ${galleryState.lastDebug.sampleAttrs.map(a => a.key).join(', ')}` : 'Pas de customAttributes sur les line items'}
-                      ${galleryState.lastDebug.error ? `<br><span style="color:var(--critical)">Erreur : ${galleryState.lastDebug.error}</span>` : ''}
-                      <br><br>
-                      <button class="btn" style="font-size:11px;padding:4px 8px;" onclick="loadAllOrdersDebug()">🔍 Scanner sans filtre</button>
-                    </div>
-                  ` : ''}
-                </div>`
-              : `<div class="order-browse-grid" id="browse-grid">
-                  ${allImages.map((img, idx) => `
-                    <div class="order-img-card ${isInSelection(img.imageUrl) ? 'selected' : ''} ${isAlreadySaved(img.imageUrl) ? 'saved' : ''}"
+            ${allImages.length === 0 ? `
+              <div class="gallery-empty">
+                Aucune image teeinblue trouvée dans les commandes
+                ${galleryState.lastDebug ? `
+                  <div style="margin-top:12px;font-size:11px;color:var(--text-sub);text-align:left;background:var(--bg);padding:10px;border-radius:6px;max-width:420px;margin:12px auto 0;">
+                    <strong>Debug :</strong><br>
+                    Commandes scannées : ${galleryState.lastDebug.totalOrders || 0}<br>
+                    Avec images : ${galleryState.lastDebug.ordersWithImages || 0}<br>
+                    ${galleryState.lastDebug.sampleAttrs?.length > 0
+                      ? `Clés attrs : ${galleryState.lastDebug.sampleAttrs.map(a => a.key).join(', ')}`
+                      : 'Pas de customAttributes sur les line items'}
+                    ${galleryState.lastDebug.error ? `<br><span style="color:var(--critical)">Erreur : ${galleryState.lastDebug.error}</span>` : ''}
+                    <br><br>
+                    <button class="btn" style="font-size:11px;padding:4px 8px;" onclick="loadAllOrdersDebug()">🔍 Scanner sans filtre</button>
+                  </div>` : ''}
+              </div>
+            ` : `
+              <div class="order-browse-grid" id="browse-grid">
+                ${allImages.map((img, idx) => {
+                  const nicheInfo = getNicheLabel(img.niche);
+                  const inSel = isInSelection(img.imageUrl);
+                  const saved = isAlreadySaved(img.imageUrl);
+                  return `
+                    <div class="order-img-card ${inSel ? 'selected' : ''}"
                          onclick="toggleSelection(${idx})"
                          id="browse-card-${idx}">
                       <img src="${img.imageUrl}" alt="${img.title}" loading="lazy" />
-                      ${isAlreadySaved(img.imageUrl) ? `<span class="img-added">✓ En galerie</span>` : ''}
-                      <div class="img-meta">${img.orderName}<br>${img.title.substring(0,20)}${img.title.length>20?'…':''}</div>
+                      ${saved ? `<span class="img-added">✓ Publié</span>` : ''}
+                      ${nicheInfo ? `<span style="position:absolute;top:5px;${saved?'left:55px':'left:5px'};background:${nicheInfo.color};color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;">${nicheInfo.label}</span>` : ''}
+                      <div class="img-meta">${img.orderName}<br>${img.title.substring(0,22)}${img.title.length>22?'…':''}</div>
                       <div class="img-check">✓</div>
-                    </div>
-                  `).join('')}
-                </div>
-                ${galleryState.browseHasNext ? `
-                  <button class="btn gallery-load-more" onclick="loadMoreAndRefresh()" id="btn-load-more">
-                    Charger plus de commandes
-                  </button>
-                ` : ''}`
-            }
+                    </div>`;
+                }).join('')}
+              </div>
+              ${galleryState.browseHasNext ? `
+                <button class="btn gallery-load-more" onclick="loadMoreAndRefresh()" id="btn-load-more">
+                  Charger plus de commandes
+                </button>` : ''}
+            `}
           </div>
         </div>
 
@@ -1465,32 +1475,27 @@ function renderGalleryUI() {
               <div class="gallery-filter-bar">
                 <button class="filter-tag-btn ${galleryState.activeFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Tout</button>
                 ${uniqueTags.map(t => `<button class="filter-tag-btn ${galleryState.activeFilter === t ? 'active' : ''}" onclick="setFilter('${t}')">${t}</button>`).join('')}
-              </div>
-            ` : ''}
+              </div>` : ''}
             ${filteredSaved.length === 0
-              ? `<div class="gallery-empty">${savedCount === 0 ? 'Aucun rendu publié pour l\'instant' : 'Aucun rendu pour ce filtre'}</div>`
+              ? `<div class="gallery-empty">${savedCount === 0 ? 'Aucun rendu publié pour l'instant' : 'Aucun rendu pour ce filtre'}</div>`
               : `<div class="saved-gallery-grid">
-                  ${filteredSaved.map((item, idx) => {
+                  ${filteredSaved.map(item => {
                     const realIdx = galleryState.savedItems.indexOf(item);
                     return `
                       <div class="saved-img-card">
                         <img src="${item.imageUrl}" alt="${item.title}" loading="lazy" />
-                        <div class="saved-tags">
-                          ${(item.tags||[]).map(t => `<span class="saved-tag">${t}</span>`).join('')}
-                        </div>
+                        <div class="saved-tags">${(item.tags||[]).map(t=>`<span class="saved-tag">${t}</span>`).join('')}</div>
                         <div class="saved-actions">
                           <button class="saved-del" onclick="removeSavedItem(${realIdx})" title="Retirer">✕</button>
                         </div>
-                      </div>
-                    `;
+                      </div>`;
                   }).join('')}
-                </div>`
-            }
+                </div>`}
           </div>
         </div>
       </div>
 
-      <!-- Colonne droite : sélection en cours -->
+      <!-- Colonne droite : sélection -->
       <div class="gallery-panel" style="position:sticky;top:calc(var(--header-height) + 16px);">
         <div class="gallery-panel-header">
           <h3>🎯 Sélection en cours</h3>
@@ -1503,67 +1508,66 @@ function renderGalleryUI() {
                 Clique sur les images pour les sélectionner
               </div>`
             : `<div class="selection-preview">
-                ${galleryState.selection.map((item, idx) => `
-                  <div class="sel-item" id="sel-item-${idx}">
-                    <img src="${item.imageUrl}" alt="${item.title}" />
-                    <div class="sel-item-body">
-                      <div class="sel-item-title" title="${item.title}">${item.title}</div>
-                      <div class="sel-item-tags">
-                        ${(item.tags||[]).map(t => `
-                          <span class="sel-tag">${t}
-                            <button onclick="removeTagFromSelection(${idx},'${t}')" title="Retirer">×</button>
-                          </span>
-                        `).join('')}
+                ${galleryState.selection.map((item, idx) => {
+                  const nicheInfo = getNicheLabel(item.niche);
+                  const suggs = nicheTagSuggestions(item);
+                  return `
+                    <div class="sel-item">
+                      <img src="${item.imageUrl}" alt="${item.title}" />
+                      <div class="sel-item-body">
+                        <div class="sel-item-title" title="${item.title}">
+                          ${nicheInfo ? `<span style="background:${nicheInfo.color};color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-right:4px;">${nicheInfo.label}</span>` : ''}
+                          ${item.title}
+                        </div>
+                        <div class="sel-item-tags">
+                          ${(item.tags||[]).map(t => `
+                            <span class="sel-tag">${t}
+                              <button onclick="removeTagFromSelection(${idx},'${t}')" title="Retirer">×</button>
+                            </span>`).join('')}
+                        </div>
+                        <div class="tag-input-row">
+                          <input type="text" placeholder="Ajouter un tag…" id="tag-input-${idx}"
+                            onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addTagToSelection(${idx})}"
+                            list="tag-datalist-${idx}" />
+                          <button class="btn" style="padding:4px 8px;font-size:12px;" onclick="addTagToSelection(${idx})">+</button>
+                        </div>
+                        <datalist id="tag-datalist-${idx}">${suggs.map(t=>`<option value="${t}">`).join('')}</datalist>
+                        ${suggs.length > 0 ? `
+                          <div class="tag-suggestions" style="margin-top:4px;">
+                            ${suggs.filter(t=>!(item.tags||[]).includes(t)).map(t=>`<button class="tag-sug-btn" onclick="quickAddTag(${idx},'${t}')">${t}</button>`).join('')}
+                          </div>` : ''}
                       </div>
-                      <div class="tag-input-row">
-                        <input type="text" placeholder="Ajouter un tag…" id="tag-input-${idx}"
-                          onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addTagToSelection(${idx})}"
-                          list="tag-datalist" />
-                        <button class="btn" style="padding:4px 8px;font-size:12px;" onclick="addTagToSelection(${idx})">+</button>
-                      </div>
-                      ${tagsHtml ? `<div class="tag-suggestions" style="margin-top:4px;">${allTags.filter(t => !(item.tags||[]).includes(t)).map(t => `<button class="tag-sug-btn" onclick="quickAddTag(${idx},'${t}')">${t}</button>`).join('')}</div>` : ''}
-                    </div>
-                    <button class="sel-item-remove" onclick="removeFromSelection(${idx})" title="Retirer">✕</button>
-                  </div>
-                `).join('')}
-              </div>
-              <datalist id="tag-datalist">${allTags.map(t => `<option value="${t}">`).join('')}</datalist>`
-          }
+                      <button class="sel-item-remove" onclick="removeFromSelection(${idx})" title="Retirer">✕</button>
+                    </div>`;
+                }).join('')}
+              </div>`}
         </div>
       </div>
     </div>
   `;
 
-  // Ref globale pour toggle
   window._galleryImages = allImages;
 }
 
 function toggleSelection(idx) {
   const img = window._galleryImages[idx];
   if (!img) return;
-
   const existingIdx = galleryState.selection.findIndex(i => i.imageUrl === img.imageUrl);
   if (existingIdx >= 0) {
     galleryState.selection.splice(existingIdx, 1);
   } else {
-    if (isAlreadySaved(img.imageUrl)) {
-      showToast('Ce rendu est déjà dans la galerie publiée', 'warning');
-      return;
-    }
-    galleryState.selection.push({ ...img, tags: [] });
+    if (isAlreadySaved(img.imageUrl)) { showToast('Ce rendu est déjà publié', 'warning'); return; }
+    // Pré-remplir le tag niche automatiquement
+    const autoTags = [];
+    if (img.niche === 'running') autoTags.push('running');
+    if (img.niche === 'cf') autoTags.push('crossfit');
+    galleryState.selection.push({ ...img, tags: autoTags });
   }
   renderGalleryUI();
 }
 
-function removeFromSelection(idx) {
-  galleryState.selection.splice(idx, 1);
-  renderGalleryUI();
-}
-
-function clearSelection() {
-  galleryState.selection = [];
-  renderGalleryUI();
-}
+function removeFromSelection(idx) { galleryState.selection.splice(idx, 1); renderGalleryUI(); }
+function clearSelection() { galleryState.selection = []; renderGalleryUI(); }
 
 function addTagToSelection(selIdx) {
   const input = document.getElementById(`tag-input-${selIdx}`);
@@ -1571,9 +1575,7 @@ function addTagToSelection(selIdx) {
   const tag = input.value.trim().toLowerCase().replace(/,/g, '');
   if (!tag) return;
   if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
-  if (!galleryState.selection[selIdx].tags.includes(tag)) {
-    galleryState.selection[selIdx].tags.push(tag);
-  }
+  if (!galleryState.selection[selIdx].tags.includes(tag)) galleryState.selection[selIdx].tags.push(tag);
   input.value = '';
   renderGalleryUI();
 }
@@ -1581,10 +1583,7 @@ function addTagToSelection(selIdx) {
 function quickAddTag(selIdx, tag) {
   if (!galleryState.selection[selIdx]) return;
   if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
-  if (!galleryState.selection[selIdx].tags.includes(tag)) {
-    galleryState.selection[selIdx].tags.push(tag);
-    renderGalleryUI();
-  }
+  if (!galleryState.selection[selIdx].tags.includes(tag)) { galleryState.selection[selIdx].tags.push(tag); renderGalleryUI(); }
 }
 
 function removeTagFromSelection(selIdx, tag) {
@@ -1593,29 +1592,15 @@ function removeTagFromSelection(selIdx, tag) {
   renderGalleryUI();
 }
 
-function addTagSuggestion(tag) {
-  // Ajoute le tag à tous les items de sélection sans ce tag
-  galleryState.selection.forEach(item => {
-    if (!item.tags) item.tags = [];
-    if (!item.tags.includes(tag)) item.tags.push(tag);
-  });
-  renderGalleryUI();
-}
-
-function setFilter(tag) {
-  galleryState.activeFilter = tag;
-  renderGalleryUI();
-}
+function setFilter(tag) { galleryState.activeFilter = tag; renderGalleryUI(); }
 
 async function removeSavedItem(idx) {
   if (!confirm('Retirer ce rendu de la galerie ?')) return;
   galleryState.savedItems.splice(idx, 1);
   try {
     await galleryApi('save', { items: galleryState.savedItems });
-    showToast('Rendu retiré de la galerie');
-  } catch(e) {
-    showToast('Erreur sauvegarde: ' + e.message, 'error');
-  }
+    showToast('Rendu retiré');
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
   renderGalleryUI();
 }
 
@@ -1627,44 +1612,28 @@ async function loadMoreAndRefresh() {
 }
 
 async function loadAllOrdersDebug() {
-  // Mode debug : scan sans filtre tag pour trouver les vraies clés
   galleryState.browseLoading = true;
   try {
     const r = await galleryApi('fetchOrdersAll', { cursor: null });
     if (r.debug) {
-      alert(`Debug scan (sans filtre) :\n` +
-        `Commandes : ${r.debug.totalOrders}\n` +
-        `Avec images : ${r.debug.ordersWithImages}\n` +
-        `Clés attrs exemple : ${JSON.stringify(r.debug.sampleAttrs?.map(a=>a.key))}\n` +
-        `\n→ Si "Avec images" > 0, les images ont été trouvées !`
-      );
-      if (r.orders?.length > 0) {
-        galleryState.browseOrders = r.orders;
-        galleryState.lastDebug = r.debug;
-      }
+      const keys = r.debug.allUniqueAttrKeys || r.debug.sampleAttrs?.map(a=>a.key) || [];
+      alert(`Scan sans filtre :\nCommandes : ${r.debug.totalOrders}\nAvec images : ${r.debug.ordersWithImages}\nToutes les clés attrs : ${JSON.stringify(keys)}`);
+      if (r.orders?.length > 0) { galleryState.browseOrders = r.orders; galleryState.lastDebug = r.debug; }
     }
-  } catch(e) {
-    alert('Erreur debug: ' + e.message);
-  }
+  } catch(e) { alert('Erreur debug: ' + e.message); }
   galleryState.browseLoading = false;
   renderGalleryUI();
 }
 
 async function saveGallery() {
   if (galleryState.selection.length === 0) return;
-
-  // Vérifier que tous les items ont au moins un tag
   const untagged = galleryState.selection.filter(i => !i.tags || i.tags.length === 0);
-  if (untagged.length > 0) {
-    showToast(`${untagged.length} image(s) sans tag — ajoute au moins une catégorie`, 'warning');
-    return;
-  }
+  if (untagged.length > 0) { showToast(`${untagged.length} image(s) sans tag — ajoute au moins une catégorie`, 'warning'); return; }
 
   const btn = document.getElementById('btn-save-gallery');
   if (btn) { btn.disabled = true; btn.textContent = 'Sauvegarde…'; }
 
   try {
-    // Merger avec les items existants
     const newItems = [
       ...galleryState.savedItems,
       ...galleryState.selection.map(item => ({
@@ -1673,15 +1642,16 @@ async function saveGallery() {
         productId: item.productId,
         customizationId: item.customizationId,
         title: item.title,
+        niche: item.niche,
         tags: item.tags,
         addedAt: new Date().toISOString(),
       }))
     ];
-
     await galleryApi('save', { items: newItems });
+    const added = galleryState.selection.length;
     galleryState.savedItems = newItems;
     galleryState.selection = [];
-    showToast(`${newItems.length - galleryState.savedItems.length + galleryState.selection.length} rendu(s) ajouté(s) à la galerie !`);
+    showToast(`${added} rendu(s) ajouté(s) à la galerie !`);
     renderGalleryUI();
   } catch(e) {
     showToast('Erreur: ' + e.message, 'error');
