@@ -1663,3 +1663,491 @@ async function saveGallery() {
 </script>
 </body>
 </html>
+const galleryState = {
+  browseOrders: [],
+  browseCursor: null,
+  browseHasNext: false,
+  browseLoading: false,
+  selection: [],
+  savedItems: [],
+  savedLoaded: false,
+  activeFilter: 'all',
+  lastDebug: null,
+  showManualForm: false,
+};
+
+async function galleryApi(action, extra = {}) {
+  const res = await fetch(state.proxyUrl.replace('/api/shopify', '/api/gallery'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
+    body: JSON.stringify({ action, ...extra }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  return json;
+}
+
+function getAllTags() {
+  const tags = new Set();
+  galleryState.savedItems.forEach(item => item.tags?.forEach(t => tags.add(t)));
+  galleryState.selection.forEach(item => item.tags?.forEach(t => tags.add(t)));
+  return [...tags].sort();
+}
+
+async function renderGalleryTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement de la galerie…</div>`;
+
+  if (!galleryState.savedLoaded) {
+    try {
+      const r = await galleryApi('get');
+      galleryState.savedItems = r.items || [];
+      galleryState.savedLoaded = true;
+    } catch(e) {
+      galleryState.savedItems = [];
+      galleryState.savedLoaded = true;
+    }
+  }
+
+  if (galleryState.browseOrders.length === 0 && !galleryState.browseLoading) {
+    await loadMoreBrowseOrders();
+  }
+
+  renderGalleryUI();
+}
+
+async function loadMoreBrowseOrders() {
+  if (galleryState.browseLoading) return;
+  galleryState.browseLoading = true;
+  try {
+    const r = await galleryApi('fetchOrders', { cursor: galleryState.browseCursor });
+    galleryState.browseOrders.push(...(r.orders || []));
+    galleryState.browseCursor = r.pageInfo?.endCursor || null;
+    galleryState.browseHasNext = r.pageInfo?.hasNextPage || false;
+    galleryState.lastDebug = r.debug || null;
+  } catch(e) {
+    console.error('Erreur chargement commandes:', e);
+    galleryState.lastDebug = { error: e.message };
+  }
+  galleryState.browseLoading = false;
+}
+
+function getImageAndCustId(li) {
+  const imageUrl = li._imageUrl
+    || li.customAttributes?.find(a => ['_customization_image','customization-image','customization_image'].includes(a.key))?.value
+    || null;
+  const customizationId = li._customizationId
+    || li.customAttributes?.find(a => ['_customization_id','customization-id','customization_id'].includes(a.key))?.value
+    || null;
+  return { imageUrl, customizationId };
+}
+
+function getNicheLabel(niche) {
+  if (niche === 'running') return { label: 'Running', color: '#1a73e8' };
+  if (niche === 'cf') return { label: 'CrossFit', color: '#d93025' };
+  return null;
+}
+
+function isAlreadySaved(imageUrl) { return galleryState.savedItems.some(i => i.imageUrl === imageUrl); }
+function isInSelection(imageUrl) { return galleryState.selection.some(i => i.imageUrl === imageUrl); }
+
+function renderManualForm() {
+  const allTags = getAllTags();
+  return `
+    <div class="gallery-panel" style="margin-bottom:16px;border:2px dashed var(--primary);">
+      <div class="gallery-panel-header">
+        <h3>✏️ Ajout manuel</h3>
+        <button class="btn" style="font-size:12px;padding:4px 8px;" onclick="galleryState.showManualForm=false;renderGalleryUI()">✕ Fermer</button>
+      </div>
+      <div class="gallery-panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Image URL *</label>
+            <input id="mf-imageUrl" type="url" placeholder="https://cdn.teeinblue.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Customization ID *</label>
+            <input id="mf-custId" type="text" placeholder="1a33ab74-2dcf-49a0-b509-..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Handle produit *</label>
+            <input id="mf-handle" type="text" placeholder="t-shirt-running-personnalise" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Variant ID (pour couleur)</label>
+            <input id="mf-variantId" type="text" placeholder="47332888510766" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />
+            <div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Visible dans l'URL Shopify admin du variant</div>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Titre / description</label>
+            <input id="mf-title" type="text" placeholder="T-shirt Running Bleu" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Niche</label>
+            <select id="mf-niche" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);">
+              <option value="">— Sélectionner —</option>
+              <option value="running">🏃 Running</option>
+              <option value="cf">🏋️ CrossFit</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags (séparés par virgule) *</label>
+          <input id="mf-tags" type="text" placeholder="running, trail, strava..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />
+          ${allTags.length > 0 ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">${allTags.map(t=>`<button class="tag-sug-btn" onclick="document.getElementById('mf-tags').value+=('${t},')">${t}</button>`).join('')}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-primary" onclick="submitManualItem()" style="flex:1;">💾 Ajouter à la galerie</button>
+          <div id="mf-preview" style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;">
+            <img id="mf-preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:none;" />
+          </div>
+        </div>
+        <div id="mf-error" style="color:var(--critical);font-size:12px;margin-top:6px;display:none;"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function submitManualItem() {
+  const imageUrl = document.getElementById('mf-imageUrl').value.trim();
+  const custId = document.getElementById('mf-custId').value.trim();
+  const handle = document.getElementById('mf-handle').value.trim();
+  const variantId = document.getElementById('mf-variantId').value.trim();
+  const title = document.getElementById('mf-title').value.trim() || handle;
+  const niche = document.getElementById('mf-niche').value;
+  const tagsRaw = document.getElementById('mf-tags').value;
+  const tags = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  const errEl = document.getElementById('mf-error');
+
+  if (!imageUrl || !custId || !handle) {
+    errEl.textContent = 'Image URL, Customization ID et Handle sont obligatoires';
+    errEl.style.display = 'block'; return;
+  }
+  if (tags.length === 0) {
+    errEl.textContent = 'Ajoute au moins un tag';
+    errEl.style.display = 'block'; return;
+  }
+  if (isAlreadySaved(imageUrl)) {
+    errEl.textContent = 'Cette image est déjà dans la galerie';
+    errEl.style.display = 'block'; return;
+  }
+
+  errEl.style.display = 'none';
+
+  const newItem = {
+    imageUrl, customizationId: custId,
+    productHandle: handle, variantId: variantId || null,
+    title, niche: niche || null, tags,
+    addedAt: new Date().toISOString(),
+  };
+
+  try {
+    const newItems = [...galleryState.savedItems, newItem];
+    await galleryApi('save', { items: newItems });
+    galleryState.savedItems = newItems;
+    galleryState.showManualForm = false;
+    showToast('Rendu ajouté à la galerie !');
+    renderGalleryUI();
+  } catch(e) {
+    errEl.textContent = 'Erreur: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function renderGalleryUI() {
+  const c = document.getElementById('content');
+  const savedCount = galleryState.savedItems.length;
+  const selCount = galleryState.selection.length;
+  const allTags = getAllTags();
+
+  const allImages = [];
+  galleryState.browseOrders.forEach(order => {
+    order.lineItems.edges.forEach(({ node: li }) => {
+      const { imageUrl, customizationId } = getImageAndCustId(li);
+      if (!imageUrl) return;
+      allImages.push({
+        imageUrl, customizationId,
+        productHandle: li.variant?.product?.handle || null,
+        productId: li.variant?.product?.id || null,
+        variantId: li._variantId || null,
+        variantTitle: li._variantTitle || null,
+        title: li.title,
+        orderName: order.name,
+        niche: li._niche || null,
+      });
+    });
+  });
+
+  const uniqueTags = [...new Set(galleryState.savedItems.flatMap(i => i.tags || []))].sort();
+  const filteredSaved = galleryState.activeFilter === 'all'
+    ? galleryState.savedItems
+    : galleryState.savedItems.filter(i => i.tags?.includes(galleryState.activeFilter));
+
+  function nicheTagSuggestions(item) {
+    const suggs = [];
+    if (item.niche === 'running') suggs.push('running');
+    if (item.niche === 'cf') suggs.push('crossfit');
+    allTags.filter(t => !(item.tags||[]).includes(t) && !suggs.includes(t)).forEach(t => suggs.push(t));
+    return suggs;
+  }
+
+  c.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-size:18px;font-weight:700;">🖼️ Galerie inspirationnelle</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="galleryState.showManualForm=!galleryState.showManualForm;renderGalleryUI()">✏️ Ajout manuel</button>
+        <button class="btn btn-primary" onclick="saveGallery()" id="btn-save-gallery" ${selCount === 0 ? 'disabled' : ''}>
+          💾 Sauvegarder (${selCount})
+        </button>
+      </div>
+    </div>
+
+    ${galleryState.showManualForm ? renderManualForm() : ''}
+
+    <div class="gallery-layout">
+      <div>
+        <div class="gallery-panel" style="margin-bottom:16px;">
+          <div class="gallery-panel-header">
+            <h3>📦 Rendus des commandes</h3>
+            <span style="font-size:12px;color:var(--text-sub)">${allImages.length} images</span>
+          </div>
+          <div class="gallery-panel-body">
+            ${allImages.length === 0 ? `
+              <div class="gallery-empty">
+                Aucune image teeinblue trouvée
+                ${galleryState.lastDebug ? `
+                  <div style="margin-top:12px;font-size:11px;color:var(--text-sub);text-align:left;background:var(--bg);padding:10px;border-radius:6px;max-width:420px;margin:12px auto 0;">
+                    <strong>Debug :</strong> ${galleryState.lastDebug.totalOrders || 0} commandes scannées,
+                    ${galleryState.lastDebug.ordersWithImages || 0} avec images<br>
+                    ${galleryState.lastDebug.sampleAttrs?.length > 0 ? `Clés : ${galleryState.lastDebug.sampleAttrs.map(a=>a.key).join(', ')}` : 'Pas de customAttributes'}
+                    ${galleryState.lastDebug.error ? `<br><span style="color:var(--critical)">${galleryState.lastDebug.error}</span>` : ''}
+                    <br><br><button class="btn" style="font-size:11px;padding:4px 8px;" onclick="loadAllOrdersDebug()">🔍 Scanner sans filtre</button>
+                  </div>` : ''}
+              </div>
+            ` : `
+              <div class="order-browse-grid">
+                ${allImages.map((img, idx) => {
+                  const nicheInfo = getNicheLabel(img.niche);
+                  const inSel = isInSelection(img.imageUrl);
+                  const saved = isAlreadySaved(img.imageUrl);
+                  return `
+                    <div class="order-img-card ${inSel ? 'selected' : ''}" onclick="toggleSelection(${idx})">
+                      <img src="${img.imageUrl}" alt="${img.title}" loading="lazy" />
+                      ${saved ? `<span class="img-added">✓ Publié</span>` : ''}
+                      ${nicheInfo ? `<span style="position:absolute;top:5px;${saved?'left:58px':'left:5px'};background:${nicheInfo.color};color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;">${nicheInfo.label}</span>` : ''}
+                      ${img.variantTitle && img.variantTitle !== 'Default Title' ? `<span style="position:absolute;bottom:22px;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 5px;text-align:center;">${img.variantTitle}</span>` : ''}
+                      <div class="img-meta">${img.orderName}</div>
+                      <div class="img-check">✓</div>
+                    </div>`;
+                }).join('')}
+              </div>
+              ${galleryState.browseHasNext ? `<button class="btn gallery-load-more" onclick="loadMoreAndRefresh()">Charger plus</button>` : ''}
+            `}
+          </div>
+        </div>
+
+        <div class="gallery-panel">
+          <div class="gallery-panel-header">
+            <h3>✅ Galerie publiée (${savedCount})</h3>
+          </div>
+          <div class="gallery-panel-body">
+            ${uniqueTags.length > 0 ? `
+              <div class="gallery-filter-bar">
+                <button class="filter-tag-btn ${galleryState.activeFilter==='all'?'active':''}" onclick="setFilter('all')">Tout</button>
+                ${uniqueTags.map(t=>`<button class="filter-tag-btn ${galleryState.activeFilter===t?'active':''}" onclick="setFilter('${t}')">${t}</button>`).join('')}
+              </div>` : ''}
+            ${filteredSaved.length === 0
+              ? `<div class="gallery-empty">${savedCount === 0 ? "Aucun rendu publié pour l'instant" : 'Aucun rendu pour ce filtre'}</div>`
+              : `<div class="saved-gallery-grid">
+                  ${filteredSaved.map(item => {
+                    const realIdx = galleryState.savedItems.indexOf(item);
+                    const nicheInfo = getNicheLabel(item.niche);
+                    return `
+                      <div class="saved-img-card">
+                        <img src="${item.imageUrl}" alt="${item.title}" loading="lazy" />
+                        ${nicheInfo ? `<span style="position:absolute;top:4px;left:4px;background:${nicheInfo.color};color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;">${nicheInfo.label}</span>` : ''}
+                        <div class="saved-tags">${(item.tags||[]).map(t=>`<span class="saved-tag">${t}</span>`).join('')}</div>
+                        ${item.variantId ? `<div style="font-size:9px;color:var(--text-sub);padding:0 4px 4px;text-align:center;">variant ${item.variantId.slice(-6)}</div>` : ''}
+                        <div class="saved-actions"><button class="saved-del" onclick="removeSavedItem(${realIdx})">✕</button></div>
+                      </div>`;
+                  }).join('')}
+                </div>`}
+          </div>
+        </div>
+      </div>
+
+      <!-- Sélection -->
+      <div class="gallery-panel" style="position:sticky;top:calc(var(--header-height) + 16px);">
+        <div class="gallery-panel-header">
+          <h3>🎯 Sélection (${selCount})</h3>
+          ${selCount > 0 ? `<button class="btn" style="font-size:12px;padding:4px 8px;" onclick="clearSelection()">Vider</button>` : ''}
+        </div>
+        <div class="gallery-panel-body">
+          ${selCount === 0
+            ? `<div class="gallery-empty" style="padding:20px;"><div style="font-size:32px;margin-bottom:8px;">👆</div>Clique sur les images</div>`
+            : `<div class="selection-preview">
+                ${galleryState.selection.map((item, idx) => {
+                  const nicheInfo = getNicheLabel(item.niche);
+                  const suggs = nicheTagSuggestions(item);
+                  return `
+                    <div class="sel-item">
+                      <img src="${item.imageUrl}" alt="${item.title}" />
+                      <div class="sel-item-body">
+                        <div class="sel-item-title">
+                          ${nicheInfo ? `<span style="background:${nicheInfo.color};color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-right:3px;">${nicheInfo.label}</span>` : ''}
+                          ${item.title}
+                        </div>
+                        ${item.variantTitle && item.variantTitle !== 'Default Title' ? `<div style="font-size:11px;color:var(--text-sub);margin-bottom:4px;">🎨 ${item.variantTitle}</div>` : ''}
+                        <div class="sel-item-tags">
+                          ${(item.tags||[]).map(t=>`<span class="sel-tag">${t}<button onclick="removeTagFromSelection(${idx},'${t}')">×</button></span>`).join('')}
+                        </div>
+                        <div class="tag-input-row">
+                          <input type="text" placeholder="Tag…" id="tag-input-${idx}"
+                            onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addTagToSelection(${idx})}"
+                            list="tag-dl-${idx}" />
+                          <button class="btn" style="padding:4px 8px;font-size:12px;" onclick="addTagToSelection(${idx})">+</button>
+                        </div>
+                        <datalist id="tag-dl-${idx}">${suggs.map(t=>`<option value="${t}">`).join('')}</datalist>
+                        ${suggs.filter(t=>!(item.tags||[]).includes(t)).length > 0 ? `
+                          <div class="tag-suggestions" style="margin-top:4px;">
+                            ${suggs.filter(t=>!(item.tags||[]).includes(t)).map(t=>`<button class="tag-sug-btn" onclick="quickAddTag(${idx},'${t}')">${t}</button>`).join('')}
+                          </div>` : ''}
+                      </div>
+                      <button class="sel-item-remove" onclick="removeFromSelection(${idx})">✕</button>
+                    </div>`;
+                }).join('')}
+              </div>`}
+        </div>
+      </div>
+    </div>
+  `;
+
+  window._galleryImages = allImages;
+
+  // Preview image dans le formulaire manuel
+  if (galleryState.showManualForm) {
+    const urlInput = document.getElementById('mf-imageUrl');
+    const previewImg = document.getElementById('mf-preview-img');
+    if (urlInput && previewImg) {
+      urlInput.addEventListener('input', () => {
+        const url = urlInput.value.trim();
+        if (url) { previewImg.src = url; previewImg.style.display = 'block'; }
+        else previewImg.style.display = 'none';
+      });
+    }
+  }
+}
+
+function toggleSelection(idx) {
+  const img = window._galleryImages[idx];
+  if (!img) return;
+  const existingIdx = galleryState.selection.findIndex(i => i.imageUrl === img.imageUrl);
+  if (existingIdx >= 0) {
+    galleryState.selection.splice(existingIdx, 1);
+  } else {
+    if (isAlreadySaved(img.imageUrl)) { showToast("Déjà publié", 'warning'); return; }
+    const autoTags = [];
+    if (img.niche === 'running') autoTags.push('running');
+    if (img.niche === 'cf') autoTags.push('crossfit');
+    galleryState.selection.push({ ...img, tags: autoTags });
+  }
+  renderGalleryUI();
+}
+
+function removeFromSelection(idx) { galleryState.selection.splice(idx, 1); renderGalleryUI(); }
+function clearSelection() { galleryState.selection = []; renderGalleryUI(); }
+
+function addTagToSelection(selIdx) {
+  const input = document.getElementById(`tag-input-${selIdx}`);
+  if (!input) return;
+  const tag = input.value.trim().toLowerCase().replace(/,/g, '');
+  if (!tag) return;
+  if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
+  if (!galleryState.selection[selIdx].tags.includes(tag)) galleryState.selection[selIdx].tags.push(tag);
+  input.value = '';
+  renderGalleryUI();
+}
+
+function quickAddTag(selIdx, tag) {
+  if (!galleryState.selection[selIdx]) return;
+  if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
+  if (!galleryState.selection[selIdx].tags.includes(tag)) { galleryState.selection[selIdx].tags.push(tag); renderGalleryUI(); }
+}
+
+function removeTagFromSelection(selIdx, tag) {
+  if (!galleryState.selection[selIdx]) return;
+  galleryState.selection[selIdx].tags = galleryState.selection[selIdx].tags.filter(t => t !== tag);
+  renderGalleryUI();
+}
+
+function setFilter(tag) { galleryState.activeFilter = tag; renderGalleryUI(); }
+
+async function removeSavedItem(idx) {
+  if (!confirm('Retirer ce rendu ?')) return;
+  galleryState.savedItems.splice(idx, 1);
+  try {
+    await galleryApi('save', { items: galleryState.savedItems });
+    showToast('Retiré');
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+  renderGalleryUI();
+}
+
+async function loadMoreAndRefresh() {
+  const btn = document.getElementById('btn-load-more');
+  if (btn) { btn.disabled = true; btn.textContent = 'Chargement…'; }
+  await loadMoreBrowseOrders();
+  renderGalleryUI();
+}
+
+async function loadAllOrdersDebug() {
+  galleryState.browseLoading = true;
+  try {
+    const r = await galleryApi('fetchOrdersAll', { cursor: null });
+    if (r.debug) {
+      const keys = r.debug.allUniqueAttrKeys || r.debug.sampleAttrs?.map(a=>a.key) || [];
+      alert(`Sans filtre :\nCommandes : ${r.debug.totalOrders}\nAvec images : ${r.debug.ordersWithImages}\nClés : ${JSON.stringify(keys)}`);
+      if (r.orders?.length > 0) { galleryState.browseOrders = r.orders; galleryState.lastDebug = r.debug; }
+    }
+  } catch(e) { alert('Erreur: ' + e.message); }
+  galleryState.browseLoading = false;
+  renderGalleryUI();
+}
+
+async function saveGallery() {
+  if (galleryState.selection.length === 0) return;
+  const untagged = galleryState.selection.filter(i => !i.tags || i.tags.length === 0);
+  if (untagged.length > 0) { showToast(`${untagged.length} image(s) sans tag`, 'warning'); return; }
+
+  const btn = document.getElementById('btn-save-gallery');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sauvegarde…'; }
+
+  try {
+    const newItems = [
+      ...galleryState.savedItems,
+      ...galleryState.selection.map(item => ({
+        imageUrl: item.imageUrl,
+        productHandle: item.productHandle,
+        variantId: item.variantId || null,
+        customizationId: item.customizationId,
+        title: item.title,
+        niche: item.niche,
+        tags: item.tags,
+        addedAt: new Date().toISOString(),
+      }))
+    ];
+    await galleryApi('save', { items: newItems });
+    const added = galleryState.selection.length;
+    galleryState.savedItems = newItems;
+    galleryState.selection = [];
+    showToast(`${added} rendu(s) ajouté(s) !`);
+    renderGalleryUI();
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Sauvegarder'; }
+  }
+}
+
+
+</script>
+</body>
+</html>
