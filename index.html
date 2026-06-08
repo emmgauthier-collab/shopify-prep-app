@@ -1,369 +1,3 @@
-
-Claude a terminé la réponse.
-j'aimerais réaliser une page sur mon site shopify qui recense par catégorie des rendus de tshirts qui pourrait inspirer les gens.  il est possible de récupérer les rendus image de teein blue par le metafield customization-image qu'on retrouve dans les lines items. Ensuite il faut pointer sur le produit avec le customisation id parametre ddans l'url pour permettre à l'utilisateur de retrouver le meme design. Donc en gros il faudrait je pense un back office pour selectionner les rendus sympa, et les catégoriser (tags) et sur le front, avoir une page qui retrace tous les images avec un lein vers le produit, voici la doc de teeinblue : How to Prefill Personalization Options Using a customization_id in the URL
-Overview
-Did you know that you can share a product link that already has all the personalization options pre-selected? By using the  customization-id  parameter in your product URL, Teeinblue will automatically load the specific options previously chosen.
-
-Step 1: Generate the Customization ID
-First, you need to act as a customer to generate the customization_id for your desired configuration:
-
-Go to your storefront and navigate to the product page.
-Select all the personalization options (text, images, clipart, etc.) that you want to prefill.
-Click Add to Cart.
-Step 2: Retrieve the Customization ID
-Once the product is in the cart, Shopify assigns it a customization_id from Teeinblue:
-
-Navigate to your cart page, then add .json to the end of the URL (e.g., your-store.com/cart.json).
-Look for the property named _customization_id. Copy the value of this ID.Example:"_customization_id":"1a33ab74-2dcf-49a0-b509-263d4348cd95"
-Afficher plus
-09:21
-Je comprends bien le projet ! En résumé :
-
-Back-office : sélectionner des rendus (images teeinblue via metafield), les taguer par catégorie, les sauvegarder Front : galerie inspirationnelle par catégorie avec lien vers le produit pré-configuré via customization_id
-
-Quelques questions avant de me lancer :
-
-Q : Pour le back-office, où préfères-tu qu'il tourne ?
-R : on peut mettre le code dans le vercel qu'on a déja créé (assistant personnalisation)
-
-Q : Pour stocker les sélections (images choisies + tags), quelle solution ?
-R : 1
-
-Q : Les catégories (tags) sont-elles déjà définies ou à créer librement ?
-R : À définir librement dans le back-office
-
-09:23
-Parfait. Donc l'architecture sera :
-
-Back-office : app Next.js sur Vercel (repo emmgauthier-collab) avec auth simple
-Stockage : Metafields Shopify sur une ressource dédiée (ex: shop metafield namespace rxwear_gallery)
-Front : page Liquid dans le thème Symmetry qui lit ces metafields
-Avant de coder, j'ai besoin de quelques infos techniques :
-
-Q : Le repo Vercel de l'assistant personnalisation, il s'appelle comment sur GitHub ? (pour que je structure le code dans le bon contexte)
-R : https://shopify-prep-app.vercel.app/ on l'a créé ensemble déja
-
-Q : Pour écrire les metafields Shopify depuis le back-office Vercel, comment gère-t-on l’auth Shopify Admin API ?
-R : j'ai pas compris
-
-Q : La source des rendus à afficher dans le back-office : on browse quoi pour choisir ?
-R : Orders (lignes de commande avec customization-image)
-
-09:24
-OK, je me souviens de l'app. Pour l'auth Shopify, pas de souci — je vais t'expliquer simplement.
-
-
-Relevant chats
-Relevant chats
-Je retrouve le contexte. Pour l'auth Shopify, voici l'explication simple :
-
-Le back-office sur Vercel a besoin de parler à l'API Admin Shopify pour :
-
-Lire les commandes (récupérer les images teeinblue)
-Écrire les metafields (sauvegarder ta sélection de galerie)
-Pour ça, il faut un token Admin API Shopify stocké en variable d'environnement sur Vercel. Tu l'as probablement déjà si l'app shopify-prep-app tourne — c'est le même token.
-
-Q : L'app shopify-prep-app sur Vercel a-t-elle déjà un token Shopify Admin API configuré ?
-R : Oui, j'ai déjà un token Admin API Shopify configuré sur Vercel
-
-Q : L'app shopify-prep-app est en quelle techno ? (pour que je reste cohérent)
-R : je vais te montrer le code
-
-09:25
-Montre-moi le code, je vais analyser la structure et partir de là pour intégrer la galerie proprement.
-
-
-shopify-prep-app-main.zip
-zip
-
-09:25
-
-Exécuté 5 commandes, consulté un fichier
-Exécuté 5 commandes, consulté un fichier
-Parfait, j'ai tout ce qu'il me faut. L'architecture est claire :
-
-HTML/JS pur avec proxy Vercel (api/shopify.js)
-Auth par password en header X-App-Password
-GraphQL Shopify via gql() helper
-Les images teeinblue sont dans li.variant.metafield(namespace:"teeinblue", key:"customization_image") ou dans customAttributes._customization_image
-Le _customization_id est dans les customAttributes
-Je vais créer :
-
-gallery.html — le back-office galerie (nouvel onglet dans l'app)
-api/gallery.js — endpoint Vercel pour lire/écrire les metafields shop
-gallery-front.liquid + page.gallery.json — la page vitrine Shopify
-
-Exécuté 3 commandes
-Exécuté 3 commandes
-J'ai tout ce qu'il faut. Je vais maintenant produire les 4 fichiers. C'est un gros chantier, je commence :
-
-
-5 fichiers créés, exécuté 4 commandes, lu un fichier
-5 fichiers créés, exécuté 4 commandes, lu un fichier
-Voilà les 5 fichiers + le zip. Voici ce que tu as :
-
-api/gallery.js — Endpoint Vercel qui gère 3 actions :
-
-fetchOrders → parcourt les commandes et retourne uniquement les line items ayant une image teeinblue
-get → lit le metafield rxwear_gallery.items du shop
-save → écrit/met à jour ce metafield (JSON array)
-gallery-backoffice-tab.html — Code à intégrer dans ton index.html existant. C'est un fichier d'instructions avec le CSS et JS à copier-coller. Le fichier README détaille exactement les 4 endroits à modifier (onglet, switchTab, CSS, JS).
-
-rxwear-gallery.liquid — Section Shopify complète avec :
-
-Lecture du metafield en Liquid
-Filtres par tag (JS côté client, sans rechargement)
-Lien vers le produit avec ?customization_id=xxx pour le pré-remplissage Teeinblue
-Overlay "Créer ce design" au survol
-Toutes les options configurables depuis le customizer Shopify
-page.gallery.json — Template à uploader dans templates/, puis créer une page Shopify avec ce template.
-
-Point important sur le metafield : il faut aller dans Shopify Admin > Settings > Custom data > Shop et créer le metafield rxwear_gallery / items de type JSON pour que Liquid puisse le lire avec shop.metafields.rxwear_gallery.items.value. Sans ça l'API fonctionne mais le front Liquid ne verra rien.
-
-
-Gallery feature
-ZIP 
-
-Gallery
-JS 
-
-Gallery backoffice tab
-Code · HTML 
-
-Rxwear gallery
-LIQUID 
-
-Page.gallery
-Code · JSON 
-
-Readme gallery
-Document · MD 
-1780905513438_image.png
-j'ai rien qui saffiche
-
-09:58
-Je vois le problème — l'onglet Galerie est bien là et la structure s'affiche, mais "0 images trouvées". L'API fetchOrders ne remonte rien.
-
-Le souci probable : la requête GraphQL dans gallery.js filtre avec q: 'status:any' mais cherche les metafields teeinblue sur li.variant — or dans beaucoup de commandes, le variant peut être null ou le metafield pas chargé.
-
-Laisse-moi voir le vrai problème :
-
-
-A consulté 2 fichiers
-A consulté 2 fichiers
-J'identifie deux problèmes :
-
-status:any n'est pas une query valide pour les orders Shopify — ça retourne 0 résultats
-Le metafield teeinblue est sur le variant en base de données, mais l'image dans les commandes est plutôt dans les customAttributes du line item (_customization_image) — le metafield variant ne sera présent que si Teeinblue le met à jour côté variant, ce qui n'est pas toujours le cas
-Je corrige :
-
-
-Corriger gallery.js
-Corriger gallery.js
-Maintenant il y a aussi un deuxième problème dans le JS front : si fetchOrders retourne 0 résultats avec tag:custom, c'est peut-être que tes commandes teeinblue n'ont pas ce tag. Je dois aussi mettre à jour le back-office pour afficher le debug et tester sans filtre :
-
-
-Exécuté 2 commandes
-Exécuté 2 commandes
-Le vrai problème est que le filtre tag:custom dans la query GraphQL est trop restrictif — tes commandes teeinblue ont peut-être un autre tag. Je remplace par une query sans filtre (toutes les commandes récentes) ET j'ajoute un mode debug visible dans l'UI :
-
-
-Exécuté 5 commandes, lu un fichier
-Exécuté 5 commandes, lu un fichier
-Deux fichiers à remplacer sur ton repo. Ce qui a changé :
-
-api/gallery.js — 3 corrections :
-
-Suppression du filtre status:any qui était invalide → remplacé par tag:custom avec tri par date décroissante
-Ajout d'une 2ème fonction fetchAllOrdersWithImages sans aucun filtre (pour le debug)
-Détection de l'image avec toutes les variantes de clé : _customization_image, customization-image, customization_image
-gallery-backoffice-tab.html — 2 corrections :
-
-getImageAndCustId cherche maintenant les 3 variantes de nommage de la clé image
-Si 0 images → affiche un bloc debug qui montre combien de commandes ont été scannées et quelles clés customAttributes ont été trouvées, avec un bouton "Scanner sans filtre" qui appellera fetchOrdersAll pour voir ce qui existe vraiment dans tes commandes
-Procédure de test après déploiement :
-
-Déploie les 2 fichiers → Vercel rebuild
-Ouvre l'onglet Galerie → si toujours 0, clique sur "Scanner sans filtre"
-L'alert te dira exactement quelles clés sont dans tes commandes (ex: _customization_image vs teeinblue_image etc.)
-Envoie-moi ce résultat si ça coince encore
-
-Gallery feature v2
-ZIP 
-
-Gallery
-JS 
-
-Gallery backoffice tab
-Code · HTML 
-je fichier backoffice tab cest quoi que je dois mettre à jour ?
-
-10:05
-Le fichier gallery-backoffice-tab.html n'est pas un fichier à uploader directement — c'est un fichier d'instructions avec du code à copier-coller dans ton index.html existant.
-
-Concrètement, tu as 2 choses à mettre à jour dans index.html :
-
-1. Le JS — remplacer les fonctions galerie existantes
-
-Dans index.html, trouve le bloc <script id="gallery-js-to-copy"> que tu avais collé la première fois, et remplace-le entièrement par le nouveau bloc <script id="gallery-js-to-copy"> du nouveau fichier.
-
-2. Rien d'autre — le CSS et l'onglet tab sont déjà en place depuis la v1.
-
-En pratique : ouvre gallery-backoffice-tab.html, copie tout le contenu entre <script id="gallery-js-to-copy"> et </script>, et remplace le bloc correspondant dans ton index.html.
-
-Sinon, si tu veux que je te génère directement un index.html complet avec tout intégré, envoie-moi ton index.html actuel (celui que tu as modifié avec la v1) et je te sors la version finale prête à déployer.
-
-refais moi le index ça sera plus simple
-
-10:05
-Envoie-moi ton index.html actuel (celui modifié avec la v1) et je te sors la version finale complète.
-
-
-index (1).html
-html
-
-10:10
-
-Exécuté 4 commandes
-Exécuté 4 commandes
-Bon, j'ai tout ce qu'il faut. Je vais maintenant reconstruire le index.html complet en remplaçant proprement le bloc galerie par la version corrigée.
-
-
-Exécuté 3 commandes, lu un fichier
-Exécuté 3 commandes, lu un fichier
-Voilà. Tu remplace ton index.html sur le repo par ce fichier, et tu déploies sur Vercel.
-
-N'oublie pas de déployer aussi le gallery.js corrigé (v2) dans api/ si ce n'est pas encore fait — c'est lui qui contient le fetchOrdersAll sans filtre.
-
-Après déploiement, si toujours 0 images → clique sur "🔍 Scanner sans filtre" qui apparaîtra dans le message d'erreur, et une alerte te dira exactement quelles clés sont présentes dans tes commandes.
-
-
-Index
-Code · HTML 
-1780906378689_image.png
-1780906392498_image.png
-10:13
-Erreur : Unauthorized — le endpoint /api/gallery n'est pas encore déployé sur Vercel (ou le rewrite manque dans vercel.json).
-
-Le front envoie bien la requête mais Vercel retourne 401 car il ne trouve pas la route /api/gallery.
-
-Vérifie deux choses :
-
-1. Le fichier vercel.json doit contenir les deux rewrites :
-
-json
-{
-  "rewrites": [
-    { "source": "/api/shopify", "destination": "/api/shopify.js" },
-    { "source": "/api/gallery", "destination": "/api/gallery.js" }
-  ]
-}
-2. Le fichier api/gallery.js est bien présent dans ton repo GitHub (dossier api/).
-
-Est-ce que tu as bien pushé le gallery.js dans le dossier api/ sur GitHub ? Et mis à jour le vercel.json ?
-
-oui pr le 1 et 2 cest bon, j'ai cette erreur quand je clique sur rechercher sans filtre
-
-10:14
-L'erreur Unauthorized vient du endpoint lui-même — le password n'est pas transmis correctement dans loadAllOrdersDebug. Regarde la fonction dans le JS :
-
-
-Vérifier comment galleryApi envoie le password
-Vérifier comment galleryApi envoie le password
-Trouvé. Le problème est ligne 1291 : state.password — mais dans cet app, le mot de passe est stocké dans sessionStorage et lu via une autre clé. Regardons comment gql() le fait :
-
-
-Voir comment gql() envoie le password
-Voir comment gql() envoie le password
-Voilà le bug : gql() utilise state.appPassword mais galleryApi utilise state.password (qui n'existe pas). Correction rapide :
-
-
-Exécuté 3 commandes, lu un fichier
-Exécuté 3 commandes, lu un fichier
-C'était ça — galleryApi envoyait state.password qui n'existe pas, alors que partout ailleurs dans l'app c'est state.appPassword. Résultat : le header X-App-Password était vide → Unauthorized.
-
-Remplace le index.html sur GitHub et redéploie. Ça devrait maintenant scanner les commandes.
-
-
-Index
-Code · HTML 
-ok donc la ca marche bien coté back, par contre coté front jai rien qui apaprait. Dailleurs j'aimerais pouvoir distinguer 2 niches : le running et cf, qui sont facile a distinguer, leur produit ont un tag : custom (pour le cf) et customrunning pour le running
-
-10:20
-Super que le back marche ! Pour le front, deux problèmes probables :
-
-Le metafield rxwear_gallery.items n'est pas encore défini comme type JSON dans Shopify → Liquid ne peut pas le lire
-La page n'a pas encore le bon template assigné
-Et pour les 2 niches, je vais adapter le système pour que les tags "cf" et "running" soient proposés automatiquement selon le tag produit de la commande.
-
-Laisse-moi d'abord corriger les deux fichiers :
-
-
-Exécuté 2 commandes
-Exécuté 2 commandes
-OK, j'ai tout le contexte. Je refais les deux fichiers proprement :
-
-gallery.js — ajoute les tags produit (custom → "cf", customrunning → "running") dans les données retournées rxwear-gallery.liquid — corrige la lecture du metafield + améliore le rendu visuel avec distinction CF/Running
-
-
-Réécrire gallery.js avec détection niche
-Réécrire gallery.js avec détection niche
-Maintenant le JS du back-office pour auto-suggérer la niche et utiliser _imageUrl / _niche :
-
-
-Réécrire le bloc galerie JS dans index_final.html
-Réécrire le bloc galerie JS dans index_final.html
-Maintenant la section Liquid front, corrigée pour lire proprement le metafield :
-
-
-Exécuté 2 commandes, lu un fichier
-Exécuté 2 commandes, lu un fichier
-3 fichiers à déployer :
-
-index.html → GitHub (remplace l'existant) — corrige le bug state.password + détection niche automatique dans le back-office
-
-api/gallery.js → GitHub dans api/ — récupère les tags produit pour détecter customrunning → "running" et custom → "cf", et pré-remplit le tag automatiquement quand tu sélectionnes une image
-
-rxwear-gallery.liquid → Shopify thème sections/ — corrige la lecture du metafield + badges Running/CrossFit sur chaque carte
-
-Pour le front qui n'affichait rien — il faut absolument créer le metafield dans Shopify Admin :
-
-Settings → Custom data → Shop → Add definition
-
-Namespace : rxwear_gallery
-Key : items
-Type : JSON
-Sans ça Liquid ne peut pas accéder à shop.metafields.rxwear_gallery.items.value.
-
-
-Index
-Code · HTML 
-
-Gallery
-JS 
-
-Rxwear gallery
-LIQUID 
-en fait le front marché bien javais juste pas validé les designs
-
-10:23
-Ah parfait ! Donc tout fonctionne. Tu peux maintenant :
-
-Sélectionner les rendus dans le back-office
-Les tags running / crossfit se mettent automatiquement selon le produit
-Sauvegarder → ça s'affiche directement sur la page front avec les filtres
-Tu veux qu'on améliore quelque chose sur l'affichage front, ou c'est bon pour l'instant ?
-
-
-
-
-
-
-Claude est une IA et peut faire des erreurs. Veuillez vérifier les réponses.
-
-
-raw
-Index · HTML
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -371,7 +5,7 @@ Index · HTML
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Assistant personnalisation</title>
   <style>
- 
+
     style id="gallery-css-to-copy">
   /* ── Galerie back-office ── */
   .gallery-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
@@ -442,7 +76,7 @@ Index · HTML
     }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
     #app { display: flex; flex-direction: column; min-height: 100vh; }
- 
+
     /* Login */
     #login-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9000; align-items: center; justify-content: center; }
     #login-screen.show { display: flex; }
@@ -452,10 +86,10 @@ Index · HTML
     .login-box input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 16px; margin-bottom: 12px; text-align: center; letter-spacing: 2px; }
     .login-box input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .login-error { color: var(--critical); font-size: 13px; margin-top: 8px; display: none; }
- 
+
     #topbar { position: sticky; top: 0; z-index: 200; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; height: var(--header-height); display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
     #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; }
- 
+
     .tabs { display: flex; gap: 4px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; overflow-x: auto; }
     .tab-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: var(--text-sub); border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
     .tab-btn:hover { color: var(--text); }
@@ -463,12 +97,12 @@ Index · HTML
     .tab-btn .badge { display: inline-block; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 4px; line-height: 18px; }
     .tab-badge-urgent { background: var(--critical); color: #fff; }
     .tab-badge-total { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
- 
+
     #content { flex: 1; padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
     .card + .card { margin-top: 12px; }
     .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
- 
+
     .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: box-shadow .15s, transform .1s; box-shadow: var(--shadow); }
     .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.15); transform: translateY(-1px); }
@@ -477,24 +111,24 @@ Index · HTML
     .stat-card .stat-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
     .stat-card.urgent { border-color: var(--critical); background: var(--critical-bg); }
     .stat-card.urgent .stat-value { color: var(--critical); }
- 
+
     .notes-list { display: flex; flex-direction: column; gap: 8px; }
     .note-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: var(--radius); }
     .note-order { font-weight: 700; font-size: 13px; color: var(--critical); white-space: nowrap; }
     .note-text { flex: 1; font-size: 13px; color: var(--text); }
     .note-age { font-size: 11px; white-space: nowrap; }
- 
+
     #order-sticky { position: sticky; top: var(--header-height); z-index: 100; background: var(--surface); border-bottom: 2px solid var(--border); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .order-sticky-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
     .order-sticky-top h2 { font-size: 18px; font-weight: 700; }
     .prep-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .prep-label { font-size: 12px; color: var(--text-sub); font-weight: 600; margin-right: 4px; }
     .prep-item { background: var(--info-bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 13px; white-space: nowrap; }
- 
+
     .nav-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .nav-bar select { flex: 1; min-width: 160px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; background: var(--surface); cursor: pointer; }
     .nav-bar .counter { color: var(--text-sub); font-size: 13px; white-space: nowrap; }
- 
+
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s; white-space: nowrap; text-decoration: none; }
     .btn:hover { background: #f6f6f7; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
@@ -503,20 +137,20 @@ Index · HTML
     .btn-critical { background: var(--critical); color: #fff; border-color: var(--critical); }
     .btn-lg { padding: 12px 24px; font-size: 16px; font-weight: 600; width: 100%; justify-content: center; }
     .btn-warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); }
- 
+
     .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
     .badge-critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
     .badge-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid #f1c84b; }
     .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
     .badge-info { background: var(--info-bg); color: var(--text); border: 1px solid var(--border); }
- 
+
     .alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius); margin-bottom: 12px; }
     .alert-critical { background: var(--critical-bg); border: 1px solid var(--critical-border); }
     .alert-critical strong { color: var(--critical); }
     .alert-warning { background: var(--warning-bg); border: 1px solid #f1c84b; }
     .alert-warning strong { color: var(--warning); }
     .alert .alert-text { color: var(--text); }
- 
+
     .lineitem-grid { display: grid; grid-template-columns: 56px 1fr 120px; gap: 16px; align-items: start; }
     .qty-cell { text-align: center; }
     .qty-num { font-size: 28px; font-weight: 700; line-height: 1; }
@@ -526,7 +160,7 @@ Index · HTML
     .attr-item { font-size: 12px; color: var(--text-sub); }
     .dl-link { font-size: 13px; color: var(--primary); text-decoration: none; margin-top: 6px; display: inline-block; }
     .img-cell img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); object-fit: contain; aspect-ratio: 1/1; display: block; cursor: zoom-in; }
- 
+
     /* Supplier workflow */
     .workflow-steps { display: flex; flex-direction: column; gap: 16px; }
     .step { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -540,7 +174,7 @@ Index · HTML
     .step-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .order-count-badge { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 14px; font-size: 13px; margin-bottom: 12px; }
     .order-count-badge strong { font-size: 18px; color: var(--primary); }
- 
+
     /* Print tab */
     .print-order-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
     .print-order-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: background .15s; }
@@ -552,15 +186,15 @@ Index · HTML
     .print-order-detail { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
     .print-order-note { font-size: 12px; color: var(--critical); margin-top: 4px; font-style: italic; }
     .print-order-files { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
- 
+
     .zip-result { background: var(--success-bg); border: 1px solid #95c9b4; border-radius: var(--radius); padding: 16px; margin-top: 12px; }
     .zip-result a { color: var(--primary); font-weight: 600; }
- 
+
     #img-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 9999; align-items: center; justify-content: center; cursor: pointer; }
     #img-modal.open { display: flex; }
     #img-modal img { max-width: 92vw; max-height: 92vh; border-radius: 10px; object-fit: contain; cursor: default; }
     #img-modal-close { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 28px; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
- 
+
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
     .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
@@ -571,11 +205,11 @@ Index · HTML
     .form-group input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .settings-hint { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
     .settings-section { font-size: 12px; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: .5px; margin: 16px 0 8px; border-top: 1px solid var(--border); padding-top: 12px; }
- 
+
     .spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; gap: 12px; color: var(--text-sub); }
     .spinner-ring { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
- 
+
     .empty { text-align: center; padding: 48px; color: var(--text-sub); }
     kbd { background: var(--info-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; font-family: monospace; }
     .history-table { width: 100%; border-collapse: collapse; }
@@ -583,12 +217,12 @@ Index · HTML
     .history-table th { font-weight: 600; background: var(--bg); color: var(--text-sub); font-size: 12px; text-transform: uppercase; }
     .history-table tr:last-child td { border-bottom: none; }
     .history-table tr:hover td { background: var(--bg); }
- 
+
     #scroll-top { position: fixed; bottom: 24px; right: 24px; width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,128,96,.4); display: none; align-items: center; justify-content: center; z-index: 300; }
     #scroll-top.visible { display: flex; }
     #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: all .25s; z-index: 500; pointer-events: none; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
- 
+
     @media (max-width: 600px) {
       .lineitem-grid { grid-template-columns: 48px 1fr 80px; gap: 10px; }
       .qty-num { font-size: 22px; }
@@ -600,7 +234,7 @@ Index · HTML
     0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
   }
- 
+
   /* ── Supplier notes block ── */
   .supplier-notes-block {
     margin-top: 14px;
@@ -631,12 +265,12 @@ Index · HTML
   .supplier-note-order { font-weight: 700; color: var(--text); white-space: nowrap; }
   .supplier-note-client { color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .supplier-note-text { color: #7a5600; line-height: 1.5; }
- 
+
   </style>
 </head>
 <body>
 <div id="app">
- 
+
   <div id="login-screen">
     <div class="login-box">
       <h1>🎨 Assistant perso</h1>
@@ -646,12 +280,12 @@ Index · HTML
       <div id="login-error" class="login-error">Mot de passe incorrect</div>
     </div>
   </div>
- 
+
   <div id="img-modal" onclick="closeImgModal()">
     <button id="img-modal-close" onclick="closeImgModal()">✕</button>
     <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()" />
   </div>
- 
+
   <div id="settings-modal">
     <div class="settings-box">
       <h2>⚙️ Configuration</h2>
@@ -665,20 +299,20 @@ Index · HTML
         <input id="cfg-password" type="password" placeholder="••••••••" />
         <div class="settings-hint">Correspond à APP_PASSWORD dans Vercel</div>
       </div>
- 
+
       <div style="display:flex;gap:8px;margin-top:20px;">
         <button class="btn btn-primary" onclick="saveSettings()">Sauvegarder</button>
         <button class="btn" onclick="closeSettings()">Annuler</button>
       </div>
     </div>
   </div>
- 
+
   <div id="topbar">
     <h1>🎨 Assistant personnalisation</h1>
     <button class="btn" onclick="openSettings()">⚙️</button>
     <button class="btn" onclick="logout()" title="Déconnexion">🔒</button>
   </div>
- 
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
     <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="tab-badge-urgent badge" style="display:none"></span><span id="tab-custom-badge-total" class="tab-badge-total badge" style="display:none"></span></button>
@@ -686,15 +320,15 @@ Index · HTML
     <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">🖼️ Galerie</button>
   </div>
- 
+
   <div id="content"></div>
 </div>
- 
+
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div id="toast"></div>
- 
+
 <script>
- 
+
   
 const state = {
   activeTab: 'dashboard',
@@ -708,9 +342,9 @@ const state = {
   printZipDone: false,
   printZipOrderIds: [],  // IDs des commandes zippées (pour suppression tag)
 };
- 
+
 const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customization_id'];
- 
+
 // ════════════════════════════════════════════
 // AUTH & SETTINGS
 // ════════════════════════════════════════════
@@ -720,15 +354,15 @@ function loadSettings() {
   // Extraire le shop depuis l'URL proxy
   const proxyHost = (localStorage.getItem('proxyUrl') || '').replace('https://','').split('/')[0];
   state.shop = localStorage.getItem('shop') || proxyHost.replace('.vercel.app','') || '';
- 
+
   state.isLoggedIn = sessionStorage.getItem('loggedIn') === '1';
 }
- 
+
 function checkAuth() {
   if (!state.isLoggedIn) { document.getElementById('login-screen').classList.add('show'); return false; }
   return true;
 }
- 
+
 async function tryLogin() {
   const input = document.getElementById('login-input');
   const pwd = input.value.trim();
@@ -752,29 +386,29 @@ async function tryLogin() {
     document.getElementById('login-error').textContent = 'Erreur de connexion — vérifie l\'URL proxy';
   }
 }
- 
+
 function logout() { sessionStorage.removeItem('loggedIn'); state.isLoggedIn = false; document.getElementById('login-screen').classList.add('show'); document.getElementById('login-input').value = ''; }
- 
+
 function saveSettings() {
   const url = document.getElementById('cfg-proxy-url').value.trim();
   const pwd = document.getElementById('cfg-password').value.trim();
- 
+
   if (!url) { showToast('⚠️ Remplis l\'URL proxy', 'warning'); return; }
   localStorage.setItem('proxyUrl', url); state.proxyUrl = url;
   if (pwd) { localStorage.setItem('appPassword', pwd); state.appPassword = pwd; }
- 
+
   closeSettings();
   showToast('✅ Configuration sauvegardée');
 }
- 
+
 function openSettings() {
   document.getElementById('cfg-proxy-url').value = state.proxyUrl;
   document.getElementById('cfg-password').value = '';
- 
+
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
- 
+
 // ════════════════════════════════════════════
 // GRAPHQL
 // ════════════════════════════════════════════
@@ -790,7 +424,7 @@ async function gql(query, variables = {}) {
   if (json.errors?.length) throw new Error(json.errors.map(e => e.message).join(', '));
   return json.data;
 }
- 
+
 async function callGas(orders) {
   // Appel via proxy Vercel
   const res = await fetch(state.proxyUrl, {
@@ -803,7 +437,7 @@ async function callGas(orders) {
   if (json.error) throw new Error(json.error);
   return json;
 }
- 
+
 // ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
@@ -823,7 +457,7 @@ function switchTab(tab) {
   }
 else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab })[tab]?.();
 }
- 
+
 // ════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════
@@ -846,7 +480,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 });
- 
+
 // ════════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════════
@@ -867,7 +501,7 @@ async function renderDashboard() {
         }
       }`)
     ]);
- 
+
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
     // ── Badges tous les onglets ──
     const badgeUrgent = document.getElementById('tab-custom-badge');
@@ -886,10 +520,10 @@ async function renderDashboard() {
     // Impression (vert)
     badgePrint.style.display = counts.todoprint > 0 ? '' : 'none';
     if (counts.todoprint > 0) badgePrint.textContent = counts.todoprint;
- 
+
     const ordersWithNotes = notesData.orders.edges.map(e => e.node).filter(o => o.note?.trim());
     const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
- 
+
     const notesHtml = ordersWithNotes.length === 0
       ? `<div style="color:var(--text-sub);font-size:13px;padding:4px 0;">Aucune note en cours ✅</div>`
       : `<div class="notes-list">${ordersWithNotes.map(o => {
@@ -902,7 +536,7 @@ async function renderDashboard() {
             <span class="note-age" style="color:${ageColor}">${age}j</span>
           </div>`;
         }).join('')}</div>`;
- 
+
     c.innerHTML = `
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
@@ -922,7 +556,7 @@ async function renderDashboard() {
   }
 }
 function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); }
- 
+
 // ════════════════════════════════════════════
 // CUSTOM ORDERS
 // ════════════════════════════════════════════
@@ -934,7 +568,7 @@ const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName 
     }
     customAttributes { key value }
   }}}`;
- 
+
 async function fetchCustomOrders(cursor = null, direction = 'forward', urgent = false) {
   const base = 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)';
   const data = await gql(`query($first: Int, $after: String, $last: Int, $before: String, $q: String!) {
@@ -954,7 +588,7 @@ async function fetchCustomOrders(cursor = null, direction = 'forward', urgent = 
   state.currentCursor = cursor;
   state.currentDirection = direction;
 }
- 
+
 async function renderCustomTab(restorePage = false) {
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
@@ -968,10 +602,10 @@ async function renderCustomTab(restorePage = false) {
   }
   catch(err) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`; }
 }
- 
+
 function getOrderStatusBadges(tags) {
   const badges = [];
- 
+
   // ── Statut impression ──
   const printTag = tags.find(t => /^print_\d{8}$/.test(t));
   if (printTag) {
@@ -980,7 +614,7 @@ function getOrderStatusBadges(tags) {
   } else if (tags.includes('TODOPRINT')) {
     badges.push({ label: '🖨️ Impression à lancer', tone: 'warning' });
   }
- 
+
   // ── Statut commande fournisseur ──
   const orderTag = tags.find(t => /^order_\d{8}$/.test(t));
   if (orderTag) {
@@ -989,13 +623,13 @@ function getOrderStatusBadges(tags) {
   } else if (tags.includes('TOORDER')) {
     badges.push({ label: '⏳ À commander fournisseur', tone: 'warning' });
   }
- 
+
   // Si aucun statut
   if (badges.length === 0) badges.push({ label: '🆕 Nouvelle commande', tone: 'info' });
- 
+
   return badges;
 }
- 
+
 function renderStatusBadges(tags) {
   const colors = { success: 'var(--success-bg)', warning: 'var(--warning-bg)', info: 'var(--info-bg)' };
   const borders = { success: '#95c9b4', warning: '#f1c84b', info: 'var(--border)' };
@@ -1004,14 +638,14 @@ function renderStatusBadges(tags) {
     `<span class="badge" style="background:${colors[s.tone]};border-color:${borders[s.tone]};color:${texts[s.tone]}">${s.label}</span>`
   ).join('');
 }
- 
+
 function renderOrderView() {
   const c = document.getElementById('content');
   const order = state.orders[state.currentIndex] || null;
   const hasPrev = state.currentIndex > 0 || state.pageInfo?.hasPreviousPage;
   const hasNext = state.currentIndex < state.orders.length - 1 || state.pageInfo?.hasNextPage;
   const counter = state.orders.length === 0 ? 'Aucune commande' : `${state.currentIndex + 1} / ${state.orders.length}${state.pageInfo?.hasNextPage ? '+' : ''}`;
- 
+
   let html = `<div class="nav-bar">
     <button class="btn" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédent <kbd>J</kbd></button>
     ${state.orders.length > 0 ? `<select onchange="jumpToOrder(this.value)">${state.orders.map((o, i) => {
@@ -1023,10 +657,10 @@ function renderOrderView() {
     <button class="btn ${state.filterUrgent ? 'btn-critical' : 'btn-warning'}" onclick="toggleUrgentFilter()">🚨 Urgent${state.filterUrgent?' ✕':''}</button>
     ${state.filterUrgent ? '<span class="badge badge-critical">Filtre actif</span>' : ''}
   </div>`;
- 
+
   if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; return; }
   if (!order) { c.innerHTML = html; return; }
- 
+
   const isUrgent = order.tags.some(t => t==='urgent'||t==='URGENT');
   const hasNote = !!(order.note?.trim());
   const customerName = order.customer ? `${order.customer.firstName||''} ${order.customer.lastName||''}`.trim() : '';
@@ -1039,7 +673,7 @@ function renderOrderView() {
     const v = li.variant?.title; const sv = v && v!=='Default Title';
     return `<span class="prep-item"><strong>${li.quantity}×</strong> ${li.title}${sv?` — ${v}`:''}</span>`;
   }).join('');
- 
+
   html += `<div id="order-sticky">
     <div class="order-sticky-top">
       <h2>${order.name}</h2>
@@ -1055,7 +689,7 @@ function renderOrderView() {
     <div class="prep-list"><span class="prep-label">À préparer :</span>${prepItems}</div>
   </div>
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
- 
+
   for (const {node:li} of order.lineItems.edges) {
     const variant = li.variant?.title || '';
     const showVariant = variant && variant !== 'Default Title';
@@ -1080,7 +714,7 @@ function renderOrderView() {
   if (hasNext) html += `<div style="margin-top:20px;"><button class="btn btn-primary btn-lg" onclick="nextOrderAndScroll()">Commande suivante → <kbd style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff;">K</kbd></button></div>`;
   c.innerHTML = html;
 }
- 
+
 async function prevOrder() {
   if (state.currentIndex > 0) { state.currentIndex--; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
   else if (state.pageInfo?.hasPreviousPage) {
@@ -1105,9 +739,9 @@ async function toggleUrgentFilter() {
   try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
- 
+
 // Note : le rechargement au retour de focus est géré par visibilitychange ci-dessous
- 
+
 // ════════════════════════════════════════════
 // SUPPLIER TAB
 // ════════════════════════════════════════════
@@ -1119,14 +753,14 @@ async function fetchToOrderOrders() {
   }
   return orders;
 }
- 
+
 async function renderSupplierTab() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try { state.supplierOrders = await fetchToOrderOrders(); state.supplierSnapshot = []; renderSupplierView(); loadHistory(); }
   catch(e) { c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
- 
+
 function renderSupplierView() {
   const count = state.supplierOrders.length;
   const step1Done = state.supplierSnapshot.length > 0;
@@ -1164,7 +798,7 @@ function renderSupplierView() {
       <div id="history-content"><div style="color:var(--text-sub);font-size:13px;">Chargement...</div></div>
     </div>`;
 }
- 
+
 function renderSupplierNotes(orders) {
   const withNote = orders.filter(o => o.note && o.note.trim());
   if (withNote.length === 0) return '<div style="margin-top:12px;font-size:13px;color:var(--success);">✅ Aucune note sur ces commandes</div>';
@@ -1182,7 +816,7 @@ function renderSupplierNotes(orders) {
     ${rows}
   </div>`;
 }
- 
+
 function downloadAndSnapshot(type) {
   state.supplierSnapshot = state.supplierOrders.map(o => o.id);
   const { url, filename } = type === 'imbretex' ? generateImbretex(state.supplierOrders) : generateComplete(state.supplierOrders);
@@ -1190,7 +824,7 @@ function downloadAndSnapshot(type) {
   showToast(`✅ ${type === 'imbretex' ? 'Export IMBRETEX' : 'Export complet'} téléchargé`);
   renderSupplierView(); loadHistory();
 }
- 
+
 async function previewStep2() {
   const preview = document.getElementById('step2-preview');
   preview.innerHTML = `<div class="spinner" style="padding:16px;"><div class="spinner-ring"></div>Vérification...</div>`;
@@ -1208,7 +842,7 @@ async function previewStep2() {
     preview.innerHTML = html;
   } catch(e) { preview.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
- 
+
 async function validateSupplierOrders(orderIds) {
   const btn = event.target; btn.disabled = true; btn.textContent = 'Validation...';
   const today = new Date();
@@ -1235,7 +869,7 @@ async function validateSupplierOrders(orderIds) {
   renderSupplierView();
   loadHistory();
 }
- 
+
 function generateImbretex(orders, dateOverride = null) {
   const skuMap = new Map();
   orders.forEach(o => o.lineItems.edges.forEach(({node:li}) => {
@@ -1247,7 +881,7 @@ function generateImbretex(orders, dateOverride = null) {
   skuMap.forEach((qty,sku) => { csv += `${sku};${qty};custom_${dateStr.replace(/-/g,'')}\n`; });
   return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `commande-imbretex-${dateStr}.csv` };
 }
- 
+
 function generateComplete(orders, dateOverride = null) {
   let csv = 'Numéro commande;Date;Client;Produit;Variant;Quantité;imbretex_sku;Notes commande\n';
   orders.forEach(o => {
@@ -1260,7 +894,7 @@ function generateComplete(orders, dateOverride = null) {
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `resume-commandes-${dateStr}.csv` };
 }
- 
+
 async function loadHistory() {
   const el = document.getElementById('history-content'); if (!el) return;
   try {
@@ -1273,7 +907,7 @@ async function loadHistory() {
     el.innerHTML = `<table class="history-table"><thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead><tbody>${tags.map(h=>`<tr><td><strong>${h.date}</strong></td><td>${h.count}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn" onclick="regenAndDownload('${h.tag}','imbretex')">↺ IMBRETEX</button><button class="btn" onclick="regenAndDownload('${h.tag}','complete')">↺ Complet</button></div></td></tr>`).join('')}</tbody></table>`;
   } catch(e) { if(el) el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Erreur historique.</div>`; }
 }
- 
+
 async function regenAndDownload(tag, type) {
   try {
     let orders=[], hasNext=true, cursor=null;
@@ -1284,7 +918,7 @@ async function regenAndDownload(tag, type) {
     showToast(`✅ Téléchargé`);
   } catch(e) { showToast('Erreur: '+e.message,'error'); }
 }
- 
+
 // ════════════════════════════════════════════
 // PRINT TAB — Préparation impression
 // ════════════════════════════════════════════
@@ -1321,7 +955,7 @@ async function renderPrintTab() {
     c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
   }
 }
- 
+
 function renderPrintView() {
   const c = document.getElementById('content');
   const orders = state.printOrders;
@@ -1329,13 +963,13 @@ function renderPrintView() {
     c.innerHTML = `<div class="empty">Aucune commande avec la balise TODOPRINT.</div>`;
     return;
   }
- 
+
   const selectedCount = state.printSelected.size;
   const ordersWithNotes = orders.filter(o => o.note?.trim() && state.printSelected.has(o.id));
- 
+
   let html = `
     <div class="workflow-steps">
- 
+
       <!-- ÉTAPE 1 : Sélection -->
       <div class="step">
         <div class="step-header">
@@ -1378,7 +1012,7 @@ function renderPrintView() {
           </div>` : ''}
         </div>
       </div>
- 
+
       <!-- ÉTAPE 2 : Génération ZIP -->
       <div class="step">
         <div class="step-header">
@@ -1401,7 +1035,7 @@ function renderPrintView() {
           <div id="zip-result-zone"></div>
         </div>
       </div>
- 
+
       <!-- ÉTAPE 3 : Validation -->
       <div class="step">
         <div class="step-header">
@@ -1421,12 +1055,12 @@ function renderPrintView() {
           `}
         </div>
       </div>
- 
+
     </div>`;
- 
+
   c.innerHTML = html;
 }
- 
+
 function extractPngSvgFromJson(jsonText) {
   if (!jsonText) return [];
   try {
@@ -1446,7 +1080,7 @@ function extractPngSvgFromJson(jsonText) {
     return [...new Set(out)];
   }
 }
- 
+
 function togglePrintOrder(orderId, checked) {
   if (checked) state.printSelected.add(orderId);
   else state.printSelected.delete(orderId);
@@ -1456,7 +1090,7 @@ function togglePrintOrder(orderId, checked) {
   // Mise à jour du compteur partout
   updatePrintCounter();
 }
- 
+
 function updatePrintCounter() {
   const n = state.printSelected.size;
   const total = state.printOrders.length;
@@ -1469,16 +1103,16 @@ function updatePrintCounter() {
   const genBtn = document.getElementById('generate-zip-btn');
   if (genBtn) genBtn.disabled = n === 0;
 }
- 
+
 function printSelectAll() { state.printOrders.forEach(o => state.printSelected.add(o.id)); renderPrintView(); }
 function printDeselectAll() { state.printSelected.clear(); renderPrintView(); }
- 
+
 async function generatePrintZip() {
   const btn = event.target;
   btn.disabled = true; btn.textContent = '⏳ Génération en cours... (peut prendre 1-2 min)';
- 
+
   const selectedOrders = state.printOrders.filter(o => state.printSelected.has(o.id));
- 
+
   // Prépare les données pour le GAS
   const gasOrders = [];
   for (const order of selectedOrders) {
@@ -1507,22 +1141,22 @@ async function generatePrintZip() {
   console.log('gasOrders count:', gasOrders.length, 'total designUrls:', gasOrders.reduce((s,o)=>s+o.designUrls.length,0));
   // Debug first order
   if (gasOrders[0]) console.log('First order designUrls:', gasOrders[0].designUrls);
- 
+
   try {
     const result = await callGas(gasOrders);
     state.printZipDone = true;
     state.printZipOrderIds = selectedOrders.map(o => o.id);
- 
+
     const zipLinks = result.zips.map(z =>
       `<a href="${z.url}" target="_blank">📦 ${z.name}</a>`
     ).join('<br/>');
- 
+
     document.getElementById('zip-result-zone').innerHTML = `
       <div class="zip-result" style="margin-top:12px;">
         <div style="font-weight:600;margin-bottom:8px;">✅ ZIP généré dans ton Drive !</div>
         ${zipLinks}
       </div>`;
- 
+
     // Affiche le bouton étape 3
     renderPrintView();
     showToast('✅ ZIP généré avec succès !');
@@ -1531,7 +1165,7 @@ async function generatePrintZip() {
     document.getElementById('zip-result-zone').innerHTML = `<div class="alert alert-critical" style="margin-top:8px;"><strong>Erreur :</strong> <span class="alert-text">${e.message}</span></div>`;
   }
 }
- 
+
 async function validatePrintOrders() {
   const btn = event.target; btn.disabled = true; btn.textContent = 'Suppression en cours...';
   const today = new Date();
@@ -1563,7 +1197,7 @@ async function validatePrintOrders() {
   }
   await renderPrintTab();
 }
- 
+
 // ════════════════════════════════════════════
 // CONFETTI + RETOUR DE FOCUS
 // ════════════════════════════════════════════
@@ -1584,24 +1218,24 @@ function launchConfetti() {
     setTimeout(() => el.remove(), 3000);
   }
 }
- 
+
 // Vérifie si la commande courante est traitée — confettis si oui
 async function checkCurrentOrderDone() {
   if (state.activeTab !== 'custom') return;
   if (!state.isLoggedIn || !state.proxyUrl) return;
   if (!state.orders.length) return;
- 
+
   const order = state.orders[state.currentIndex];
   if (!order) return;
- 
+
   try {
     const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
     const current = data?.order;
     if (!current) return;
- 
+
     const stillCustom = current.tags.includes('custom');
     const fulfilled = ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
- 
+
     if (!stillCustom || fulfilled) {
       launchConfetti();
       showToast('🎉 Commande traitée — suivante !');
@@ -1617,24 +1251,24 @@ async function checkCurrentOrderDone() {
     // Silencieux
   }
 }
- 
+
 // Onglet normal (alt+tab, clic sur barre des tâches)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') checkCurrentOrderDone();
 });
- 
+
 // Onglet fractionné / split view (le focus window change sans visibilitychange)
 window.addEventListener('focus', () => {
   checkCurrentOrderDone();
 });
- 
+
 // ── Init ──
 loadSettings();
 if (!state.proxyUrl) setTimeout(openSettings, 300);
 else if (!state.isLoggedIn) document.getElementById('login-screen').classList.add('show');
 else renderDashboard();
- 
- 
+
+
 // ════════════════════════════════════════════
 // GALERIE INSPIRATIONNELLE
 // ════════════════════════════════════════════
@@ -1649,7 +1283,7 @@ const galleryState = {
   activeFilter: 'all',
   lastDebug: null,
 };
- 
+
 async function galleryApi(action, extra = {}) {
   const res = await fetch(state.proxyUrl.replace('/api/shopify', '/api/gallery'), {
     method: 'POST',
@@ -1660,18 +1294,18 @@ async function galleryApi(action, extra = {}) {
   if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
   return json;
 }
- 
+
 function getAllTags() {
   const tags = new Set();
   galleryState.savedItems.forEach(item => item.tags?.forEach(t => tags.add(t)));
   galleryState.selection.forEach(item => item.tags?.forEach(t => tags.add(t)));
   return [...tags].sort();
 }
- 
+
 async function renderGalleryTab() {
   const c = document.getElementById('content');
   c.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement de la galerie…</div>`;
- 
+
   if (!galleryState.savedLoaded) {
     try {
       const r = await galleryApi('get');
@@ -1682,14 +1316,14 @@ async function renderGalleryTab() {
       galleryState.savedLoaded = true;
     }
   }
- 
+
   if (galleryState.browseOrders.length === 0 && !galleryState.browseLoading) {
     await loadMoreBrowseOrders();
   }
- 
+
   renderGalleryUI();
 }
- 
+
 async function loadMoreBrowseOrders() {
   if (galleryState.browseLoading) return;
   galleryState.browseLoading = true;
@@ -1706,7 +1340,7 @@ async function loadMoreBrowseOrders() {
   }
   galleryState.browseLoading = false;
 }
- 
+
 function getImageAndCustId(li) {
   // L'API enrichit déjà les line items avec _imageUrl et _customizationId
   const imageUrl = li._imageUrl
@@ -1717,27 +1351,27 @@ function getImageAndCustId(li) {
     || null;
   return { imageUrl, customizationId };
 }
- 
+
 function getNicheLabel(niche) {
   if (niche === 'running') return { label: 'Running', color: '#1a73e8', bg: '#e8f0fe' };
   if (niche === 'cf') return { label: 'CrossFit', color: '#d93025', bg: '#fce8e6' };
   return null;
 }
- 
+
 function isAlreadySaved(imageUrl) {
   return galleryState.savedItems.some(i => i.imageUrl === imageUrl);
 }
- 
+
 function isInSelection(imageUrl) {
   return galleryState.selection.some(i => i.imageUrl === imageUrl);
 }
- 
+
 function renderGalleryUI() {
   const c = document.getElementById('content');
   const savedCount = galleryState.savedItems.length;
   const selCount = galleryState.selection.length;
   const allTags = getAllTags();
- 
+
   // Extraire toutes les images des commandes
   const allImages = [];
   galleryState.browseOrders.forEach(order => {
@@ -1755,12 +1389,12 @@ function renderGalleryUI() {
       });
     });
   });
- 
+
   const uniqueTags = [...new Set(galleryState.savedItems.flatMap(i => i.tags || []))].sort();
   const filteredSaved = galleryState.activeFilter === 'all'
     ? galleryState.savedItems
     : galleryState.savedItems.filter(i => i.tags?.includes(galleryState.activeFilter));
- 
+
   // Suggestions niche pour la sélection en cours
   function nicheTagSuggestions(item) {
     const niche = item.niche;
@@ -1771,7 +1405,7 @@ function renderGalleryUI() {
     allTags.filter(t => !(item.tags||[]).includes(t) && !suggestions.includes(t)).forEach(t => suggestions.push(t));
     return suggestions;
   }
- 
+
   c.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <h2 style="font-size:18px;font-weight:700;">🖼️ Galerie inspirationnelle</h2>
@@ -1779,7 +1413,7 @@ function renderGalleryUI() {
         💾 Sauvegarder sélection (${selCount})
       </button>
     </div>
- 
+
     <div class="gallery-layout">
       <!-- Colonne gauche -->
       <div>
@@ -1830,7 +1464,7 @@ function renderGalleryUI() {
             `}
           </div>
         </div>
- 
+
         <!-- Galerie sauvegardée -->
         <div class="gallery-panel">
           <div class="gallery-panel-header">
@@ -1860,7 +1494,7 @@ function renderGalleryUI() {
           </div>
         </div>
       </div>
- 
+
       <!-- Colonne droite : sélection -->
       <div class="gallery-panel" style="position:sticky;top:calc(var(--header-height) + 16px);">
         <div class="gallery-panel-header">
@@ -1911,10 +1545,10 @@ function renderGalleryUI() {
       </div>
     </div>
   `;
- 
+
   window._galleryImages = allImages;
 }
- 
+
 function toggleSelection(idx) {
   const img = window._galleryImages[idx];
   if (!img) return;
@@ -1931,10 +1565,10 @@ function toggleSelection(idx) {
   }
   renderGalleryUI();
 }
- 
+
 function removeFromSelection(idx) { galleryState.selection.splice(idx, 1); renderGalleryUI(); }
 function clearSelection() { galleryState.selection = []; renderGalleryUI(); }
- 
+
 function addTagToSelection(selIdx) {
   const input = document.getElementById(`tag-input-${selIdx}`);
   if (!input) return;
@@ -1945,21 +1579,21 @@ function addTagToSelection(selIdx) {
   input.value = '';
   renderGalleryUI();
 }
- 
+
 function quickAddTag(selIdx, tag) {
   if (!galleryState.selection[selIdx]) return;
   if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
   if (!galleryState.selection[selIdx].tags.includes(tag)) { galleryState.selection[selIdx].tags.push(tag); renderGalleryUI(); }
 }
- 
+
 function removeTagFromSelection(selIdx, tag) {
   if (!galleryState.selection[selIdx]) return;
   galleryState.selection[selIdx].tags = galleryState.selection[selIdx].tags.filter(t => t !== tag);
   renderGalleryUI();
 }
- 
+
 function setFilter(tag) { galleryState.activeFilter = tag; renderGalleryUI(); }
- 
+
 async function removeSavedItem(idx) {
   if (!confirm('Retirer ce rendu de la galerie ?')) return;
   galleryState.savedItems.splice(idx, 1);
@@ -1969,14 +1603,14 @@ async function removeSavedItem(idx) {
   } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
   renderGalleryUI();
 }
- 
+
 async function loadMoreAndRefresh() {
   const btn = document.getElementById('btn-load-more');
   if (btn) { btn.disabled = true; btn.textContent = 'Chargement…'; }
   await loadMoreBrowseOrders();
   renderGalleryUI();
 }
- 
+
 async function loadAllOrdersDebug() {
   galleryState.browseLoading = true;
   try {
@@ -1990,15 +1624,15 @@ async function loadAllOrdersDebug() {
   galleryState.browseLoading = false;
   renderGalleryUI();
 }
- 
+
 async function saveGallery() {
   if (galleryState.selection.length === 0) return;
   const untagged = galleryState.selection.filter(i => !i.tags || i.tags.length === 0);
   if (untagged.length > 0) { showToast(`${untagged.length} image(s) sans tag — ajoute au moins une catégorie`, 'warning'); return; }
- 
+
   const btn = document.getElementById('btn-save-gallery');
   if (btn) { btn.disabled = true; btn.textContent = 'Sauvegarde…'; }
- 
+
   try {
     const newItems = [
       ...galleryState.savedItems,
@@ -2024,11 +1658,8 @@ async function saveGallery() {
     if (btn) { btn.disabled = false; btn.textContent = `💾 Sauvegarder sélection`; }
   }
 }
- 
- 
+
+
 </script>
 </body>
 </html>
- 
-
-
