@@ -1288,7 +1288,7 @@ const galleryState = {
 async function galleryApi(action, extra = {}) {
   const res = await fetch(state.proxyUrl.replace('/api/shopify', '/api/gallery'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-App-Password': state.password },
+    headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
     body: JSON.stringify({ action, ...extra }),
   });
   const json = await res.json();
