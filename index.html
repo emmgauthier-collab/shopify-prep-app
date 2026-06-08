@@ -5,6 +5,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Assistant personnalisation</title>
   <style>
+
+    style id="gallery-css-to-copy">
+  /* ── Galerie back-office ── */
+  .gallery-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .gallery-layout { grid-template-columns: 1fr; } }
+ 
+  .gallery-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .gallery-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .gallery-panel-header h3 { font-size: 14px; font-weight: 600; flex: 1; }
+  .gallery-panel-body { padding: 12px; }
+ 
+  /* Grille de browsing commandes */
+  .order-browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .order-img-card { position: relative; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, transform .1s; background: var(--bg); }
+  .order-img-card:hover { transform: scale(1.03); }
+  .order-img-card.selected { border-color: var(--primary); }
+  .order-img-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .order-img-card .img-meta { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 10px; padding: 3px 5px; line-height: 1.3; }
+  .order-img-card .img-check { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 12px; display: none; align-items: center; justify-content: center; }
+  .order-img-card.selected .img-check { display: flex; }
+  .order-img-card .img-added { position: absolute; top: 5px; left: 5px; background: rgba(0,128,96,.85); color: #fff; font-size: 9px; padding: 2px 5px; border-radius: 3px; }
+ 
+  /* Sélection en cours */
+  .selection-preview { display: flex; flex-direction: column; gap: 10px; }
+  .sel-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); }
+  .sel-item img { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+  .sel-item-body { flex: 1; min-width: 0; }
+  .sel-item-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sel-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .sel-tag { background: var(--primary); color: #fff; border-radius: 10px; font-size: 11px; padding: 1px 8px; display: flex; align-items: center; gap: 3px; }
+  .sel-tag button { background: none; border: none; color: #fff; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; opacity: .7; }
+  .sel-tag button:hover { opacity: 1; }
+  .sel-item-remove { background: none; border: none; cursor: pointer; color: var(--text-sub); font-size: 16px; padding: 2px; }
+  .sel-item-remove:hover { color: var(--critical); }
+ 
+  .tag-input-row { display: flex; gap: 6px; margin-top: 4px; }
+  .tag-input-row input { flex: 1; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; min-width: 0; }
+  .tag-input-row input:focus { outline: none; border-color: var(--primary); }
+ 
+  /* Galerie sauvegardée */
+  .saved-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+  .saved-img-card { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); background: var(--bg); }
+  .saved-img-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .saved-img-card .saved-tags { display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; }
+  .saved-img-card .saved-tag { background: var(--primary); color: #fff; border-radius: 8px; font-size: 9px; padding: 1px 5px; }
+  .saved-img-card .saved-actions { position: absolute; top: 4px; right: 4px; display: none; gap: 4px; }
+  .saved-img-card:hover .saved-actions { display: flex; }
+  .saved-img-card .saved-del { background: var(--critical); color: #fff; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+ 
+  .gallery-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .filter-tag-btn { padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; cursor: pointer; transition: background .15s; }
+  .filter-tag-btn:hover, .filter-tag-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+ 
+  .gallery-empty { text-align: center; padding: 32px; color: var(--text-sub); font-size: 14px; }
+  .gallery-load-more { width: 100%; margin-top: 10px; }
+ 
+  .tag-suggestions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .tag-sug-btn { padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); font-size: 11px; cursor: pointer; color: var(--text-sub); }
+  .tag-sug-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #f6f6f7; --surface: #fff; --border: #e1e3e5; --text: #202223; --text-sub: #6d7175;
@@ -267,6 +327,8 @@
 <div id="toast"></div>
 
 <script>
+
+  
 const state = {
   activeTab: 'dashboard',
   proxyUrl: '', appPassword: '', shop: '',
@@ -1204,6 +1266,375 @@ loadSettings();
 if (!state.proxyUrl) setTimeout(openSettings, 300);
 else if (!state.isLoggedIn) document.getElementById('login-screen').classList.add('show');
 else renderDashboard();
+
+
+  const galleryState = {
+  browseOrders: [],        // commandes browsées avec images
+  browseCursor: null,
+  browseHasNext: false,
+  browseLoading: false,
+  selection: [],           // { imageUrl, productHandle, productId, customizationId, title, tags:[] }
+  savedItems: [],          // items sauvegardés dans Shopify metafield
+  savedLoaded: false,
+  activeFilter: 'all',
+};
+ 
+async function galleryApi(action, extra = {}) {
+  const res = await fetch(state.proxyUrl.replace('/api/shopify', '/api/gallery'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-App-Password': state.password },
+    body: JSON.stringify({ action, ...extra }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  return json;
+}
+ 
+function getAllTags() {
+  const tags = new Set();
+  galleryState.savedItems.forEach(item => item.tags?.forEach(t => tags.add(t)));
+  galleryState.selection.forEach(item => item.tags?.forEach(t => tags.add(t)));
+  return [...tags].sort();
+}
+ 
+async function renderGalleryTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement de la galerie…</div>`;
+ 
+  // Charger les items sauvegardés si pas encore fait
+  if (!galleryState.savedLoaded) {
+    try {
+      const r = await galleryApi('get');
+      galleryState.savedItems = r.items || [];
+      galleryState.savedLoaded = true;
+    } catch(e) {
+      galleryState.savedItems = [];
+      galleryState.savedLoaded = true;
+    }
+  }
+ 
+  // Charger les commandes si pas encore fait
+  if (galleryState.browseOrders.length === 0 && !galleryState.browseLoading) {
+    await loadMoreBrowseOrders();
+  }
+ 
+  renderGalleryUI();
+}
+ 
+async function loadMoreBrowseOrders() {
+  if (galleryState.browseLoading) return;
+  galleryState.browseLoading = true;
+  try {
+    const r = await galleryApi('fetchOrders', { cursor: galleryState.browseCursor });
+    galleryState.browseOrders.push(...(r.orders || []));
+    galleryState.browseCursor = r.pageInfo?.endCursor || null;
+    galleryState.browseHasNext = r.pageInfo?.hasNextPage || false;
+  } catch(e) {
+    console.error('Erreur chargement commandes:', e);
+  }
+  galleryState.browseLoading = false;
+}
+ 
+function getImageAndCustId(li) {
+  const imgAttr = li.customAttributes?.find(a => a.key === '_customization_image');
+  const custIdAttr = li.customAttributes?.find(a => a.key === '_customization_id');
+  const imageUrl = imgAttr?.value || li.variant?.customizationImage?.value || null;
+  const customizationId = custIdAttr?.value || null;
+  return { imageUrl, customizationId };
+}
+ 
+function isAlreadySaved(imageUrl) {
+  return galleryState.savedItems.some(i => i.imageUrl === imageUrl);
+}
+ 
+function isInSelection(imageUrl) {
+  return galleryState.selection.some(i => i.imageUrl === imageUrl);
+}
+ 
+function renderGalleryUI() {
+  const c = document.getElementById('content');
+  const savedCount = galleryState.savedItems.length;
+  const selCount = galleryState.selection.length;
+  const allTags = getAllTags();
+ 
+  // Extraire toutes les images browsables des commandes
+  const allImages = [];
+  galleryState.browseOrders.forEach(order => {
+    order.lineItems.edges.forEach(({ node: li }) => {
+      const { imageUrl, customizationId } = getImageAndCustId(li);
+      if (!imageUrl) return;
+      allImages.push({
+        imageUrl,
+        customizationId,
+        productHandle: li.variant?.product?.handle || null,
+        productId: li.variant?.product?.id || null,
+        title: li.title,
+        orderName: order.name,
+      });
+    });
+  });
+ 
+  // Tags existants pour suggestions
+  const tagsHtml = allTags.length > 0
+    ? `<div class="tag-suggestions">${allTags.map(t => `<button class="tag-sug-btn" onclick="addTagSuggestion('${t}')">${t}</button>`).join('')}</div>`
+    : '';
+ 
+  // Filtre de la galerie sauvegardée
+  const filteredSaved = galleryState.activeFilter === 'all'
+    ? galleryState.savedItems
+    : galleryState.savedItems.filter(i => i.tags?.includes(galleryState.activeFilter));
+ 
+  const uniqueTags = [...new Set(galleryState.savedItems.flatMap(i => i.tags || []))].sort();
+ 
+  c.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-size:18px;font-weight:700;">🖼️ Galerie inspirationnelle</h2>
+      <button class="btn btn-primary" onclick="saveGallery()" id="btn-save-gallery" ${selCount === 0 ? 'disabled' : ''}>
+        💾 Sauvegarder sélection (${selCount})
+      </button>
+    </div>
+ 
+    <div class="gallery-layout">
+      <!-- Colonne gauche : browser commandes -->
+      <div>
+        <div class="gallery-panel" style="margin-bottom:16px;">
+          <div class="gallery-panel-header">
+            <h3>📦 Rendus des commandes</h3>
+            <span style="font-size:12px;color:var(--text-sub)">${allImages.length} images trouvées</span>
+          </div>
+          <div class="gallery-panel-body">
+            ${allImages.length === 0
+              ? `<div class="gallery-empty">Aucune image teeinblue trouvée dans les commandes</div>`
+              : `<div class="order-browse-grid" id="browse-grid">
+                  ${allImages.map((img, idx) => `
+                    <div class="order-img-card ${isInSelection(img.imageUrl) ? 'selected' : ''} ${isAlreadySaved(img.imageUrl) ? 'saved' : ''}"
+                         onclick="toggleSelection(${idx})"
+                         id="browse-card-${idx}">
+                      <img src="${img.imageUrl}" alt="${img.title}" loading="lazy" />
+                      ${isAlreadySaved(img.imageUrl) ? `<span class="img-added">✓ En galerie</span>` : ''}
+                      <div class="img-meta">${img.orderName}<br>${img.title.substring(0,20)}${img.title.length>20?'…':''}</div>
+                      <div class="img-check">✓</div>
+                    </div>
+                  `).join('')}
+                </div>
+                ${galleryState.browseHasNext ? `
+                  <button class="btn gallery-load-more" onclick="loadMoreAndRefresh()" id="btn-load-more">
+                    Charger plus de commandes
+                  </button>
+                ` : ''}`
+            }
+          </div>
+        </div>
+ 
+        <!-- Galerie sauvegardée -->
+        <div class="gallery-panel">
+          <div class="gallery-panel-header">
+            <h3>✅ Galerie publiée (${savedCount})</h3>
+          </div>
+          <div class="gallery-panel-body">
+            ${uniqueTags.length > 0 ? `
+              <div class="gallery-filter-bar">
+                <button class="filter-tag-btn ${galleryState.activeFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">Tout</button>
+                ${uniqueTags.map(t => `<button class="filter-tag-btn ${galleryState.activeFilter === t ? 'active' : ''}" onclick="setFilter('${t}')">${t}</button>`).join('')}
+              </div>
+            ` : ''}
+            ${filteredSaved.length === 0
+              ? `<div class="gallery-empty">${savedCount === 0 ? 'Aucun rendu publié pour l\'instant' : 'Aucun rendu pour ce filtre'}</div>`
+              : `<div class="saved-gallery-grid">
+                  ${filteredSaved.map((item, idx) => {
+                    const realIdx = galleryState.savedItems.indexOf(item);
+                    return `
+                      <div class="saved-img-card">
+                        <img src="${item.imageUrl}" alt="${item.title}" loading="lazy" />
+                        <div class="saved-tags">
+                          ${(item.tags||[]).map(t => `<span class="saved-tag">${t}</span>`).join('')}
+                        </div>
+                        <div class="saved-actions">
+                          <button class="saved-del" onclick="removeSavedItem(${realIdx})" title="Retirer">✕</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>`
+            }
+          </div>
+        </div>
+      </div>
+ 
+      <!-- Colonne droite : sélection en cours -->
+      <div class="gallery-panel" style="position:sticky;top:calc(var(--header-height) + 16px);">
+        <div class="gallery-panel-header">
+          <h3>🎯 Sélection en cours</h3>
+          ${selCount > 0 ? `<button class="btn" style="font-size:12px;padding:4px 8px;" onclick="clearSelection()">Tout vider</button>` : ''}
+        </div>
+        <div class="gallery-panel-body">
+          ${selCount === 0
+            ? `<div class="gallery-empty" style="padding:20px;">
+                <div style="font-size:32px;margin-bottom:8px;">👆</div>
+                Clique sur les images pour les sélectionner
+              </div>`
+            : `<div class="selection-preview">
+                ${galleryState.selection.map((item, idx) => `
+                  <div class="sel-item" id="sel-item-${idx}">
+                    <img src="${item.imageUrl}" alt="${item.title}" />
+                    <div class="sel-item-body">
+                      <div class="sel-item-title" title="${item.title}">${item.title}</div>
+                      <div class="sel-item-tags">
+                        ${(item.tags||[]).map(t => `
+                          <span class="sel-tag">${t}
+                            <button onclick="removeTagFromSelection(${idx},'${t}')" title="Retirer">×</button>
+                          </span>
+                        `).join('')}
+                      </div>
+                      <div class="tag-input-row">
+                        <input type="text" placeholder="Ajouter un tag…" id="tag-input-${idx}"
+                          onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addTagToSelection(${idx})}"
+                          list="tag-datalist" />
+                        <button class="btn" style="padding:4px 8px;font-size:12px;" onclick="addTagToSelection(${idx})">+</button>
+                      </div>
+                      ${tagsHtml ? `<div class="tag-suggestions" style="margin-top:4px;">${allTags.filter(t => !(item.tags||[]).includes(t)).map(t => `<button class="tag-sug-btn" onclick="quickAddTag(${idx},'${t}')">${t}</button>`).join('')}</div>` : ''}
+                    </div>
+                    <button class="sel-item-remove" onclick="removeFromSelection(${idx})" title="Retirer">✕</button>
+                  </div>
+                `).join('')}
+              </div>
+              <datalist id="tag-datalist">${allTags.map(t => `<option value="${t}">`).join('')}</datalist>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+ 
+  // Ref globale pour toggle
+  window._galleryImages = allImages;
+}
+ 
+function toggleSelection(idx) {
+  const img = window._galleryImages[idx];
+  if (!img) return;
+ 
+  const existingIdx = galleryState.selection.findIndex(i => i.imageUrl === img.imageUrl);
+  if (existingIdx >= 0) {
+    galleryState.selection.splice(existingIdx, 1);
+  } else {
+    if (isAlreadySaved(img.imageUrl)) {
+      showToast('Ce rendu est déjà dans la galerie publiée', 'warning');
+      return;
+    }
+    galleryState.selection.push({ ...img, tags: [] });
+  }
+  renderGalleryUI();
+}
+ 
+function removeFromSelection(idx) {
+  galleryState.selection.splice(idx, 1);
+  renderGalleryUI();
+}
+ 
+function clearSelection() {
+  galleryState.selection = [];
+  renderGalleryUI();
+}
+ 
+function addTagToSelection(selIdx) {
+  const input = document.getElementById(`tag-input-${selIdx}`);
+  if (!input) return;
+  const tag = input.value.trim().toLowerCase().replace(/,/g, '');
+  if (!tag) return;
+  if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
+  if (!galleryState.selection[selIdx].tags.includes(tag)) {
+    galleryState.selection[selIdx].tags.push(tag);
+  }
+  input.value = '';
+  renderGalleryUI();
+}
+ 
+function quickAddTag(selIdx, tag) {
+  if (!galleryState.selection[selIdx]) return;
+  if (!galleryState.selection[selIdx].tags) galleryState.selection[selIdx].tags = [];
+  if (!galleryState.selection[selIdx].tags.includes(tag)) {
+    galleryState.selection[selIdx].tags.push(tag);
+    renderGalleryUI();
+  }
+}
+ 
+function removeTagFromSelection(selIdx, tag) {
+  if (!galleryState.selection[selIdx]) return;
+  galleryState.selection[selIdx].tags = galleryState.selection[selIdx].tags.filter(t => t !== tag);
+  renderGalleryUI();
+}
+ 
+function addTagSuggestion(tag) {
+  // Ajoute le tag à tous les items de sélection sans ce tag
+  galleryState.selection.forEach(item => {
+    if (!item.tags) item.tags = [];
+    if (!item.tags.includes(tag)) item.tags.push(tag);
+  });
+  renderGalleryUI();
+}
+ 
+function setFilter(tag) {
+  galleryState.activeFilter = tag;
+  renderGalleryUI();
+}
+ 
+async function removeSavedItem(idx) {
+  if (!confirm('Retirer ce rendu de la galerie ?')) return;
+  galleryState.savedItems.splice(idx, 1);
+  try {
+    await galleryApi('save', { items: galleryState.savedItems });
+    showToast('Rendu retiré de la galerie');
+  } catch(e) {
+    showToast('Erreur sauvegarde: ' + e.message, 'error');
+  }
+  renderGalleryUI();
+}
+ 
+async function loadMoreAndRefresh() {
+  const btn = document.getElementById('btn-load-more');
+  if (btn) { btn.disabled = true; btn.textContent = 'Chargement…'; }
+  await loadMoreBrowseOrders();
+  renderGalleryUI();
+}
+ 
+async function saveGallery() {
+  if (galleryState.selection.length === 0) return;
+ 
+  // Vérifier que tous les items ont au moins un tag
+  const untagged = galleryState.selection.filter(i => !i.tags || i.tags.length === 0);
+  if (untagged.length > 0) {
+    showToast(`${untagged.length} image(s) sans tag — ajoute au moins une catégorie`, 'warning');
+    return;
+  }
+ 
+  const btn = document.getElementById('btn-save-gallery');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sauvegarde…'; }
+ 
+  try {
+    // Merger avec les items existants
+    const newItems = [
+      ...galleryState.savedItems,
+      ...galleryState.selection.map(item => ({
+        imageUrl: item.imageUrl,
+        productHandle: item.productHandle,
+        productId: item.productId,
+        customizationId: item.customizationId,
+        title: item.title,
+        tags: item.tags,
+        addedAt: new Date().toISOString(),
+      }))
+    ];
+ 
+    await galleryApi('save', { items: newItems });
+    galleryState.savedItems = newItems;
+    galleryState.selection = [];
+    showToast(`${newItems.length - galleryState.savedItems.length + galleryState.selection.length} rendu(s) ajouté(s) à la galerie !`);
+    renderGalleryUI();
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = `💾 Sauvegarder sélection`; }
+  }
+}
 </script>
 </body>
 </html>
