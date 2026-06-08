@@ -1562,7 +1562,7 @@ function renderSavedPanel(){
   ];
   tabs.forEach(function(tab){
     var active=galleryState.activeNiche===tab.id;
-    h+='<button onclick="galleryState.activeNiche=''+tab.id+'';galleryState.savedSelection=[];galleryState.showBulkTag=false;renderGalleryUI()" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;cursor:pointer;font-weight:600;font-size:12px;white-space:nowrap;border-bottom:'+(active?'2px solid '+tab.color+';color:'+tab.color:'2px solid transparent;color:var(--text-sub)')+';">'+tab.label+' ('+tab.count+')</button>';
+    h+='<button onclick="galleryState.activeNiche=\''+tab.id+'\';galleryState.savedSelection=[];galleryState.showBulkTag=false;renderGalleryUI()" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;cursor:pointer;font-weight:600;font-size:12px;white-space:nowrap;border-bottom:'+(active?'2px solid '+tab.color+';color:'+tab.color:'2px solid transparent;color:var(--text-sub)')+';"><span>'+tab.label+'</span> <span style=\"opacity:.7;font-size:11px;\">('+tab.count+')</span></button>';
   });
   h+='</div>';
   h+=renderSavedNicheTab(galleryState.activeNiche);
