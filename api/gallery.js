@@ -143,6 +143,8 @@ async function fetchOrdersWithImages(cursor = null) {
               _imageUrl: extractImage(li.customAttributes),
               _customizationId: extractCustId(li.customAttributes),
               _niche: detectNiche(li.variant?.product?.tags),
+              _variantId: li.variant?.id ? li.variant.id.replace('gid://shopify/ProductVariant/', '') : null,
+              _variantTitle: li.variant?.title || null,
             }
           }))
       }
@@ -203,6 +205,8 @@ async function fetchAllOrdersWithImages(cursor = null) {
               _imageUrl: extractImage(li.customAttributes),
               _customizationId: extractCustId(li.customAttributes),
               _niche: detectNiche(li.variant?.product?.tags),
+              _variantId: li.variant?.id ? li.variant.id.replace('gid://shopify/ProductVariant/', '') : null,
+              _variantTitle: li.variant?.title || null,
             }
           }))
       }
