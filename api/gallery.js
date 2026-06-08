@@ -7,6 +7,10 @@ const APP_PASSWORD = process.env.APP_PASSWORD;
 const NAMESPACE = 'rxwear_gallery';
 const KEY = 'items';
 
+// Clés possibles pour l'image teeinblue dans les customAttributes
+const IMAGE_KEYS = ['_customization_image', 'customization-image', 'customization_image', 'Customization Image'];
+const CUSTID_KEYS = ['_customization_id', 'customization-id', 'customization_id'];
+
 let cachedToken = null;
 let tokenExpiresAt = 0;
 
@@ -38,14 +42,28 @@ async function shopifyGql(query, variables = {}) {
   return res.json();
 }
 
-// Lire les items de galerie depuis le metafield shop
+function extractImage(customAttributes) {
+  return customAttributes?.find(a => IMAGE_KEYS.includes(a.key))?.value || null;
+}
+
+function extractCustId(customAttributes) {
+  return customAttributes?.find(a => CUSTID_KEYS.includes(a.key))?.value || null;
+}
+
+// Déduire la niche depuis les tags du produit
+function detectNiche(productTags) {
+  if (!productTags) return null;
+  const tags = Array.isArray(productTags) ? productTags : [productTags];
+  const tagsLower = tags.map(t => t.toLowerCase());
+  if (tagsLower.includes('customrunning')) return 'running';
+  if (tagsLower.includes('custom')) return 'cf';
+  return null;
+}
+
 async function getGalleryItems() {
   const data = await shopifyGql(`{
     shop {
-      metafield(namespace: "${NAMESPACE}", key: "${KEY}") {
-        id
-        value
-      }
+      metafield(namespace: "${NAMESPACE}", key: "${KEY}") { id value }
     }
   }`);
   const raw = data?.data?.shop?.metafield?.value;
@@ -57,7 +75,6 @@ async function getGalleryItems() {
   }
 }
 
-// Sauvegarder les items dans le metafield shop
 async function saveGalleryItems(items) {
   const shopData = await shopifyGql(`{ shop { id } }`);
   const shopId = shopData?.data?.shop?.id;
@@ -85,31 +102,22 @@ async function saveGalleryItems(items) {
   return data?.data?.metafieldsSet?.metafields?.[0];
 }
 
-// Récupérer les commandes avec des images teeinblue
-// L'image est dans customAttributes._customization_image (ligne de commande)
-// Le customization_id est dans customAttributes._customization_id
+// Récupérer commandes avec images — filtre tag:custom OR tag:customrunning
 async function fetchOrdersWithImages(cursor = null) {
-  // Pas de filtre status:any — on prend toutes les commandes (ouvertes + fermées)
-  // On utilise la query vide pour tout récupérer, ou on filtre par tag teeinblue si dispo
   const data = await shopifyGql(`
     query($first: Int!, $after: String) {
       orders(first: $first, after: $after, query: "tag:custom", sortKey: CREATED_AT, reverse: true) {
         edges {
           node {
-            id
-            name
-            createdAt
+            id name createdAt
             lineItems(first: 50) {
               edges {
                 node {
-                  id
-                  title
-                  quantity
+                  id title quantity
                   customAttributes { key value }
                   variant {
-                    id
-                    title
-                    product { id handle title }
+                    id title
+                    product { id handle title tags }
                   }
                 }
               }
@@ -119,37 +127,29 @@ async function fetchOrdersWithImages(cursor = null) {
         pageInfo { hasNextPage endCursor }
       }
     }
-  `, {
-    first: 50,
-    after: cursor || null,
-  });
+  `, { first: 50, after: cursor || null });
 
   const orders = data?.data?.orders?.edges?.map(e => e.node) || [];
 
-  // Filtrer les line items avec image teeinblue
   const filtered = orders
     .map(order => ({
       ...order,
       lineItems: {
-        edges: order.lineItems.edges.filter(({ node: li }) => {
-          const imgAttr = li.customAttributes?.find(
-            a => a.key === '_customization_image' || a.key === 'customization-image'
-          );
-          return imgAttr?.value;
-        })
+        edges: order.lineItems.edges
+          .filter(({ node: li }) => extractImage(li.customAttributes))
+          .map(({ node: li }) => ({
+            node: {
+              ...li,
+              _imageUrl: extractImage(li.customAttributes),
+              _customizationId: extractCustId(li.customAttributes),
+              _niche: detectNiche(li.variant?.product?.tags),
+            }
+          }))
       }
     }))
     .filter(o => o.lineItems.edges.length > 0);
 
-  // Debug : log le nombre total et filtré
-  console.log(`fetchOrders: ${orders.length} commandes total, ${filtered.length} avec images teeinblue`);
-  if (orders.length > 0 && filtered.length === 0) {
-    // Log les clés custom attributes pour debug
-    const sample = orders[0]?.lineItems?.edges?.[0]?.node;
-    if (sample) {
-      console.log('Sample line item customAttributes:', JSON.stringify(sample.customAttributes));
-    }
-  }
+  console.log(`fetchOrders: ${orders.length} commandes, ${filtered.length} avec images`);
 
   return {
     orders: filtered,
@@ -162,28 +162,22 @@ async function fetchOrdersWithImages(cursor = null) {
   };
 }
 
-
-// Version sans filtre tag — pour debug et découverte des vraies clés
+// Version sans filtre — debug
 async function fetchAllOrdersWithImages(cursor = null) {
   const data = await shopifyGql(`
     query($first: Int!, $after: String) {
       orders(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) {
         edges {
           node {
-            id
-            name
-            createdAt
+            id name createdAt
             lineItems(first: 20) {
               edges {
                 node {
-                  id
-                  title
-                  quantity
+                  id title quantity
                   customAttributes { key value }
                   variant {
-                    id
-                    title
-                    product { id handle title }
+                    id title
+                    product { id handle title tags }
                   }
                 }
               }
@@ -197,25 +191,26 @@ async function fetchAllOrdersWithImages(cursor = null) {
 
   const orders = data?.data?.orders?.edges?.map(e => e.node) || [];
 
-  // Chercher les images avec toutes les variantes de clé possibles
-  const IMAGE_KEYS = ['_customization_image', 'customization-image', 'Customization Image', 'customization_image'];
-  const CUSTID_KEYS = ['_customization_id', 'customization-id', 'customization_id'];
-
   const filtered = orders
     .map(order => ({
       ...order,
       lineItems: {
-        edges: order.lineItems.edges.filter(({ node: li }) => {
-          return li.customAttributes?.some(a => IMAGE_KEYS.includes(a.key) && a.value);
-        })
+        edges: order.lineItems.edges
+          .filter(({ node: li }) => extractImage(li.customAttributes))
+          .map(({ node: li }) => ({
+            node: {
+              ...li,
+              _imageUrl: extractImage(li.customAttributes),
+              _customizationId: extractCustId(li.customAttributes),
+              _niche: detectNiche(li.variant?.product?.tags),
+            }
+          }))
       }
     }))
     .filter(o => o.lineItems.edges.length > 0);
 
   const allAttrs = orders.flatMap(o => o.lineItems.edges.flatMap(e => e.node.customAttributes || []));
   const uniqueKeys = [...new Set(allAttrs.map(a => a.key))];
-
-  console.log(`fetchAllOrders: ${orders.length} commandes, ${filtered.length} avec images, clés uniques:`, uniqueKeys);
 
   return {
     orders: filtered,
@@ -238,8 +233,7 @@ export default async function handler(req, res) {
 
   const password = req.headers['x-app-password'];
   if (!APP_PASSWORD || !password || password !== APP_PASSWORD) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
+    res.status(401).json({ error: 'Unauthorized' }); return;
   }
 
   try {
@@ -247,31 +241,17 @@ export default async function handler(req, res) {
     const { action, items, cursor } = body;
 
     if (req.method === 'GET' || action === 'get') {
-      const result = await getGalleryItems();
-      res.status(200).json(result);
-      return;
+      res.status(200).json(await getGalleryItems()); return;
     }
-
     if (action === 'save') {
-      if (!Array.isArray(items)) {
-        res.status(400).json({ error: 'items doit être un tableau' });
-        return;
-      }
-      const result = await saveGalleryItems(items);
-      res.status(200).json({ ok: true, metafield: result });
-      return;
+      if (!Array.isArray(items)) { res.status(400).json({ error: 'items doit être un tableau' }); return; }
+      res.status(200).json({ ok: true, metafield: await saveGalleryItems(items) }); return;
     }
-
     if (action === 'fetchOrders') {
-      const result = await fetchOrdersWithImages(cursor || null);
-      res.status(200).json(result);
-      return;
+      res.status(200).json(await fetchOrdersWithImages(cursor || null)); return;
     }
-
     if (action === 'fetchOrdersAll') {
-      const result = await fetchAllOrdersWithImages(cursor || null);
-      res.status(200).json(result);
-      return;
+      res.status(200).json(await fetchAllOrdersWithImages(cursor || null)); return;
     }
 
     res.status(400).json({ error: `Action inconnue: ${action}` });
