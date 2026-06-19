@@ -1288,7 +1288,10 @@ const galleryState = {
   dragNiche: null,
   savedSelection: [],
   showBulkTag: false,
-  galleryTab: 'browse',   // 'browse' | 'published'
+  galleryTab: 'browse',   // 'browse' | 'published' | 'icons'
+  tagIcons: {},
+  tagIconsLoaded: false,
+  uploadingIcon: null,
 };
 
 // ── Persistance position ──
@@ -1344,6 +1347,98 @@ function getAllTags() {
   galleryState.savedItems.forEach(function(i){ (i.tags||[]).forEach(function(t){tags.add(t);}); });
   galleryState.selection.forEach(function(i){ (i.tags||[]).forEach(function(t){tags.add(t);}); });
   return Array.from(tags).sort();
+}
+
+async function loadTagIcons() {
+  if (galleryState.tagIconsLoaded) return;
+  try {
+    const r = await galleryApi('getTagIcons');
+    galleryState.tagIcons = r.icons || {};
+  } catch(e) { galleryState.tagIcons = {}; }
+  galleryState.tagIconsLoaded = true;
+}
+
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function() {
+      const result = reader.result;
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadTagIcon(tag, file) {
+  galleryState.uploadingIcon = tag;
+  renderGalleryUI();
+  try {
+    var base64 = await fileToBase64(file);
+    var r = await galleryApi('uploadIcon', { tag: tag, base64Data: base64, filename: file.name, mimeType: file.type });
+    galleryState.tagIcons = r.icons || galleryState.tagIcons;
+    showToast('Ic\u00f4ne mise \u00e0 jour pour "' + tag + '"');
+  } catch(e) {
+    showToast('Erreur upload: ' + e.message, 'error');
+  }
+  galleryState.uploadingIcon = null;
+  renderGalleryUI();
+}
+
+async function removeTagIcon(tag) {
+  if (!confirm('Retirer l\'ic\u00f4ne pour "' + tag + '" ?')) return;
+  try {
+    var r = await galleryApi('removeTagIcon', { tag: tag });
+    galleryState.tagIcons = r.icons || {};
+    showToast('Ic\u00f4ne retir\u00e9e');
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+  renderGalleryUI();
+}
+
+function triggerIconUpload(tag) {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/png,image/svg+xml,image/jpeg,image/webp';
+  input.onchange = function() {
+    if (input.files && input.files[0]) uploadTagIcon(tag, input.files[0]);
+  };
+  input.click();
+}
+
+function renderIconsPanel() {
+  var allTags = getAllTags();
+  var displayTags = Array.from(new Set(['crossfit', 'running'].concat(allTags)));
+
+  var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>Ic\u00f4nes des filtres</h3></div>';
+  h += '<div class="gallery-panel-body">';
+  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Importe une image (PNG, SVG, JPG) pour chaque tag. Elle remplacera le texte/emoji dans les filtres du front.</p>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">';
+
+  displayTags.forEach(function(tag) {
+    var iconUrl = galleryState.tagIcons[tag];
+    var isUploading = galleryState.uploadingIcon === tag;
+    var label = tag === 'crossfit' ? 'CrossFit' : tag === 'running' ? 'Running' : tag;
+
+    h += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;background:var(--surface);">';
+    h += '<div style="width:64px;height:64px;margin:0 auto 8px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
+    if (isUploading) {
+      h += '<div style="font-size:11px;color:var(--text-sub);">Envoi...</div>';
+    } else if (iconUrl) {
+      h += '<img src="' + iconUrl + '" alt="' + label + '" style="width:100%;height:100%;object-fit:contain;" />';
+    } else {
+      h += '<div style="font-size:24px;opacity:.3;">&#128247;</div>';
+    }
+    h += '</div>';
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">' + label + '</div>';
+    h += '<div style="display:flex;gap:4px;justify-content:center;">';
+    h += '<button class="btn" style="font-size:11px;padding:4px 8px;" onclick="triggerIconUpload(\'' + tag + '\')">' + (iconUrl ? 'Changer' : 'Importer') + '</button>';
+    if (iconUrl) h += '<button class="btn" style="font-size:11px;padding:4px 8px;color:var(--critical);" onclick="removeTagIcon(\'' + tag + '\')">Retirer</button>';
+    h += '</div></div>';
+  });
+
+  h += '</div></div></div>';
+  return h;
 }
 
 async function renderGalleryTab() {
@@ -1604,25 +1699,28 @@ function renderGalleryUI() {
   // Onglets principaux
   h += '<button onclick="galleryState.galleryTab=\'browse\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='browse'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#128247; Parcourir</button>';
   h += '<button onclick="galleryState.galleryTab=\'published\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='published'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#10003; Publi\u00e9s ('+total+')</button>';
+  h += '<button onclick="galleryState.galleryTab=\'icons\';loadTagIcons().then(renderGalleryUI);" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='icons'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#127912; Ic\u00f4nes</button>';
   h += '</div>';
   h += '<div style="display:flex;gap:8px;">';
   if (galleryState.galleryTab === 'browse') {
     h += '<button class="btn" onclick="galleryState.showManualForm=!galleryState.showManualForm;renderGalleryUI()">'+(galleryState.showManualForm?'Fermer':'&#9999;&#65039; Ajout manuel')+'</button>';
   }
-  h += '<button class="btn btn-primary" onclick="saveGallery()" id="btn-sg"'+(!sel?' disabled':'')+'>&#128190; Sauvegarder ('+sel+')</button>';
+  if (galleryState.galleryTab !== 'icons') {
+    h += '<button class="btn btn-primary" onclick="saveGallery()" id="btn-sg"'+(!sel?' disabled':'')+'>&#128190; Sauvegarder ('+sel+')</button>';
+  }
   h += '</div></div>';
 
   if (galleryState.showManualForm) h += renderManualForm();
 
   if (galleryState.galleryTab === 'browse') {
-    // Layout 2 colonnes : images | sélection
     h += '<div class="gallery-layout">';
     h += '<div class="gallery-panel"><div class="gallery-panel-header"><h3>&#128247; Rendus des commandes</h3></div><div class="gallery-panel-body" id="gallery-browse-panel"></div></div>';
     h += '<div class="gallery-panel" style="position:sticky;top:calc(var(--header-height) + 56px);">'+renderSelPanel()+'</div>';
     h += '</div>';
-  } else {
-    // Onglet publiés
+  } else if (galleryState.galleryTab === 'published') {
     h += '<div class="gallery-panel"><div class="gallery-panel-body">'+renderSavedPanel()+'</div></div>';
+  } else if (galleryState.galleryTab === 'icons') {
+    h += renderIconsPanel();
   }
 
   c.innerHTML = h;
