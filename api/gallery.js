@@ -299,11 +299,17 @@ async function uploadIconFile(base64Data, filename, mimeType) {
     }]
   });
 
+  if (stagedData?.errors?.length) {
+    throw new Error('Erreur GraphQL stagedUploadsCreate: ' + stagedData.errors.map(e => e.message).join(', '));
+  }
+
   const stagedErrors = stagedData?.data?.stagedUploadsCreate?.userErrors;
   if (stagedErrors?.length) throw new Error(stagedErrors.map(e => e.message).join(', '));
 
   const target = stagedData?.data?.stagedUploadsCreate?.stagedTargets?.[0];
-  if (!target) throw new Error('Pas de cible de staged upload');
+  if (!target) {
+    throw new Error('Pas de cible de staged upload. Réponse brute: ' + JSON.stringify(stagedData).slice(0, 500));
+  }
 
   // 3. Construire le FormData et uploader le fichier vers le staged URL
   const formData = new FormData();
