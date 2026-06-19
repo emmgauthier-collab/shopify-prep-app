@@ -295,7 +295,7 @@ async function uploadIconFile(base64Data, filename, mimeType) {
       mimeType: mimeType,
       fileSize: fileSize,
       httpMethod: 'POST',
-      resource: 'FILE',
+      resource: 'IMAGE',
     }]
   });
 
