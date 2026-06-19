@@ -4,8 +4,8 @@ const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 const APP_PASSWORD = process.env.APP_PASSWORD;
 
-const NAMESPACE = 'custom';
-const KEY = 'rxwear_gallery';
+const NAMESPACE = 'rxwear_gallery';
+const KEY = 'items';
 
 // Clés possibles pour l'image teeinblue dans les customAttributes
 const IMAGE_KEYS = ['_customization_image', 'customization-image', 'customization_image', 'Customization Image'];
@@ -229,7 +229,7 @@ async function fetchAllOrdersWithImages(cursor = null) {
 }
 
 
-const ICONS_KEY = 'rxwear_gallery_icons';
+const ICONS_KEY = 'tag_icons';
 
 // Récupérer les icônes de tags depuis le metafield shop
 async function getTagIcons() {
