@@ -1598,11 +1598,12 @@ function renderBrowsePanel() {
 function renderSavedNicheTab(niche) {
   var items; var allTags=getAllTags();
   if(niche==='all') items=galleryState.savedItems;
+  else if(niche==='official') items=galleryState.savedItems.filter(function(i){return i.source==='official';});
   else if(niche==='other') items=galleryState.savedItems.filter(function(i){return !i.niche||(i.niche!=='cf'&&i.niche!=='running');});
   else items=galleryState.savedItems.filter(function(i){return i.niche===niche;});
   var nicheIndices=[];
   galleryState.savedItems.forEach(function(item,ri){
-    var matches=(niche==='all')||(niche==='other'&&(!item.niche||(item.niche!=='cf'&&item.niche!=='running')))||(item.niche===niche);
+    var matches=(niche==='all')||(niche==='official'&&item.source==='official')||(niche==='other'&&(!item.niche||(item.niche!=='cf'&&item.niche!=='running')))||(item.niche===niche);
     if(matches) nicheIndices.push(ri);
   });
   var allSel=nicheIndices.length>0&&nicheIndices.every(function(ri){return galleryState.savedSelection.indexOf(ri)>-1;});
@@ -1622,6 +1623,7 @@ function renderSavedNicheTab(niche) {
     var isSel=galleryState.savedSelection.indexOf(ri)>-1;
     h+='<div class="saved-img-card" draggable="true" ondragstart="onDragStart(event,'+idx+',\''+niche+'\')" ondragover="onDragOver(event)" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'+idx+',\''+niche+'\')" ondragend="onDragEnd()" style="cursor:grab;outline:'+(isSel?'2px solid var(--primary)':'none')+';outline-offset:2px;">';
     h+='<div style="position:absolute;top:5px;left:5px;z-index:2;"><input type="checkbox" '+(isSel?'checked':'')+' onclick="event.stopPropagation();toggleSavedSelection('+ri+')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);" /></div>';
+    if(item.source==='official')h+='<div style="position:absolute;top:4px;right:4px;z-index:2;background:#c9a227;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 1px 3px rgba(0,0,0,.3);" title="Design officiel">&#11088;</div>';
     h+='<img src="'+item.imageUrl+'" alt="" loading="lazy" onclick="toggleSavedSelection('+ri+')" style="cursor:pointer;" />';
     if(isEditing){h+='<div style="padding:6px;background:var(--surface);"><div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;">'+(item.tags||[]).map(function(t){return '<span style="background:var(--primary);color:#fff;border-radius:8px;font-size:10px;padding:1px 5px;display:flex;align-items:center;gap:2px;">'+t+'<button onclick="removeEditTag('+ri+',\''+t+'\')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:11px;padding:0;">&#x2715;</button></span>';}).join('')+'</div><div style="display:flex;gap:3px;margin-bottom:4px;"><input id="edit-tag-input-'+ri+'" type="text" placeholder="Tag..." list="etdl-'+ri+'" style="flex:1;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:11px;" onkeydown="if(event.key===\'Enter\'||event.key===\',\'){event.preventDefault();addEditTag('+ri+')}" /><button onclick="addEditTag('+ri+')" style="padding:3px 6px;font-size:11px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;">+</button></div><datalist id="etdl-'+ri+'">'+allTags.map(function(t){return '<option value="'+t+'">';}).join('')+'</datalist><div style="display:flex;gap:4px;"><button onclick="saveEditTags('+ri+')" style="flex:1;padding:3px;font-size:11px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;">Sauver</button><button onclick="cancelEditTags()" style="padding:3px 6px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Annuler</button></div></div>';}
     else{h+='<div class="saved-tags">'+(item.tags||[]).map(function(t){return '<span class="saved-tag">'+t+'</span>';}).join('')+'</div>';if(item.variantId)h+='<div style="font-size:9px;color:var(--text-sub);padding:0 4px 2px;text-align:center;">var. ...'+String(item.variantId).slice(-6)+'</div>';}
@@ -1636,8 +1638,9 @@ function renderSavedPanel(){
   var cfCount=galleryState.savedItems.filter(function(i){return i.niche==='cf';}).length;
   var runCount=galleryState.savedItems.filter(function(i){return i.niche==='running';}).length;
   var otherCount=galleryState.savedItems.filter(function(i){return !i.niche||(i.niche!=='cf'&&i.niche!=='running');}).length;
+  var officialCount=galleryState.savedItems.filter(function(i){return i.source==='official';}).length;
   var total=galleryState.savedItems.length;
-  var tabs=[{id:'cf',label:'&#127947;&#65039; CF',count:cfCount,color:'#d93025'},{id:'running',label:'&#127939; Running',count:runCount,color:'#1a73e8'},{id:'other',label:'&#128360; Autres',count:otherCount,color:'#888'},{id:'all',label:'Tous',count:total,color:'var(--primary)'}];
+  var tabs=[{id:'cf',label:'&#127947;&#65039; CF',count:cfCount,color:'#d93025'},{id:'running',label:'&#127939; Running',count:runCount,color:'#1a73e8'},{id:'official',label:'&#11088; Mes designs',count:officialCount,color:'#c9a227'},{id:'other',label:'&#128360; Autres',count:otherCount,color:'#888'},{id:'all',label:'Tous',count:total,color:'var(--primary)'}];
   var h='<div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px;overflow-x:auto;">';
   tabs.forEach(function(tab){
     var active=galleryState.activeNiche===tab.id;
@@ -1651,15 +1654,52 @@ function renderSavedPanel(){
 function renderManualForm(){
   var allTags=getAllTags();
   var h='<div class="gallery-panel" style="margin-bottom:16px;border:2px dashed var(--primary);"><div class="gallery-panel-header"><h3>Ajout manuel</h3><button class="btn" style="font-size:12px;padding:4px 8px;" onclick="galleryState.showManualForm=false;renderGalleryUI()">Fermer</button></div><div class="gallery-panel-body">';
+  h+='<div style="background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px;">';
+  h+='<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">JSON Teeinblue (ligne de commande / properties)</label>';
+  h+='<textarea id="mf-json" rows="3" placeholder="Colle ici le JSON complet ou juste l objet properties" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:monospace;resize:vertical;"></textarea>';
+  h+='<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><button class="btn" style="font-size:12px;padding:5px 10px;" onclick="parseTeeinblueJson()">Parser le JSON</button><span style="font-size:10px;color:var(--text-sub);">Remplit automatiquement les champs ci-dessous</span></div>';
+  h+='<div id="mf-json-err" style="color:var(--critical);font-size:12px;margin-top:6px;display:none;"></div>';
+  h+='</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">';
   function fld(id,lbl,ph,note){var f='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">'+lbl+'</label><input id="'+id+'" type="text" placeholder="'+ph+'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';if(note)f+='<div style="font-size:10px;color:var(--text-sub);margin-top:2px;">'+note+'</div>';return f+'</div>';}
-  h+=fld('mf-img','Image URL *','https://cdn.teeinblue.com/...','');h+=fld('mf-cid','Customization ID *','1a33ab74-...','');h+=fld('mf-hdl','Handle produit *','t-shirt-running-personnalise','');h+=fld('mf-vid','Variant ID','47332888510766',"Depuis l'URL admin");h+=fld('mf-ttl','Titre','T-shirt Running Bleu','');
+  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Image URL *</label><input id="mf-img" type="text" placeholder="https://cdn.teeinblue.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /><div style="display:flex;align-items:center;gap:6px;margin-top:4px;"><input id="mf-img-file" type="file" accept="image/*" style="font-size:11px;flex:1;min-width:0;" /><button class="btn" type="button" style="font-size:11px;padding:4px 8px;white-space:nowrap;" onclick="uploadManualImage()">Uploader</button></div><div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Colle une URL Teeinblue, ou uploade ton propre mockup (PNG/JPG)</div></div>';
+  h+=fld('mf-cid','Customization ID *','1a33ab74-...','');h+=fld('mf-hdl','Handle produit *','t-shirt-running-personnalise','');h+=fld('mf-vid','Variant ID','47332888510766',"Depuis l'URL admin");h+=fld('mf-ttl','Titre','T-shirt Running Bleu','');
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Niche</label><select id="mf-niche" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);"><option value="">-- Choisir --</option><option value="running">Running</option><option value="cf">CrossFit</option></select></div>';
-  h+='</div><div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';
+  h+='</div><div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
+  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';
   if(allTags.length){h+='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="var i=document.getElementById(\'mf-tags\');i.value=(i.value?i.value+\',\':\'\')+\''+t+'\'">'+t+'</button>';}).join('')+'</div>';}
   h+='</div><div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-primary" onclick="submitManual()" style="flex:1;">Ajouter</button><div style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;"><img id="mf-prev" src="" style="width:100%;height:100%;object-fit:cover;display:none;" /></div></div>';
   h+='<div id="mf-err" style="color:var(--critical);font-size:12px;margin-top:6px;display:none;"></div></div></div>';
   return h;
+}
+
+function parseTeeinblueJson(){
+  var raw=document.getElementById('mf-json').value.trim();
+  var err=document.getElementById('mf-json-err');
+  err.style.display='none';
+  if(!raw){err.textContent='Colle d\'abord un JSON dans la zone ci-dessus';err.style.display='block';return;}
+  var obj;
+  try{obj=JSON.parse(raw);}catch(e){err.textContent='JSON invalide : '+e.message;err.style.display='block';return;}
+  var props=obj.properties||obj;
+  function pick(sources,keys){for(var s=0;s<sources.length;s++){var src=sources[s];if(!src)continue;for(var i=0;i<keys.length;i++){if(src[keys[i]])return src[keys[i]];}}return '';}
+  var img=pick([props,obj],['_customization_image','customization-image','customization_image','Customization Image']);
+  var cid=pick([props,obj],['_customization_id','customization-id','customization_id']);
+  var hdl=obj.handle||'';
+  var vid=obj.variant_id||obj.id||'';
+  var ttl=obj.product_title||obj.title||'';
+  var filled=[];
+  if(img){document.getElementById('mf-img').value=img;filled.push('image');}
+  if(cid){document.getElementById('mf-cid').value=cid;filled.push('ID');}
+  if(hdl){document.getElementById('mf-hdl').value=hdl;filled.push('handle');}
+  if(vid){document.getElementById('mf-vid').value=vid;filled.push('variant');}
+  if(ttl){document.getElementById('mf-ttl').value=ttl;filled.push('titre');}
+  if(!img&&!cid&&!hdl&&!vid&&!ttl){err.textContent='Aucun champ reconnu dans ce JSON (verifie qu il contient _customization_id / _customization_image / handle...)';err.style.display='block';return;}
+  var hay=((hdl||'')+' '+(ttl||'')).toLowerCase();
+  var nicheSel=document.getElementById('mf-niche');
+  if(hay.indexOf('running')>-1)nicheSel.value='running';
+  else if(hay.indexOf('crossfit')>-1||hay.indexOf('hyrox')>-1||hay.indexOf('oversize')>-1||hay.indexOf('crop')>-1||hay.indexOf('tank')>-1||hay.indexOf('debardeur')>-1)nicheSel.value='cf';
+  var prev=document.getElementById('mf-prev');if(img){prev.src=img;prev.style.display='block';}
+  showToast('Champs remplis : '+filled.join(', '));
 }
 
 function renderSelPanel(){
@@ -1750,15 +1790,30 @@ async function resetBrowse() {
   renderGalleryUI();
 }
 
+async function uploadManualImage(){
+  var fileInput=document.getElementById('mf-img-file');
+  var file=fileInput&&fileInput.files[0];
+  var err=document.getElementById('mf-err');err.style.display='none';
+  if(!file){err.textContent='Choisis d\'abord un fichier image';err.style.display='block';return;}
+  try{
+    var base64=await fileToBase64(file);
+    var r=await galleryApi('uploadGalleryImage',{base64Data:base64,filename:file.name,mimeType:file.type});
+    document.getElementById('mf-img').value=r.imageUrl;
+    var prev=document.getElementById('mf-prev');if(prev){prev.src=r.imageUrl;prev.style.display='block';}
+    showToast('Image upload\u00e9e !');
+  }catch(e){err.textContent='Erreur upload: '+e.message;err.style.display='block';}
+}
+
 async function submitManual(){
   var url=document.getElementById('mf-img').value.trim(),cid=document.getElementById('mf-cid').value.trim(),hdl=document.getElementById('mf-hdl').value.trim(),vid=document.getElementById('mf-vid').value.trim(),ttl=document.getElementById('mf-ttl').value.trim()||hdl,niche=document.getElementById('mf-niche').value;
   var tags=document.getElementById('mf-tags').value.split(',').map(function(t){return t.trim().toLowerCase();}).filter(Boolean);
+  var isOfficial=document.getElementById('mf-official').checked;
   var err=document.getElementById('mf-err');
   if(!url||!cid||!hdl){err.textContent='URL, ID et Handle obligatoires';err.style.display='block';return;}
   if(!tags.length){err.textContent='Au moins un tag';err.style.display='block';return;}
   if(isAlreadySaved(url)){err.textContent='D\u00e9j\u00e0 dans la galerie';err.style.display='block';return;}
   err.style.display='none';
-  try{var newItems=galleryState.savedItems.concat([{imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,addedAt:new Date().toISOString()}]);await galleryApi('save',{items:newItems});galleryState.savedItems=newItems;galleryState.showManualForm=false;showToast('Ajout\u00e9 !');renderGalleryUI();}
+  try{var newItems=galleryState.savedItems.concat([{imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',addedAt:new Date().toISOString()}]);await galleryApi('save',{items:newItems});galleryState.savedItems=newItems;galleryState.showManualForm=false;showToast('Ajout\u00e9 !');renderGalleryUI();}
   catch(e){err.textContent='Erreur: '+e.message;err.style.display='block';}
 }
 
