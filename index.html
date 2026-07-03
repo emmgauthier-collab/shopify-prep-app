@@ -1712,6 +1712,7 @@ function renderManualForm(){
   h+=fld('mf-cid','Customization ID *','1a33ab74-...','');h+=fld('mf-hdl','Handle produit *','t-shirt-running-personnalise','');h+=fld('mf-vid','Variant ID','47332888510766',"Depuis l'URL admin");h+=fld('mf-ttl','Titre','T-shirt Running Bleu','');
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Niche</label><select id="mf-niche" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);"><option value="">-- Choisir --</option><option value="running">Running</option><option value="cf">CrossFit</option></select></div>';
   h+='</div><div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
+  h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;"><input id="mf-also-inspiration" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Aussi visible dans la galerie Inspiration (en plus des pages Designs signature)</label></div>';
   h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';
   if(allTags.length){h+='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="var i=document.getElementById(\'mf-tags\');i.value=(i.value?i.value+\',\':\'\')+\''+t+'\'">'+t+'</button>';}).join('')+'</div>';}
   h+='</div><div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-primary" onclick="submitManual()" style="flex:1;">'+(isEditing?'Enregistrer les modifications':'Ajouter')+'</button><div style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;"><img id="mf-prev" src="" style="width:100%;height:100%;object-fit:cover;display:none;" /></div></div>';
@@ -1832,6 +1833,7 @@ function renderGalleryUI() {
         document.getElementById('mf-ttl').value = editItem.title || '';
         document.getElementById('mf-niche').value = editItem.niche || '';
         document.getElementById('mf-official').checked = editItem.source === 'official';
+        document.getElementById('mf-also-inspiration').checked = editItem.showInInspiration === true;
         document.getElementById('mf-tags').value = (editItem.tags || []).join(', ');
         if (editItem.imageUrl && prv) { prv.src = editItem.imageUrl; prv.style.display = 'block'; }
       }
@@ -1874,6 +1876,7 @@ async function submitManual(){
   var url=document.getElementById('mf-img').value.trim(),cid=document.getElementById('mf-cid').value.trim(),hdl=document.getElementById('mf-hdl').value.trim(),vid=document.getElementById('mf-vid').value.trim(),ttl=document.getElementById('mf-ttl').value.trim()||hdl,niche=document.getElementById('mf-niche').value;
   var tags=document.getElementById('mf-tags').value.split(',').map(function(t){return t.trim().toLowerCase();}).filter(Boolean);
   var isOfficial=document.getElementById('mf-official').checked;
+  var alsoInspiration=document.getElementById('mf-also-inspiration').checked;
   var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
   var err=document.getElementById('mf-err');
   if(!url||!cid||!hdl){err.textContent='URL, ID et Handle obligatoires';err.style.display='block';return;}
@@ -1882,7 +1885,7 @@ async function submitManual(){
   err.style.display='none';
   try{
     var newItems=galleryState.savedItems.slice();
-    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',addedAt:new Date().toISOString()};
+    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',showInInspiration:alsoInspiration,addedAt:new Date().toISOString()};
     if(isEditing){
       var existing=galleryState.savedItems[galleryState.editingItemIndex];
       itemData.addedAt=(existing&&existing.addedAt)||itemData.addedAt;
