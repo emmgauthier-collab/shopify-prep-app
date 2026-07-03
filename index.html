@@ -1354,8 +1354,8 @@ async function galleryApi(action, extra) {
 
 function getAllTags() {
   const tags = new Set();
-  galleryState.savedItems.forEach(function(i){ (i.tags||[]).forEach(function(t){tags.add(t);}); });
-  galleryState.selection.forEach(function(i){ (i.tags||[]).forEach(function(t){tags.add(t);}); });
+  galleryState.savedItems.forEach(function(i){ if(!i)return; (i.tags||[]).forEach(function(t){tags.add(t);}); });
+  galleryState.selection.forEach(function(i){ if(!i)return; (i.tags||[]).forEach(function(t){tags.add(t);}); });
   return Array.from(tags).sort();
 }
 
@@ -1484,7 +1484,7 @@ async function renderGalleryTab() {
   const c = document.getElementById('content');
   c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement...</div>';
   if (!galleryState.savedLoaded) {
-    try { const r = await galleryApi('get'); galleryState.savedItems = r.items || []; }
+    try { const r = await galleryApi('get'); galleryState.savedItems = (r.items || []).filter(Boolean); }
     catch(e) { galleryState.savedItems = []; }
     galleryState.savedLoaded = true;
   }
@@ -1551,8 +1551,10 @@ function onDrop(e,targetIdx,niche){
   if(niche==='all'||niche==='other')return;
   const src=galleryState.dragSrcIdx;
   if(src===null||src===targetIdx||galleryState.dragNiche!==niche)return;
-  const ni=galleryState.savedItems.filter(function(i){return i.niche===niche;});
-  const ot=galleryState.savedItems.filter(function(i){return i.niche!==niche;});
+  const matchNiche=function(i){return niche==='official'?i.source==='official':i.niche===niche;};
+  const ni=galleryState.savedItems.filter(matchNiche);
+  const ot=galleryState.savedItems.filter(function(i){return !matchNiche(i);});
+  if(src<0||src>=ni.length||targetIdx<0||targetIdx>=ni.length){galleryState.dragSrcIdx=null;return;}
   const moved=ni.splice(src,1)[0];ni.splice(targetIdx,0,moved);
   galleryState.savedItems=ni.concat(ot);galleryState.dragSrcIdx=null;
   galleryApi('save',{items:galleryState.savedItems}).then(function(){showToast('Ordre sauvegard\u00e9');}).catch(function(e){showToast('Erreur: '+e.message,'error');});
