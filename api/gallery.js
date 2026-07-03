@@ -418,6 +418,13 @@ export default async function handler(req, res) {
       res.status(200).json({ ok: true, icons }); return;
     }
 
+    if (action === 'uploadGalleryImage') {
+      const { base64Data, filename, mimeType } = body;
+      if (!base64Data || !filename) { res.status(400).json({ error: 'base64Data et filename requis' }); return; }
+      const imageUrl = await uploadIconFile(base64Data, filename, mimeType || 'image/png');
+      res.status(200).json({ ok: true, imageUrl }); return;
+    }
+
     if (action === 'uploadIcon') {
       const { tag, base64Data, filename, mimeType } = body;
       if (!tag || !base64Data || !filename) { res.status(400).json({ error: 'tag, base64Data et filename requis' }); return; }
