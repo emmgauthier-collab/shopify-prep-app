@@ -1281,6 +1281,7 @@ const galleryState = {
   savedItems: [],
   savedLoaded: false,
   activeNiche: 'cf',
+  editingItemIndex: null,
   lastDebug: null,
   showManualForm: false,
   editingTags: null,
@@ -1337,7 +1338,16 @@ async function galleryApi(action, extra) {
     headers: { 'Content-Type': 'application/json', 'X-App-Password': state.appPassword },
     body: JSON.stringify(Object.assign({ action: action }, extra)),
   });
-  const json = await res.json();
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch (e) {
+    if (res.status === 413 || /request entity too large/i.test(text)) {
+      throw new Error('Fichier trop volumineux pour l\'upload (limite ~4 Mo c\u00f4t\u00e9 serveur). R\u00e9essaie, l\'image sera compress\u00e9e automatiquement.');
+    }
+    throw new Error('R\u00e9ponse serveur invalide (HTTP ' + res.status + ')');
+  }
   if (!res.ok) throw new Error(json.error || 'HTTP ' + res.status);
   return json;
 }
@@ -1371,12 +1381,41 @@ function fileToBase64(file) {
   });
 }
 
+function resizeImageForUpload(file, maxDim, quality) {
+  return new Promise(function(resolve, reject) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function() {
+      URL.revokeObjectURL(url);
+      var w = img.width, h = img.height;
+      var scale = Math.min(1, maxDim / Math.max(w, h));
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(w * scale));
+      canvas.height = Math.max(1, Math.round(h * scale));
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function(blob) {
+        if (!blob) { reject(new Error('Redimensionnement impossible')); return; }
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = function() { URL.revokeObjectURL(url); reject(new Error('Image illisible')); };
+    img.src = url;
+  });
+}
+
 async function uploadTagIcon(tag, file) {
   galleryState.uploadingIcon = tag;
   renderGalleryUI();
   try {
-    var base64 = await fileToBase64(file);
-    var r = await galleryApi('uploadIcon', { tag: tag, base64Data: base64, filename: file.name, mimeType: file.type });
+    var uploadBlob = file, uploadName = file.name, uploadType = file.type;
+    if (file.size > 2 * 1024 * 1024) {
+      uploadBlob = await resizeImageForUpload(file, 800, 0.85);
+      uploadName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+      uploadType = 'image/jpeg';
+    }
+    var base64 = await fileToBase64(uploadBlob);
+    var r = await galleryApi('uploadIcon', { tag: tag, base64Data: base64, filename: uploadName, mimeType: uploadType });
     galleryState.tagIcons = r.icons || galleryState.tagIcons;
     showToast('Ic\u00f4ne mise \u00e0 jour pour "' + tag + '"');
   } catch(e) {
@@ -1492,6 +1531,12 @@ function getCustId(li) {
 }
 function nicheColor(n){return n==='running'?'#1a73e8':n==='cf'?'#d93025':'#888';}
 function nicheLabel(n){return n==='running'?'Running':n==='cf'?'CrossFit':(n||'');}
+function startEditItem(ri){
+  galleryState.editingItemIndex=ri;
+  galleryState.showManualForm=true;
+  renderGalleryUI();
+}
+
 function isAlreadySaved(url){return galleryState.savedItems.some(function(i){return i.imageUrl===url;});}
 function isInSelection(url){return galleryState.selection.some(function(i){return i.imageUrl===url;});}
 function mkBadge(niche,left){if(!niche)return '';return '<span style="position:absolute;top:5px;left:'+left+'px;background:'+nicheColor(niche)+';color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;">'+nicheLabel(niche)+'</span>';}
@@ -1627,7 +1672,7 @@ function renderSavedNicheTab(niche) {
     h+='<img src="'+item.imageUrl+'" alt="" loading="lazy" onclick="toggleSavedSelection('+ri+')" style="cursor:pointer;" />';
     if(isEditing){h+='<div style="padding:6px;background:var(--surface);"><div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;">'+(item.tags||[]).map(function(t){return '<span style="background:var(--primary);color:#fff;border-radius:8px;font-size:10px;padding:1px 5px;display:flex;align-items:center;gap:2px;">'+t+'<button onclick="removeEditTag('+ri+',\''+t+'\')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:11px;padding:0;">&#x2715;</button></span>';}).join('')+'</div><div style="display:flex;gap:3px;margin-bottom:4px;"><input id="edit-tag-input-'+ri+'" type="text" placeholder="Tag..." list="etdl-'+ri+'" style="flex:1;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:11px;" onkeydown="if(event.key===\'Enter\'||event.key===\',\'){event.preventDefault();addEditTag('+ri+')}" /><button onclick="addEditTag('+ri+')" style="padding:3px 6px;font-size:11px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;">+</button></div><datalist id="etdl-'+ri+'">'+allTags.map(function(t){return '<option value="'+t+'">';}).join('')+'</datalist><div style="display:flex;gap:4px;"><button onclick="saveEditTags('+ri+')" style="flex:1;padding:3px;font-size:11px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;">Sauver</button><button onclick="cancelEditTags()" style="padding:3px 6px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Annuler</button></div></div>';}
     else{h+='<div class="saved-tags">'+(item.tags||[]).map(function(t){return '<span class="saved-tag">'+t+'</span>';}).join('')+'</div>';if(item.variantId)h+='<div style="font-size:9px;color:var(--text-sub);padding:0 4px 2px;text-align:center;">var. ...'+String(item.variantId).slice(-6)+'</div>';}
-    h+='<div class="saved-actions"><button onclick="startEditTags('+ri+')" style="background:var(--primary);color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#9998;</button><button class="saved-del" onclick="removeSavedItem('+ri+')">&#x2715;</button></div>';
+    h+='<div class="saved-actions"><button onclick="startEditItem('+ri+')" title="Modifier tous les champs" style="background:#c9a227;color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#128221;</button><button onclick="startEditTags('+ri+')" title="Modifier les tags" style="background:var(--primary);color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#9998;</button><button class="saved-del" onclick="removeSavedItem('+ri+')">&#x2715;</button></div>';
     h+='<div style="position:absolute;top:4px;right:4px;color:rgba(255,255,255,.7);font-size:14px;pointer-events:none;">&#8597;</div>';
     h+='</div>';
   });
@@ -1653,7 +1698,8 @@ function renderSavedPanel(){
 
 function renderManualForm(){
   var allTags=getAllTags();
-  var h='<div class="gallery-panel" style="margin-bottom:16px;border:2px dashed var(--primary);"><div class="gallery-panel-header"><h3>Ajout manuel</h3><button class="btn" style="font-size:12px;padding:4px 8px;" onclick="galleryState.showManualForm=false;renderGalleryUI()">Fermer</button></div><div class="gallery-panel-body">';
+  var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
+  var h='<div class="gallery-panel" style="margin-bottom:16px;border:2px dashed var(--primary);"><div class="gallery-panel-header"><h3>'+(isEditing?'Modifier le design':'Ajout manuel')+'</h3><button class="btn" style="font-size:12px;padding:4px 8px;" onclick="galleryState.showManualForm=false;galleryState.editingItemIndex=null;renderGalleryUI()">Fermer</button></div><div class="gallery-panel-body">';
   h+='<div style="background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px;">';
   h+='<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">JSON Teeinblue (ligne de commande / properties)</label>';
   h+='<textarea id="mf-json" rows="3" placeholder="Colle ici le JSON complet ou juste l objet properties" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:monospace;resize:vertical;"></textarea>';
@@ -1668,7 +1714,7 @@ function renderManualForm(){
   h+='</div><div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
   h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';
   if(allTags.length){h+='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="var i=document.getElementById(\'mf-tags\');i.value=(i.value?i.value+\',\':\'\')+\''+t+'\'">'+t+'</button>';}).join('')+'</div>';}
-  h+='</div><div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-primary" onclick="submitManual()" style="flex:1;">Ajouter</button><div style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;"><img id="mf-prev" src="" style="width:100%;height:100%;object-fit:cover;display:none;" /></div></div>';
+  h+='</div><div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-primary" onclick="submitManual()" style="flex:1;">'+(isEditing?'Enregistrer les modifications':'Ajouter')+'</button><div style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;"><img id="mf-prev" src="" style="width:100%;height:100%;object-fit:cover;display:none;" /></div></div>';
   h+='<div id="mf-err" style="color:var(--critical);font-size:12px;margin-top:6px;display:none;"></div></div></div>';
   return h;
 }
@@ -1776,6 +1822,20 @@ function renderGalleryUI() {
   if (galleryState.showManualForm) {
     var inp=document.getElementById('mf-img');var prv=document.getElementById('mf-prev');
     if(inp&&prv)inp.addEventListener('input',function(){prv.src=this.value;prv.style.display=this.value?'block':'none';});
+    if (galleryState.editingItemIndex !== null && galleryState.editingItemIndex !== undefined) {
+      var editItem = galleryState.savedItems[galleryState.editingItemIndex];
+      if (editItem) {
+        document.getElementById('mf-img').value = editItem.imageUrl || '';
+        document.getElementById('mf-cid').value = editItem.customizationId || '';
+        document.getElementById('mf-hdl').value = editItem.productHandle || '';
+        document.getElementById('mf-vid').value = editItem.variantId || '';
+        document.getElementById('mf-ttl').value = editItem.title || '';
+        document.getElementById('mf-niche').value = editItem.niche || '';
+        document.getElementById('mf-official').checked = editItem.source === 'official';
+        document.getElementById('mf-tags').value = (editItem.tags || []).join(', ');
+        if (editItem.imageUrl && prv) { prv.src = editItem.imageUrl; prv.style.display = 'block'; }
+      }
+    }
   }
 }
 
@@ -1796,8 +1856,14 @@ async function uploadManualImage(){
   var err=document.getElementById('mf-err');err.style.display='none';
   if(!file){err.textContent='Choisis d\'abord un fichier image';err.style.display='block';return;}
   try{
-    var base64=await fileToBase64(file);
-    var r=await galleryApi('uploadGalleryImage',{base64Data:base64,filename:file.name,mimeType:file.type});
+    var uploadBlob=file, uploadName=file.name, uploadType=file.type;
+    if(file.size>2*1024*1024){
+      uploadBlob=await resizeImageForUpload(file,1600,0.85);
+      uploadName=file.name.replace(/\.[^.]+$/,'')+'.jpg';
+      uploadType='image/jpeg';
+    }
+    var base64=await fileToBase64(uploadBlob);
+    var r=await galleryApi('uploadGalleryImage',{base64Data:base64,filename:uploadName,mimeType:uploadType});
     document.getElementById('mf-img').value=r.imageUrl;
     var prev=document.getElementById('mf-prev');if(prev){prev.src=r.imageUrl;prev.style.display='block';}
     showToast('Image upload\u00e9e !');
@@ -1808,12 +1874,29 @@ async function submitManual(){
   var url=document.getElementById('mf-img').value.trim(),cid=document.getElementById('mf-cid').value.trim(),hdl=document.getElementById('mf-hdl').value.trim(),vid=document.getElementById('mf-vid').value.trim(),ttl=document.getElementById('mf-ttl').value.trim()||hdl,niche=document.getElementById('mf-niche').value;
   var tags=document.getElementById('mf-tags').value.split(',').map(function(t){return t.trim().toLowerCase();}).filter(Boolean);
   var isOfficial=document.getElementById('mf-official').checked;
+  var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
   var err=document.getElementById('mf-err');
   if(!url||!cid||!hdl){err.textContent='URL, ID et Handle obligatoires';err.style.display='block';return;}
   if(!tags.length){err.textContent='Au moins un tag';err.style.display='block';return;}
-  if(isAlreadySaved(url)){err.textContent='D\u00e9j\u00e0 dans la galerie';err.style.display='block';return;}
+  if(!isEditing&&isAlreadySaved(url)){err.textContent='D\u00e9j\u00e0 dans la galerie';err.style.display='block';return;}
   err.style.display='none';
-  try{var newItems=galleryState.savedItems.concat([{imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',addedAt:new Date().toISOString()}]);await galleryApi('save',{items:newItems});galleryState.savedItems=newItems;galleryState.showManualForm=false;showToast('Ajout\u00e9 !');renderGalleryUI();}
+  try{
+    var newItems=galleryState.savedItems.slice();
+    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',addedAt:new Date().toISOString()};
+    if(isEditing){
+      var existing=galleryState.savedItems[galleryState.editingItemIndex];
+      itemData.addedAt=(existing&&existing.addedAt)||itemData.addedAt;
+      newItems[galleryState.editingItemIndex]=itemData;
+    }else{
+      newItems.push(itemData);
+    }
+    await galleryApi('save',{items:newItems});
+    galleryState.savedItems=newItems;
+    galleryState.showManualForm=false;
+    galleryState.editingItemIndex=null;
+    showToast(isEditing?'Modifi\u00e9 !':'Ajout\u00e9 !');
+    renderGalleryUI();
+  }
   catch(e){err.textContent='Erreur: '+e.message;err.style.display='block';}
 }
 
