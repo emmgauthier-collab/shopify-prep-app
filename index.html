@@ -1727,10 +1727,18 @@ function parseTeeinblueJson(){
   if(!raw){err.textContent='Colle d\'abord un JSON dans la zone ci-dessus';err.style.display='block';return;}
   var obj;
   try{obj=JSON.parse(raw);}catch(e){err.textContent='JSON invalide : '+e.message;err.style.display='block';return;}
+  // Objet panier complet ({"items":[...]}) : on prend la 1re ligne (ou la 1re qui a une image de customisation)
+  if(obj&&Array.isArray(obj.items)&&obj.items.length){
+    var withImage=obj.items.find(function(it){
+      var p=it.properties||it;
+      return p['_customization_image']||p['customization_image']||p['customization-image']||p['Customization Image'];
+    });
+    obj=withImage||obj.items[0];
+  }
   var props=obj.properties||obj;
   function pick(sources,keys){for(var s=0;s<sources.length;s++){var src=sources[s];if(!src)continue;for(var i=0;i<keys.length;i++){if(src[keys[i]])return src[keys[i]];}}return '';}
   var img=pick([props,obj],['_customization_image','customization-image','customization_image','Customization Image']);
-  var cid=pick([props,obj],['_customization_id','customization-id','customization_id']);
+  var cid=pick([props,obj],['_customization_id','customization-id','customization_id','_tib_customization_id','tib_customization_id']);
   var hdl=obj.handle||'';
   var vid=obj.variant_id||obj.id||'';
   var ttl=obj.product_title||obj.title||'';
@@ -1741,6 +1749,7 @@ function parseTeeinblueJson(){
   if(vid){document.getElementById('mf-vid').value=vid;filled.push('variant');}
   if(ttl){document.getElementById('mf-ttl').value=ttl;filled.push('titre');}
   if(!img&&!cid&&!hdl&&!vid&&!ttl){err.textContent='Aucun champ reconnu dans ce JSON (verifie qu il contient _customization_id / _customization_image / handle...)';err.style.display='block';return;}
+  if(!img){err.textContent='Attention : aucune image de customisation trouvee dans cette ligne (peut-etre un frais annexe plutot qu un vrai design) — verifie le champ Image URL avant d\'ajouter.';err.style.display='block';}
   var hay=((hdl||'')+' '+(ttl||'')).toLowerCase();
   var nicheSel=document.getElementById('mf-niche');
   if(hay.indexOf('running')>-1)nicheSel.value='running';
