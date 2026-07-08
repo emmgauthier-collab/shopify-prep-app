@@ -197,6 +197,15 @@
 
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
+
+    #note-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9500; align-items: center; justify-content: center; }
+    #note-modal.open { display: flex; }
+    .note-modal-box { background: var(--surface); border-radius: 12px; padding: 26px; width: min(480px, 92vw); box-shadow: 0 8px 40px rgba(0,0,0,.25); border-top: 5px solid var(--critical); }
+    .note-modal-icon { font-size: 30px; margin-bottom: 6px; }
+    .note-modal-box h2 { font-size: 17px; margin-bottom: 4px; color: var(--critical); }
+    .note-modal-order { font-size: 13px; color: var(--text-sub); margin-bottom: 14px; }
+    .note-modal-text { background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: var(--radius); padding: 12px 14px; font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
+    .note-modal-ack { width: 100%; justify-content: center; padding: 11px; font-size: 14px; }
     .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
     .settings-box h2 { font-size: 18px; margin-bottom: 16px; }
     .form-group { margin-bottom: 14px; }
@@ -284,6 +293,16 @@
   <div id="img-modal" onclick="closeImgModal()">
     <button id="img-modal-close" onclick="closeImgModal()">✕</button>
     <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()" />
+  </div>
+
+  <div id="note-modal">
+    <div class="note-modal-box">
+      <div class="note-modal-icon">⚠️</div>
+      <h2>Cette commande a une note</h2>
+      <div class="note-modal-order" id="note-modal-order"></div>
+      <div class="note-modal-text" id="note-modal-text"></div>
+      <button class="btn btn-primary note-modal-ack" onclick="acknowledgeCurrentNote()">✓ J'ai pris en compte</button>
+    </div>
   </div>
 
   <div id="settings-modal">
@@ -469,6 +488,25 @@ function showToast(msg, type = 'success') {
 window.addEventListener('scroll', () => document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200));
 function openImgModal(url) { document.getElementById('img-modal-src').src = url; document.getElementById('img-modal').classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeImgModal() { document.getElementById('img-modal').classList.remove('open'); document.body.style.overflow = ''; }
+
+// ── Popup d'alerte sur note de commande ──
+function getAckedNotes() { try { return JSON.parse(localStorage.getItem('acked_notes') || '{}'); } catch(e) { return {}; } }
+function isNoteAcked(order) { const acked = getAckedNotes(); return acked[order.id] === (order.note || ''); }
+function ackNote(order) { const acked = getAckedNotes(); acked[order.id] = order.note || ''; try { localStorage.setItem('acked_notes', JSON.stringify(acked)); } catch(e) {} }
+function showNoteModalIfNeeded(order) {
+  if (!order || !order.note?.trim() || isNoteAcked(order)) { document.getElementById('note-modal').classList.remove('open'); return; }
+  document.getElementById('note-modal-order').textContent = order.name;
+  document.getElementById('note-modal-text').textContent = order.note;
+  document.getElementById('note-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  state.noteModalOrderId = order.id;
+}
+function acknowledgeCurrentNote() {
+  const order = state.orders.find(o => o.id === state.noteModalOrderId);
+  if (order) ackNote(order);
+  document.getElementById('note-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeImgModal(); return; }
   if (state.activeTab !== 'custom') return;
@@ -660,6 +698,8 @@ function renderOrderView() {
 
   if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; return; }
   if (!order) { c.innerHTML = html; return; }
+
+  showNoteModalIfNeeded(order);
 
   const isUrgent = order.tags.some(t => t.toLowerCase() === 'urgent');
   const hasNote = !!(order.note?.trim());
