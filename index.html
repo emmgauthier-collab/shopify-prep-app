@@ -338,6 +338,7 @@
     <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur <span id="tab-supplier-badge" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">🖼️ Galerie</button>
+    <button class="tab-btn" data-tab="delaisfomo" onclick="switchTab('delaisfomo')">⏱️ Délais &amp; FOMO</button>
   </div>
 
   <div id="content"></div>
@@ -360,6 +361,16 @@ const state = {
   printSelected: new Set(), // IDs sélectionnés
   printZipDone: false,
   printZipOrderIds: [],  // IDs des commandes zippées (pour suppression tag)
+  // Délais & FOMO
+  delaisLoaded: false,
+  delais: {
+    delaiProduction: '', delaiRush: '', delaiPlancher: '',
+    rushProductId: '', rushProductTitle: '',
+    fomoActif: false, fomoTexte: '', fomoCode: '', fomoFin: '',
+    periodes: [], // [{id, debut, fin, label}]
+  },
+  delaisRushSearchResults: [],
+  delaisShowAddPeriode: false,
 };
 
 const HIDDEN_KEYS = ['_tib_design_link_1', '_customization_image', '_customization_id'];
@@ -474,7 +485,7 @@ function switchTab(tab) {
     else renderCustomTab(false);
     return;
   }
-else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab })[tab]?.();
+else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab })[tab]?.();
 }
 
 // ════════════════════════════════════════════
@@ -2001,6 +2012,255 @@ async function saveGallery(){
   }catch(e){showToast('Erreur: '+e.message,'error');if(btn){btn.disabled=false;btn.textContent='Sauvegarder';}}
 }
 
+// ════════════════════════════════════════════
+// DELAIS & FOMO
+// ════════════════════════════════════════════
+const DELAIS_QUERY = `query {
+  shop {
+    delaiProduction: metafield(namespace: "custom", key: "delai_production") { value }
+    delaiRush: metafield(namespace: "custom", key: "delai_rush") { value }
+    delaiPlancher: metafield(namespace: "custom", key: "delai_plancher_fermeture") { value }
+    rushProduct: metafield(namespace: "custom", key: "rush_product") { value }
+    vacances: metafield(namespace: "custom", key: "vacances") { value }
+    fomoActif: metafield(namespace: "custom", key: "fomo_actif") { value }
+    fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { value }
+    fomoCode: metafield(namespace: "custom", key: "fomo_code") { value }
+    fomoFin: metafield(namespace: "custom", key: "fomo_fin") { value }
+    id
+  }
+}`;
+
+async function renderDelaisFomoTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement...</div>';
+  try {
+    await loadDelaisData();
+  } catch (e) {
+    c.innerHTML = '<div class="empty">Erreur de chargement: ' + e.message + '</div>';
+    return;
+  }
+  renderDelaisUI();
+}
+
+async function loadDelaisData() {
+  const data = await gql(DELAIS_QUERY);
+  const s = data.shop;
+  state.shopGid = s.id;
+  const d = state.delais;
+  d.delaiProduction = s.delaiProduction ? s.delaiProduction.value : '';
+  d.delaiRush = s.delaiRush ? s.delaiRush.value : '';
+  d.delaiPlancher = s.delaiPlancher ? s.delaiPlancher.value : '';
+  d.fomoActif = s.fomoActif ? s.fomoActif.value === 'true' : false;
+  d.fomoTexte = s.fomoTexte ? s.fomoTexte.value : '';
+  d.fomoCode = s.fomoCode ? s.fomoCode.value : '';
+  d.fomoFin = s.fomoFin ? s.fomoFin.value : '';
+
+  // Produit rush
+  d.rushProductId = ''; d.rushProductTitle = '';
+  if (s.rushProduct && s.rushProduct.value) {
+    d.rushProductId = s.rushProduct.value;
+    try {
+      const pdata = await gql('query($id:ID!){ product(id:$id){ title } }', { id: d.rushProductId });
+      d.rushProductTitle = pdata.product ? pdata.product.title : '(produit introuvable)';
+    } catch (e) { d.rushProductTitle = '(erreur de chargement)'; }
+  }
+
+  // Periodes de fermeture
+  d.periodes = [];
+  d.vacancesGids = [];
+  if (s.vacances && s.vacances.value) {
+    let gids = [];
+    try { gids = JSON.parse(s.vacances.value); } catch (e) { gids = []; }
+    d.vacancesGids = gids;
+    if (gids.length) {
+      const ndata = await gql('query($ids:[ID!]!){ nodes(ids:$ids){ ... on Metaobject { id fields { key value } } } }', { ids: gids });
+      d.periodes = (ndata.nodes || []).filter(Boolean).map(function (n) {
+        const f = {}; (n.fields || []).forEach(function (fld) { f[fld.key] = fld.value; });
+        return { id: n.id, debut: f.debut || '', fin: f.fin || '', label: f.label || '' };
+      });
+      d.periodes.sort(function (a, b) { return a.debut < b.debut ? -1 : 1; });
+    }
+  }
+  state.delaisLoaded = true;
+}
+
+function renderDelaisUI() {
+  const c = document.getElementById('content');
+  const d = state.delais;
+  const now = new Date();
+  let fomoStatusBadge = '';
+  if (d.fomoFin) {
+    const fin = new Date(d.fomoFin);
+    if (fin < now) fomoStatusBadge = '<span class="badge tab-badge-total" style="background:#999">Expir\u00e9e</span>';
+    else if (d.fomoActif) fomoStatusBadge = '<span class="badge tab-badge-urgent">Active</span>';
+  }
+
+  let periodesHtml = '';
+  if (d.periodes.length === 0) {
+    periodesHtml = '<div style="color:var(--text-sub);font-size:13px;padding:8px 0;">Aucune p\u00e9riode de fermeture enregistr\u00e9e.</div>';
+  } else {
+    periodesHtml = d.periodes.map(function (p, i) {
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">' +
+        '<div style="flex:1;font-size:14px;"><strong>' + p.debut + '</strong> \u2192 <strong>' + p.fin + '</strong>' +
+        (p.label ? ' <span style="color:var(--text-sub);font-size:12px;">(' + escapeHtml(p.label) + ')</span>' : '') + '</div>' +
+        '<button class="btn" onclick="deletePeriode(\'' + p.id + '\')" title="Supprimer">\uD83D\uDDD1\uFE0F</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  const addFormHtml = state.delaisShowAddPeriode ? (
+    '<div class="card" style="margin-top:10px;background:var(--info-bg,#f4f6f8);">' +
+    '<div class="form-group"><label>Date de d\u00e9but</label><input type="date" id="np-debut"></div>' +
+    '<div class="form-group"><label>Date de fin</label><input type="date" id="np-fin"></div>' +
+    '<div class="form-group"><label>Label interne (optionnel)</label><input type="text" id="np-label" placeholder="ex: Vacances \u00e9t\u00e9"></div>' +
+    '<button class="btn btn-primary" onclick="savePeriode()">Ajouter</button> ' +
+    '<button class="btn" onclick="state.delaisShowAddPeriode=false;renderDelaisUI();">Annuler</button>' +
+    '</div>'
+  ) : '';
+
+  c.innerHTML =
+    '<div class="card">' +
+    '<div class="card-title">\u23F1\uFE0F D\u00e9lais de traitement</div>' +
+    '<div class="form-group"><label>D\u00e9lai normal (jours ouvr\u00e9s)</label><input type="number" id="df-delai-production" value="' + escapeHtml(d.delaiProduction) + '"></div>' +
+    '<div class="form-group"><label>D\u00e9lai rush (jours ouvr\u00e9s) \u2014 laisser vide si non disponible</label><input type="number" id="df-delai-rush" value="' + escapeHtml(d.delaiRush) + '"></div>' +
+    '<div class="form-group"><label>Plancher avant fermeture (jours ouvr\u00e9s)</label><input type="number" id="df-delai-plancher" value="' + escapeHtml(d.delaiPlancher) + '"><div class="settings-hint">En dessous de ce seuil, on arr\u00eate de r\u00e9duire le d\u00e9lai annonc\u00e9 \u00e0 l\u2019approche d\u2019une fermeture (bascule sur le d\u00e9lai apr\u00e8s-vacances).</div></div>' +
+    '<div class="form-group"><label>Produit qui active le rush</label>' +
+    (d.rushProductId ? '<div class="settings-hint" style="margin-bottom:6px;">Actuel: <strong>' + escapeHtml(d.rushProductTitle) + '</strong></div>' : '<div class="settings-hint" style="margin-bottom:6px;">Aucun produit rush configur\u00e9</div>') +
+    '<input type="text" id="df-rush-search" placeholder="Rechercher un produit par titre..." oninput="searchRushProductDebounced(this.value)">' +
+    '<div id="df-rush-results"></div>' +
+    '</div>' +
+    '<button class="btn btn-primary" onclick="saveDelaisBase()">Enregistrer les d\u00e9lais</button>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">\uD83D\uDD25 Bandeau FOMO (page produit personnalisation) ' + fomoStatusBadge + '</div>' +
+    '<div class="form-group"><label><input type="checkbox" id="df-fomo-actif" ' + (d.fomoActif ? 'checked' : '') + ' style="width:16px;height:16px;vertical-align:middle;margin-right:6px;accent-color:var(--primary);"> Bandeau actif</label></div>' +
+    '<div class="form-group"><label>Texte de l\u2019offre</label><input type="text" id="df-fomo-texte" value="' + escapeHtml(d.fomoTexte) + '" placeholder="ex: -10% sur ta personnalisation"></div>' +
+    '<div class="form-group"><label>Code promo (laisser vide = pas de code affich\u00e9)</label><input type="text" id="df-fomo-code" value="' + escapeHtml(d.fomoCode) + '"></div>' +
+    '<div class="form-group"><label>Fin de l\u2019offre</label><input type="datetime-local" id="df-fomo-fin" value="' + toDatetimeLocal(d.fomoFin) + '"><div class="settings-hint">Sert au compte \u00e0 rebours, masque automatiquement le bandeau une fois pass\u00e9e.</div></div>' +
+    '<button class="btn btn-primary" onclick="saveFomo()">Enregistrer le FOMO</button>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">\uD83C\uDFD6\uFE0F P\u00e9riodes de fermeture (vacances)</div>' +
+    '<div class="settings-hint" style="margin-bottom:8px;">D\u00e9cale automatiquement les d\u00e9lais affich\u00e9s sur le site pendant ces p\u00e9riodes.</div>' +
+    periodesHtml +
+    (state.delaisShowAddPeriode ? addFormHtml : '<button class="btn" style="margin-top:10px;" onclick="state.delaisShowAddPeriode=true;renderDelaisUI();">+ Ajouter une p\u00e9riode</button>') +
+    '</div>';
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Shopify date_time metafields are stored as ISO 8601 (UTC). Convert for the datetime-local input.
+function toDatetimeLocal(iso) {
+  if (!iso) return '';
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '';
+  const pad = function (n) { return String(n).padStart(2, '0'); };
+  return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+}
+
+async function metafieldsSetOne(key, value, type) {
+  const mutation = 'mutation($mf:[MetafieldsSetInput!]!){ metafieldsSet(metafields:$mf){ metafields{ id } userErrors{ field message } } }';
+  const vars = { mf: [{ ownerId: state.shopGid, namespace: 'custom', key: key, value: String(value), type: type }] };
+  const data = await gql(mutation, vars);
+  const errs = data.metafieldsSet.userErrors;
+  if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
+}
+
+async function saveDelaisBase() {
+  const prod = document.getElementById('df-delai-production').value.trim();
+  const rush = document.getElementById('df-delai-rush').value.trim();
+  const plancher = document.getElementById('df-delai-plancher').value.trim();
+  try {
+    if (prod !== '') await metafieldsSetOne('delai_production', prod, 'number_integer');
+    if (rush !== '') await metafieldsSetOne('delai_rush', rush, 'number_integer');
+    if (plancher !== '') await metafieldsSetOne('delai_plancher_fermeture', plancher, 'number_integer');
+    showToast('D\u00e9lais enregistr\u00e9s');
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+let _rushSearchTimer = null;
+function searchRushProductDebounced(term) {
+  clearTimeout(_rushSearchTimer);
+  _rushSearchTimer = setTimeout(function () { searchRushProduct(term); }, 350);
+}
+async function searchRushProduct(term) {
+  const box = document.getElementById('df-rush-results');
+  if (!term || term.trim().length < 2) { if (box) box.innerHTML = ''; return; }
+  try {
+    const data = await gql('query($q:String!){ products(first:8, query:$q){ edges{ node{ id title } } } }', { q: 'title:*' + term.trim() + '*' });
+    const edges = data.products.edges || [];
+    if (!box) return;
+    if (!edges.length) { box.innerHTML = '<div class="settings-hint">Aucun r\u00e9sultat</div>'; return; }
+    box.innerHTML = edges.map(function (e) {
+      return '<div style="padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);margin-top:4px;cursor:pointer;" onclick="selectRushProduct(\'' + e.node.id + '\',\'' + escapeHtml(e.node.title).replace(/'/g, "\\'") + '\')">' + escapeHtml(e.node.title) + '</div>';
+    }).join('');
+  } catch (e) { if (box) box.innerHTML = '<div class="settings-hint">Erreur: ' + e.message + '</div>'; }
+}
+async function selectRushProduct(id, title) {
+  try {
+    await metafieldsSetOne('rush_product', id, 'product_reference');
+    showToast('Produit rush mis \u00e0 jour');
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function saveFomo() {
+  const actif = document.getElementById('df-fomo-actif').checked;
+  const texte = document.getElementById('df-fomo-texte').value.trim();
+  const code = document.getElementById('df-fomo-code').value.trim();
+  const finLocal = document.getElementById('df-fomo-fin').value;
+  try {
+    await metafieldsSetOne('fomo_actif', actif, 'boolean');
+    await metafieldsSetOne('fomo_texte', texte, 'single_line_text_field');
+    await metafieldsSetOne('fomo_code', code, 'single_line_text_field');
+    if (finLocal) {
+      const iso = new Date(finLocal).toISOString();
+      await metafieldsSetOne('fomo_fin', iso, 'date_time');
+    }
+    showToast('FOMO enregistr\u00e9');
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function savePeriode() {
+  const debut = document.getElementById('np-debut').value;
+  const fin = document.getElementById('np-fin').value;
+  const label = document.getElementById('np-label').value.trim();
+  if (!debut || !fin) { showToast('D\u00e9but et fin requis', 'warning'); return; }
+  try {
+    const fields = [{ key: 'debut', value: debut }, { key: 'fin', value: fin }];
+    if (label) fields.push({ key: 'label', value: label });
+    const data = await gql(
+      'mutation($input:MetaobjectCreateInput!){ metaobjectCreate(metaobject:$input){ metaobject{ id } userErrors{ field message } } }',
+      { input: { type: 'rx_periode_fermeture', fields: fields } }
+    );
+    const errs = data.metaobjectCreate.userErrors;
+    if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
+    const newId = data.metaobjectCreate.metaobject.id;
+    const gids = state.delais.vacancesGids.concat([newId]);
+    await metafieldsSetOne('vacances', JSON.stringify(gids), 'list.metaobject_reference');
+    showToast('P\u00e9riode ajout\u00e9e');
+    state.delaisShowAddPeriode = false;
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function deletePeriode(id) {
+  if (!confirm('Supprimer cette p\u00e9riode de fermeture ?')) return;
+  try {
+    const gids = state.delais.vacancesGids.filter(function (g) { return g !== id; });
+    await metafieldsSetOne('vacances', JSON.stringify(gids), 'list.metaobject_reference');
+    await gql('mutation($id:ID!){ metaobjectDelete(id:$id){ deletedId userErrors{ field message } } }', { id: id });
+    showToast('P\u00e9riode supprim\u00e9e');
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
 
 </script>
 </body>
