@@ -27,7 +27,6 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
-    const locale = (req.query.locale || 'fr').toLowerCase();
     const config = await getDelaiConfig(false);
 
     const r = calculerDelais({
@@ -48,13 +47,13 @@ export default async function handler(req, res) {
       joursRush: r.joursRush,
       dateNormaleISO: r.dateNormaleISO,
       dateRushISO: r.dateRushISO,
-      dateNormaleLabel: formatDateLocale(r.dateNormaleISO, locale),
-      dateRushLabel: formatDateLocale(r.dateRushISO, locale),
+      dateNormaleLabel: formatDateLocale(r.dateNormaleISO),
+      dateRushLabel: formatDateLocale(r.dateRushISO),
       rushIndisponible: r.rushIndisponible,
       enFermetureAujourdhui: r.enFermetureAujourdhui,
       fermeture: r.fermetureConcernee ? {
-        debutLabel: formatDateLocale(r.fermetureConcernee.debut, locale),
-        finLabel: formatDateLocale(r.fermetureConcernee.fin, locale),
+        debutLabel: formatDateLocale(r.fermetureConcernee.debut),
+        finLabel: formatDateLocale(r.fermetureConcernee.fin),
       } : null,
       rush: config.rushProductId ? {
         variantId: config.rushVariantId,
