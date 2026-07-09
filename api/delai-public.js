@@ -55,6 +55,7 @@ export default async function handler(req, res) {
       rush: config.rushProductId ? {
         variantId: config.rushVariantId,
         price: config.rushPrice,
+        currency: config.currencyCode,
         title: config.rushTitle,
         image: config.rushImage,
       } : null,
