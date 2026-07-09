@@ -52,6 +52,10 @@ export default async function handler(req, res) {
       dateRushLabel: formatDateLocale(r.dateRushISO, locale),
       rushIndisponible: r.rushIndisponible,
       enFermetureAujourdhui: r.enFermetureAujourdhui,
+      fermeture: r.fermetureConcernee ? {
+        debutLabel: formatDateLocale(r.fermetureConcernee.debut, locale),
+        finLabel: formatDateLocale(r.fermetureConcernee.fin, locale),
+      } : null,
       rush: config.rushProductId ? {
         variantId: config.rushVariantId,
         price: config.rushPrice,
