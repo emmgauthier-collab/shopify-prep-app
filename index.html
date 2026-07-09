@@ -2017,6 +2017,7 @@ async function saveGallery(){
 // ════════════════════════════════════════════
 const DELAIS_QUERY = `query {
   shop {
+    id
     delaiProduction: metafield(namespace: "custom", key: "delai_production") { value }
     delaiRush: metafield(namespace: "custom", key: "delai_rush") { value }
     delaiPlancher: metafield(namespace: "custom", key: "delai_plancher_fermeture") { value }
@@ -2026,7 +2027,6 @@ const DELAIS_QUERY = `query {
     fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { value }
     fomoCode: metafield(namespace: "custom", key: "fomo_code") { value }
     fomoFin: metafield(namespace: "custom", key: "fomo_fin") { value }
-    id
   }
 }`;
 
@@ -2084,6 +2084,20 @@ async function loadDelaisData() {
   state.delaisLoaded = true;
 }
 
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Shopify date_time metafields are stored as ISO 8601 (UTC). Convert for the datetime-local input.
+function toDatetimeLocal(iso) {
+  if (!iso) return '';
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '';
+  const pad = function (n) { return String(n).padStart(2, '0'); };
+  return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+}
+
 function renderDelaisUI() {
   const c = document.getElementById('content');
   const d = state.delais;
@@ -2099,7 +2113,7 @@ function renderDelaisUI() {
   if (d.periodes.length === 0) {
     periodesHtml = '<div style="color:var(--text-sub);font-size:13px;padding:8px 0;">Aucune p\u00e9riode de fermeture enregistr\u00e9e.</div>';
   } else {
-    periodesHtml = d.periodes.map(function (p, i) {
+    periodesHtml = d.periodes.map(function (p) {
       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">' +
         '<div style="flex:1;font-size:14px;"><strong>' + p.debut + '</strong> \u2192 <strong>' + p.fin + '</strong>' +
         (p.label ? ' <span style="color:var(--text-sub);font-size:12px;">(' + escapeHtml(p.label) + ')</span>' : '') + '</div>' +
@@ -2123,7 +2137,7 @@ function renderDelaisUI() {
     '<div class="card-title">\u23F1\uFE0F D\u00e9lais de traitement</div>' +
     '<div class="form-group"><label>D\u00e9lai normal (jours ouvr\u00e9s)</label><input type="number" id="df-delai-production" value="' + escapeHtml(d.delaiProduction) + '"></div>' +
     '<div class="form-group"><label>D\u00e9lai rush (jours ouvr\u00e9s) \u2014 laisser vide si non disponible</label><input type="number" id="df-delai-rush" value="' + escapeHtml(d.delaiRush) + '"></div>' +
-    '<div class="form-group"><label>Plancher avant fermeture (jours ouvr\u00e9s)</label><input type="number" id="df-delai-plancher" value="' + escapeHtml(d.delaiPlancher) + '"><div class="settings-hint">En dessous de ce seuil, on arr\u00eate de r\u00e9duire le d\u00e9lai annonc\u00e9 \u00e0 l\u2019approche d\u2019une fermeture (bascule sur le d\u00e9lai apr\u00e8s-vacances).</div></div>' +
+    '<div class="form-group"><label>Plancher avant fermeture (jours ouvr\u00e9s)</label><input type="number" id="df-delai-plancher" value="' + escapeHtml(d.delaiPlancher) + '"><div class="settings-hint">En dessous de ce seuil, on arr\u00eate de r\u00e9duire le d\u00e9lai annonc\u00e9 \u00e0 l\u2019approche d\u2019une fermeture.</div></div>' +
     '<div class="form-group"><label>Produit qui active le rush</label>' +
     (d.rushProductId ? '<div class="settings-hint" style="margin-bottom:6px;">Actuel: <strong>' + escapeHtml(d.rushProductTitle) + '</strong></div>' : '<div class="settings-hint" style="margin-bottom:6px;">Aucun produit rush configur\u00e9</div>') +
     '<input type="text" id="df-rush-search" placeholder="Rechercher un produit par titre..." oninput="searchRushProductDebounced(this.value)">' +
@@ -2146,21 +2160,14 @@ function renderDelaisUI() {
     '<div class="settings-hint" style="margin-bottom:8px;">D\u00e9cale automatiquement les d\u00e9lais affich\u00e9s sur le site pendant ces p\u00e9riodes.</div>' +
     periodesHtml +
     (state.delaisShowAddPeriode ? addFormHtml : '<button class="btn" style="margin-top:10px;" onclick="state.delaisShowAddPeriode=true;renderDelaisUI();">+ Ajouter une p\u00e9riode</button>') +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">\uD83D\uDD17 Webhook commande \u2192 date limite</div>' +
+    '<div class="settings-hint" style="margin-bottom:8px;">Cr\u00e9e (une seule fois) le webhook <code>orders/create</code> qui \u00e9crit automatiquement <code>custom.date_limite_traitement</code> et <code>custom.est_rush</code> sur chaque nouvelle commande.</div>' +
+    '<button class="btn btn-primary" onclick="setupOrderWebhook()">V\u00e9rifier / activer le webhook</button>' +
+    '<div id="df-webhook-status" style="margin-top:10px;font-size:13px;"></div>' +
     '</div>';
-}
-
-function escapeHtml(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// Shopify date_time metafields are stored as ISO 8601 (UTC). Convert for the datetime-local input.
-function toDatetimeLocal(iso) {
-  if (!iso) return '';
-  const dt = new Date(iso);
-  if (isNaN(dt.getTime())) return '';
-  const pad = function (n) { return String(n).padStart(2, '0'); };
-  return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
 }
 
 async function metafieldsSetOne(key, value, type) {
@@ -2260,6 +2267,35 @@ async function deletePeriode(id) {
     showToast('P\u00e9riode supprim\u00e9e');
     await loadDelaisData(); renderDelaisUI();
   } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+// Enregistre (ou verifie) le webhook orders/create qui pointe vers
+// /api/order-delai-webhook. Utilise le proxy /api/shopify existant, donc le
+// webhook est bien cree par l'app prep-orders (meme secret que la verification HMAC).
+async function setupOrderWebhook() {
+  const box = document.getElementById('df-webhook-status');
+  box.innerHTML = 'V\u00e9rification...';
+  const callbackUrl = window.location.origin + '/api/order-delai-webhook';
+  try {
+    const existing = await gql('query { webhookSubscriptions(first: 50, topics: [ORDERS_CREATE]) { edges { node { id uri } } } }');
+    const already = (existing.webhookSubscriptions.edges || []).find(function (e) {
+      return e.node.uri === callbackUrl;
+    });
+    if (already) {
+      box.innerHTML = '<span style="color:#2d7a35">D\u00e9j\u00e0 actif sur ' + escapeHtml(callbackUrl) + '</span>';
+      return;
+    }
+    const data = await gql(
+      'mutation($topic:WebhookSubscriptionTopic!, $sub:WebhookSubscriptionInput!){ webhookSubscriptionCreate(topic:$topic, webhookSubscription:$sub){ webhookSubscription{ id } userErrors{ field message } } }',
+      { topic: 'ORDERS_CREATE', sub: { uri: callbackUrl, format: 'JSON' } }
+    );
+    const errs = data.webhookSubscriptionCreate.userErrors;
+    if (errs && errs.length) { box.innerHTML = '<span style="color:var(--critical,#c0392b)">Erreur: ' + escapeHtml(errs.map(function (e) { return e.message; }).join(', ')) + '</span>'; return; }
+    box.innerHTML = '<span style="color:#2d7a35">Webhook activ\u00e9 sur ' + escapeHtml(callbackUrl) + '</span>';
+    showToast('Webhook activ\u00e9');
+  } catch (e) {
+    box.innerHTML = '<span style="color:var(--critical,#c0392b)">Erreur: ' + escapeHtml(e.message) + '</span>';
+  }
 }
 
 </script>
