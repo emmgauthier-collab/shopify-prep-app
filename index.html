@@ -2277,9 +2277,9 @@ async function setupOrderWebhook() {
   box.innerHTML = 'V\u00e9rification...';
   const callbackUrl = window.location.origin + '/api/order-delai-webhook';
   try {
-    const existing = await gql('query { webhookSubscriptions(first: 50, topics: [ORDERS_CREATE]) { edges { node { id uri } } } }');
+    const existing = await gql('query { webhookSubscriptions(first: 50, topics: [ORDERS_CREATE]) { edges { node { id endpoint { __typename ... on WebhookHttpEndpoint { callbackUrl } } } } } }');
     const already = (existing.webhookSubscriptions.edges || []).find(function (e) {
-      return e.node.uri === callbackUrl;
+      return e.node.endpoint && e.node.endpoint.callbackUrl === callbackUrl;
     });
     if (already) {
       box.innerHTML = '<span style="color:#2d7a35">D\u00e9j\u00e0 actif sur ' + escapeHtml(callbackUrl) + '</span>';
@@ -2287,7 +2287,7 @@ async function setupOrderWebhook() {
     }
     const data = await gql(
       'mutation($topic:WebhookSubscriptionTopic!, $sub:WebhookSubscriptionInput!){ webhookSubscriptionCreate(topic:$topic, webhookSubscription:$sub){ webhookSubscription{ id } userErrors{ field message } } }',
-      { topic: 'ORDERS_CREATE', sub: { uri: callbackUrl, format: 'JSON' } }
+      { topic: 'ORDERS_CREATE', sub: { callbackUrl: callbackUrl, format: 'JSON' } }
     );
     const errs = data.webhookSubscriptionCreate.userErrors;
     if (errs && errs.length) { box.innerHTML = '<span style="color:var(--critical,#c0392b)">Erreur: ' + escapeHtml(errs.map(function (e) { return e.message; }).join(', ')) + '</span>'; return; }
