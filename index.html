@@ -610,6 +610,8 @@ function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); 
 // CUSTOM ORDERS
 // ════════════════════════════════════════════
 const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName }
+  dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
+  estRush: metafield(namespace: "custom", key: "est_rush") { value }
   lineItems(first: 250) { edges { node { id title quantity
     variant { title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
@@ -725,6 +727,18 @@ function renderOrderView() {
     return `<span class="prep-item"><strong>${li.quantity}×</strong> ${li.title}${sv?` — ${v}`:''}</span>`;
   }).join('');
 
+  // ── Délai de traitement (rempli par le webhook order-delai-webhook) ──
+  let delaiBadge = '';
+  if (order.dateLimiteTraitement?.value) {
+    const dateLimite = new Date(order.dateLimiteTraitement.value + 'T00:00:00');
+    const joursRestants = Math.ceil((dateLimite.getTime() - Date.now()) / 86400000);
+    const delaiTone = joursRestants < 0 ? 'critical' : joursRestants <= 2 ? 'warning' : 'info';
+    const dateLabel = dateLimite.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
+    const joursLabel = joursRestants < 0 ? `en retard de ${Math.abs(joursRestants)}j` : joursRestants === 0 ? "aujourd'hui" : `dans ${joursRestants}j`;
+    delaiBadge = `<span class="badge badge-${delaiTone}">⏱️ À traiter avant le ${dateLabel} (${joursLabel})</span>`;
+  }
+  const estRushBadge = order.estRush?.value === 'true' ? '<span class="badge badge-critical">⚡ RUSH</span>' : '';
+
   html += `<div id="order-sticky">
     <div class="order-sticky-top">
       <h2>${order.name}</h2>
@@ -733,6 +747,8 @@ function renderOrderView() {
       <span class="badge badge-info">${orderDate}</span>
       <span class="badge badge-${ageTone}">${ageInDays}j — ${ageLabel}</span>
       <span class="badge badge-info">${totalQty} article${totalQty>1?'s':''}</span>
+      ${delaiBadge}
+      ${estRushBadge}
       ${renderStatusBadges(order.tags)}
       <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="btn" style="margin-left:auto;font-size:12px;padding:4px 10px;">🔗 Voir dans Shopify</a>
     </div>
@@ -799,7 +815,7 @@ async function toggleUrgentFilter() {
 async function fetchToOrderOrders() {
   let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
-    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
     orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
   return orders;
@@ -829,6 +845,7 @@ function renderSupplierView() {
             <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">⬇ Export IMBRETEX</button>
             <button class="btn" onclick="downloadAndSnapshot('complete')">⬇ Export complet</button>
           </div>
+          ${renderDelaiWarnings(state.supplierOrders)}
           ${renderSupplierNotes(state.supplierOrders)}
           ${step1Done ? `<div style="margin-top:10px;font-size:13px;color:var(--success);">✅ ${state.supplierSnapshot.length} commandes exportées</div>` : ''}`}
         </div>
@@ -850,14 +867,44 @@ function renderSupplierView() {
     </div>`;
 }
 
+function renderDelaiWarnings(orders) {
+  const withDelai = orders
+    .filter(o => o.dateLimiteTraitement?.value)
+    .map(o => {
+      const dateLimite = new Date(o.dateLimiteTraitement.value + 'T00:00:00');
+      const joursRestants = Math.ceil((dateLimite.getTime() - Date.now()) / 86400000);
+      return { o, dateLimite, joursRestants };
+    })
+    .filter(x => x.joursRestants <= 3) // en retard ou à echeance proche seulement
+    .sort((a, b) => a.joursRestants - b.joursRestants);
+  if (withDelai.length === 0) return '';
+  const rows = withDelai.map(({ o, dateLimite, joursRestants }) => {
+    const customer = `${o.customer?.firstName||''} ${o.customer?.lastName||''}`.trim() || '—';
+    const dateLabel = dateLimite.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
+    const joursLabel = joursRestants < 0 ? `en retard de ${Math.abs(joursRestants)}j` : joursRestants === 0 ? "aujourd'hui" : `dans ${joursRestants}j`;
+    const tone = joursRestants < 0 ? 'critical' : 'warning';
+    const rushBadge = o.estRush?.value === 'true' ? ' <span class="badge badge-critical" style="font-size:10px;">⚡ RUSH</span>' : '';
+    return `<div class="supplier-note-row">
+      <span class="supplier-note-order">${o.name}${rushBadge}</span>
+      <span class="supplier-note-client">${customer}</span>
+      <span class="badge badge-${tone}">⏱️ ${dateLabel} (${joursLabel})</span>
+    </div>`;
+  }).join('');
+  return `<div class="supplier-notes-block" style="margin-top:12px;">
+    <div class="supplier-notes-header">⏱️ ${withDelai.length} commande${withDelai.length>1?'s':''} proche${withDelai.length>1?'s':''} ou en retard de délai</div>
+    ${rows}
+  </div>`;
+}
+
 function renderSupplierNotes(orders) {
   const withNote = orders.filter(o => o.note && o.note.trim());
   if (withNote.length === 0) return '<div style="margin-top:12px;font-size:13px;color:var(--success);">✅ Aucune note sur ces commandes</div>';
   const rows = withNote.map(o => {
     const customer = `${o.customer?.firstName||''} ${o.customer?.lastName||''}`.trim() || '—';
     const note = o.note.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const rushBadge = o.estRush?.value === 'true' ? ' <span class="badge badge-critical" style="font-size:10px;">⚡ RUSH</span>' : '';
     return `<div class="supplier-note-row">
-      <span class="supplier-note-order">${o.name}</span>
+      <span class="supplier-note-order">${o.name}${rushBadge}</span>
       <span class="supplier-note-client">${customer}</span>
       <span class="supplier-note-text">${note}</span>
     </div>`;
