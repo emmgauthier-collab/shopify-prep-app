@@ -358,6 +358,7 @@ const state = {
   proxyUrl: '', appPassword: '', shop: '',
   isLoggedIn: false,
   orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false, currentCursor: null, currentDirection: 'forward',
+  orderSearchActive: false, orderSearchQuery: '',
   supplierOrders: [], supplierSnapshot: [],
   // Print tab
   printOrders: [],       // commandes TODOPRINT avec métafields teeinblue
@@ -716,6 +717,12 @@ function renderOrderView() {
     <button class="btn" onclick="nextOrder()" ${!hasNext ? 'disabled' : ''}>Suivant <kbd>K</kbd> →</button>
     <button class="btn ${state.filterUrgent ? 'btn-critical' : 'btn-warning'}" onclick="toggleUrgentFilter()">🚨 Urgent${state.filterUrgent?' ✕':''}</button>
     ${state.filterUrgent ? '<span class="badge badge-critical">Filtre actif</span>' : ''}
+    <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+      <input id="order-search-input" type="text" placeholder="N° commande (ex: 1234)" value="${state.orderSearchActive ? (state.orderSearchQuery||'') : ''}"
+        onkeydown="if(event.key==='Enter'){searchOrderByNumber();}" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:160px;">
+      <button class="btn" onclick="searchOrderByNumber()">🔍</button>
+      ${state.orderSearchActive ? '<button class="btn" onclick="clearOrderSearch()">✕</button>' : ''}
+    </span>
   </div>`;
 
   if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; return; }
@@ -811,6 +818,44 @@ async function nextOrderAndScroll() { await nextOrder(); window.scrollTo({top:0,
 function jumpToOrder(idx) { state.currentIndex = parseInt(idx); renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
 async function toggleUrgentFilter() {
   state.filterUrgent = !state.filterUrgent;
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
+  catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
+}
+
+async function searchOrderByNumber() {
+  const input = document.getElementById('order-search-input');
+  const raw = (input?.value || '').trim();
+  if (!raw) { showToast('Saisis un numéro de commande', 'warning'); return; }
+  const num = raw.replace(/^#/, '');
+  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Recherche de la commande ${raw}...</div>`;
+  try {
+    const data = await gql(`query($q: String!) {
+      orders(first: 5, query: $q) { edges { node { ${ORDER_FIELDS} } } }
+    }`, { q: `name:*${num}*` });
+    const found = data.orders.edges.map(e => e.node);
+    if (!found.length) {
+      showToast(`Aucune commande trouvée pour "${raw}"`, 'error');
+      state.orderSearchActive = false; state.orderSearchQuery = '';
+      renderOrderView();
+      return;
+    }
+    state.orders = found;
+    state.pageInfo = null;
+    state.currentIndex = 0;
+    state.orderSearchActive = true;
+    state.orderSearchQuery = raw;
+    renderOrderView();
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(e) {
+    showToast('Erreur: '+e.message, 'error');
+    document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
+  }
+}
+
+async function clearOrderSearch() {
+  state.orderSearchActive = false;
+  state.orderSearchQuery = '';
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
