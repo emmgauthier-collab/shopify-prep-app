@@ -478,6 +478,88 @@ async function callGas(orders) {
 }
 
 // ════════════════════════════════════════════
+// SAUVEGARDE LOCALE (File System Access API)
+// ════════════════════════════════════════════
+function idbGet(key) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('rxwear-fs', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => {
+      const tx = req.result.transaction('handles', 'readonly');
+      const getReq = tx.objectStore('handles').get(key);
+      getReq.onsuccess = () => resolve(getReq.result || null);
+      getReq.onerror = () => reject(getReq.error);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+function idbSet(key, value) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('rxwear-fs', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => {
+      const tx = req.result.transaction('handles', 'readwrite');
+      tx.objectStore('handles').put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function configureLocalPrintFolder() {
+  if (!window.showDirectoryPicker) {
+    showToast('⚠️ Ton navigateur ne supporte pas cette fonctionnalité (utilise Chrome ou Edge)', 'warning');
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker({ id: 'rxwear-dtf', mode: 'readwrite' });
+    await idbSet('printFolderHandle', handle);
+    showToast('✅ Dossier local configuré : ' + handle.name);
+    renderPrintView();
+  } catch (e) {
+    if (e.name !== 'AbortError') showToast('Erreur : ' + e.message, 'warning');
+  }
+}
+
+async function getLocalPrintFolderStatus() {
+  if (!window.showDirectoryPicker) return { supported: false, configured: false, name: null };
+  const baseHandle = await idbGet('printFolderHandle');
+  if (!baseHandle) return { supported: true, configured: false, name: null };
+  return { supported: true, configured: true, name: baseHandle.name };
+}
+
+// Renvoie le dossier daté (DDMMYYYY) du jour, en le créant si besoin, ou null si pas configuré
+async function getLocalPrintDateFolder() {
+  const baseHandle = await idbGet('printFolderHandle');
+  if (!baseHandle) return null;
+
+  let perm = await baseHandle.queryPermission({ mode: 'readwrite' });
+  if (perm !== 'granted') {
+    perm = await baseHandle.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') throw new Error('Permission refusée pour le dossier local');
+  }
+
+  const today = new Date();
+  const folderName = String(today.getDate()).padStart(2, '0')
+    + String(today.getMonth() + 1).padStart(2, '0')
+    + today.getFullYear();
+
+  return await baseHandle.getDirectoryHandle(folderName, { create: true });
+}
+
+async function saveZipLocally(dateFolderHandle, filename, base64Content) {
+  const binary = atob(base64Content);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  const fileHandle = await dateFolderHandle.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(bytes);
+  await writable.close();
+}
+
+// ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
 function switchTab(tab) {
@@ -1524,6 +1606,7 @@ function renderPrintView() {
     stepBodyHtml = `
       <div class="step-title">Générer le ZIP</div>
       <div class="step-desc" style="margin-bottom:10px;">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive — ${selectedCount} commande${selectedCount>1?'s':''} sélectionnée${selectedCount>1?'s':''}</div>
+      <div id="local-folder-zone" style="margin-bottom:10px;font-size:13px;color:var(--text-secondary,#666);">Vérification du dossier local…</div>
       <div id="zip-generate-zone">
         <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
           🗜️ Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})
@@ -1531,6 +1614,19 @@ function renderPrintView() {
       </div>
       <div id="zip-result-zone"></div>
     `;
+    // Rempli après coup (async) une fois le HTML injecté
+    setTimeout(async () => {
+      const zone = document.getElementById('local-folder-zone');
+      if (!zone) return;
+      const status = await getLocalPrintFolderStatus();
+      if (!status.supported) {
+        zone.innerHTML = `📁 Sauvegarde locale non disponible (utilise Chrome ou Edge)`;
+      } else if (status.configured) {
+        zone.innerHTML = `📁 Dossier local configuré : <strong>${status.name}</strong> · <a href="#" onclick="configureLocalPrintFolder();return false;">changer</a>`;
+      } else {
+        zone.innerHTML = `<button class="btn" onclick="configureLocalPrintFolder()">📁 Configurer le dossier local (ex: DTF)</button>`;
+      }
+    }, 0);
   } else {
     stepBodyHtml = `
       <div class="step-title">Valider — supprimer la balise TODOPRINT</div>
@@ -1650,10 +1746,30 @@ async function generatePrintZip() {
       `<a href="${z.url}" target="_blank">📦 ${z.name}</a>`
     ).join('<br/>');
 
+    // Sauvegarde locale en plus du Drive, si un dossier est configuré et que le GAS renvoie le contenu (base64)
+    let localMsg = '';
+    try {
+      const dateFolder = await getLocalPrintDateFolder();
+      if (dateFolder) {
+        const zipsWithContent = result.zips.filter(z => z.base64);
+        if (zipsWithContent.length) {
+          for (const z of zipsWithContent) {
+            await saveZipLocally(dateFolder, z.name, z.base64);
+          }
+          localMsg = `<div style="margin-top:8px;">💾 Copié aussi dans <strong>${dateFolder.name}</strong> en local</div>`;
+        } else {
+          localMsg = `<div style="margin-top:8px;color:#a66;">⚠️ Dossier local configuré mais le GAS ne renvoie pas encore le contenu du ZIP — voir note technique</div>`;
+        }
+      }
+    } catch (localErr) {
+      localMsg = `<div style="margin-top:8px;color:#a66;">⚠️ Sauvegarde locale échouée : ${localErr.message}</div>`;
+    }
+
     document.getElementById('zip-result-zone').innerHTML = `
       <div class="zip-result" style="margin-top:12px;">
         <div style="font-weight:600;margin-bottom:8px;">✅ ZIP généré dans ton Drive !</div>
         ${zipLinks}
+        ${localMsg}
       </div>`;
 
     // Affiche le bouton étape 3
