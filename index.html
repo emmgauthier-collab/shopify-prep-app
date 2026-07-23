@@ -367,6 +367,7 @@ const state = {
   printZipOrderIds: [],  // IDs des commandes zippées (pour suppression tag)
   printLots: [],         // historique des lots d'impression (commentaire, commandes, date)
   printLotsLoaded: false,
+  printWizardStep: 1,    // étape affichée du cadre unique (1/2/3)
   // Délais & FOMO
   delaisLoaded: false,
   delais: {
@@ -1169,18 +1170,18 @@ function renderPrintLotsSection() {
   if (!lots.length) {
     return `<div class="card" style="margin-top:20px;">
       <div class="card-title">📋 Historique des lots d'impression</div>
-      <div style="color:var(--text-sub);font-size:13px;">Aucun lot généré pour l'instant.</div>
+      <div style="color:var(--text-sub);font-size:13px;">Aucun lot dans l'historique pour l'instant.</div>
     </div>`;
   }
   const rows = lots.map(lot => {
     const d = new Date(lot.dateGeneration);
-    const dateFr = isNaN(d.getTime()) ? '—' : `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} à ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const dateFr = isNaN(d.getTime()) ? '—' : `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` + (lot.retroactive ? '' : ` à ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`);
     const count = (lot.orderIds || []).length;
     const namesPreview = (lot.orderNames || []).slice(0, 6).join(', ') + ((lot.orderNames || []).length > 6 ? '…' : '');
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
         <div>
-          <div><strong>${dateFr}</strong> — ${count} commande${count>1?'s':''} <span class="badge badge-info">${escapeHtml(lot.tag||'')}</span></div>
+          <div><strong>${dateFr}</strong> — ${count} commande${count>1?'s':''} <span class="badge badge-info">${escapeHtml(lot.tag||'')}</span>${lot.retroactive ? ' <span class="badge" style="background:#999;color:#fff;">reconstitué</span>' : ''}</div>
           <div style="font-size:11px;color:var(--text-sub);margin-top:2px;">${escapeHtml(namesPreview)}</div>
         </div>
         <button class="btn" onclick="regenPrintLotZip('${lot.lotId}')">↺ Régénérer le ZIP</button>
@@ -1226,6 +1227,7 @@ async function renderPrintTab() {
     state.printSelected = new Set(orders.map(o => o.id));
     state.printZipDone = false;
     state.printZipOrderIds = [];
+    state.printWizardStep = 1;
     try { state.printLots = await fetchPrintLots(); state.printLotsLoaded = true; }
     catch (e) { state.printLots = []; state.printLotsLoaded = false; console.log('Erreur chargement lots impression:', e.message); }
     renderPrintView();
@@ -1234,109 +1236,116 @@ async function renderPrintTab() {
   }
 }
 
+function goToPrintStep(n) {
+  state.printWizardStep = n;
+  renderPrintView();
+}
+
 function renderPrintView() {
   const c = document.getElementById('content');
   const orders = state.printOrders;
   if (!orders.length) {
-    c.innerHTML = `<div class="empty">Aucune commande avec la balise TODOPRINT.</div>`;
+    c.innerHTML = `<div class="empty">Aucune commande avec la balise TODOPRINT.</div>${renderPrintLotsSection()}`;
     return;
   }
 
   const selectedCount = state.printSelected.size;
   const ordersWithNotes = orders.filter(o => o.note?.trim() && state.printSelected.has(o.id));
 
-  let html = `
-    <div class="workflow-steps">
+  // Clamp l'étape affichée selon ce qui est réellement débloqué
+  let step = state.printWizardStep;
+  if (step === 2 && selectedCount === 0) step = 1;
+  if (step === 3 && !state.printZipDone) step = state.printZipDone ? 3 : (selectedCount === 0 ? 1 : 2);
+  state.printWizardStep = step;
 
-      <!-- ÉTAPE 1 : Sélection -->
-      <div class="step">
-        <div class="step-header">
-          <div class="step-number ${state.printZipDone ? 'done' : ''}">1</div>
-          <div>
-            <div class="step-title">Sélectionner les commandes à préparer</div>
-            <div class="step-desc" id="print-step1-desc">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
-          </div>
-        </div>
-        <div class="step-body">
-          <div style="display:flex;gap:8px;margin-bottom:12px;">
-            <button class="btn" onclick="printSelectAll()">✅ Tout sélectionner</button>
-            <button class="btn" onclick="printDeselectAll()">☐ Tout désélectionner</button>
-          </div>
-          <div class="print-order-list">
-            ${orders.map(o => {
-              const isSelected = state.printSelected.has(o.id);
-              const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
-              const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
-              const totalQty = o.lineItems.edges.reduce((s,{node:li})=>s+li.quantity,0);
-              // Compte les fichiers disponibles
-              const fileCount = o.lineItems.edges.reduce((s,{node:li}) => {
-                const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
-                const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
-                return s + designs.length + jsonUrls.length;
-              }, 0);
-              return `<div class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
-                <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
-                <div class="print-order-info">
-                  <div class="print-order-name">${o.name} <span class="badge badge-info">${totalQty} art.</span> <span class="badge badge-info">${ageInDays}j</span></div>
-                  <div class="print-order-detail">${customer||'—'} · ${o.lineItems.edges.length} ligne${o.lineItems.edges.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
-                  ${o.note?.trim() ? `<div class="print-order-note">📝 ${o.note}</div>` : ''}
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-          ${ordersWithNotes.length > 0 ? `
-          <div class="alert alert-warning" style="margin-top:12px;">
-            📝 <strong>${ordersWithNotes.length} commande${ordersWithNotes.length>1?'s':''} avec note</strong> — incluses dans le notes.txt du ZIP
-          </div>` : ''}
-        </div>
+  const stepMeta = [
+    { n: 1, label: 'Sélection', unlocked: true },
+    { n: 2, label: 'Génération ZIP', unlocked: selectedCount > 0 },
+    { n: 3, label: 'Validation', unlocked: state.printZipDone },
+  ];
+
+  const breadcrumb = stepMeta.map(s => {
+    const isCurrent = s.n === step;
+    const clickable = s.unlocked;
+    return `<span class="step-crumb ${isCurrent ? 'current' : ''} ${clickable ? '' : 'locked'}"
+      ${clickable ? `onclick="goToPrintStep(${s.n})"` : ''}
+      style="cursor:${clickable ? 'pointer' : 'default'};opacity:${clickable ? 1 : .45};font-weight:${isCurrent ? 700 : 400};">
+      ${s.n}. ${s.label}
+    </span>`;
+  }).join('<span style="margin:0 8px;color:var(--text-sub);">→</span>');
+
+  let stepBodyHtml = '';
+
+  if (step === 1) {
+    stepBodyHtml = `
+      <div class="step-title">Sélectionner les commandes à préparer</div>
+      <div class="step-desc" id="print-step1-desc" style="margin-bottom:10px;">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn" onclick="printSelectAll()">✅ Tout sélectionner</button>
+        <button class="btn" onclick="printDeselectAll()">☐ Tout désélectionner</button>
       </div>
-
-      <!-- ÉTAPE 2 : Génération ZIP -->
-      <div class="step">
-        <div class="step-header">
-          <div class="step-number ${state.printZipDone ? 'done' : selectedCount === 0 ? 'locked' : ''}">2</div>
-          <div>
-            <div class="step-title">Générer le ZIP</div>
-            <div class="step-desc">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive</div>
-          </div>
-        </div>
-        <div class="step-body">
-          ${selectedCount === 0 ? `
-            <div style="color:var(--text-sub);font-size:13px;">Sélectionne au moins une commande à l'étape 1.</div>
-          ` : `
-            <div id="zip-generate-zone">
-              <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
-                🗜️ Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})
-              </button>
+      <div class="print-order-list">
+        ${orders.map(o => {
+          const isSelected = state.printSelected.has(o.id);
+          const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
+          const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
+          const totalQty = o.lineItems.edges.reduce((s,{node:li})=>s+li.quantity,0);
+          const fileCount = o.lineItems.edges.reduce((s,{node:li}) => {
+            const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
+            const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
+            return s + designs.length + jsonUrls.length;
+          }, 0);
+          return `<div class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
+            <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
+            <div class="print-order-info">
+              <div class="print-order-name">${o.name} <span class="badge badge-info">${totalQty} art.</span> <span class="badge badge-info">${ageInDays}j</span></div>
+              <div class="print-order-detail">${customer||'—'} · ${o.lineItems.edges.length} ligne${o.lineItems.edges.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
+              ${o.note?.trim() ? `<div class="print-order-note">📝 ${o.note}</div>` : ''}
             </div>
-          `}
-          <div id="zip-result-zone"></div>
-        </div>
+          </div>`;
+        }).join('')}
       </div>
-
-      <!-- ÉTAPE 3 : Validation -->
-      <div class="step">
-        <div class="step-header">
-          <div class="step-number ${!state.printZipDone ? 'locked' : ''}">3</div>
-          <div>
-            <div class="step-title">Valider — supprimer la balise TODOPRINT</div>
-            <div class="step-desc">Supprime TODOPRINT uniquement sur les commandes zippées</div>
-          </div>
-        </div>
-        <div class="step-body">
-          ${!state.printZipDone ? `
-            <div style="color:var(--text-sub);font-size:13px;">⚠️ Génère d'abord le ZIP à l'étape 2.</div>
-          ` : `
-            <button class="btn btn-primary" onclick="validatePrintOrders()">
-              ✅ Supprimer TODOPRINT (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})
-            </button>
-          `}
-        </div>
+      ${ordersWithNotes.length > 0 ? `
+      <div class="alert alert-warning" style="margin-top:12px;">
+        📝 <strong>${ordersWithNotes.length} commande${ordersWithNotes.length>1?'s':''} avec note</strong> — incluses dans le notes.txt du ZIP
+      </div>` : ''}
+    `;
+  } else if (step === 2) {
+    stepBodyHtml = `
+      <div class="step-title">Générer le ZIP</div>
+      <div class="step-desc" style="margin-bottom:10px;">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive — ${selectedCount} commande${selectedCount>1?'s':''} sélectionnée${selectedCount>1?'s':''}</div>
+      <div id="zip-generate-zone">
+        <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
+          🗜️ Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})
+        </button>
       </div>
+      <div id="zip-result-zone"></div>
+    `;
+  } else {
+    stepBodyHtml = `
+      <div class="step-title">Valider — supprimer la balise TODOPRINT</div>
+      <div class="step-desc" style="margin-bottom:10px;">Supprime TODOPRINT uniquement sur les commandes zippées (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})</div>
+      <button class="btn btn-primary" onclick="validatePrintOrders()">
+        ✅ Supprimer TODOPRINT (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})
+      </button>
+    `;
+  }
 
-      ${renderPrintLotsSection()}
+  const navButtons = `
+    <div style="display:flex;justify-content:space-between;margin-top:16px;">
+      <div>${step > 1 ? `<button class="btn" onclick="goToPrintStep(${step - 1})">← Précédent</button>` : ''}</div>
+      <div>${step < 3 && stepMeta[step].unlocked ? `<button class="btn btn-primary" onclick="goToPrintStep(${step + 1})">Étape suivante →</button>` : ''}</div>
+    </div>
+  `;
 
-    </div>`;
+  const html = `
+    <div class="card">
+      <div style="display:flex;align-items:center;margin-bottom:14px;font-size:13px;">${breadcrumb}</div>
+      ${stepBodyHtml}
+      ${navButtons}
+    </div>
+    ${renderPrintLotsSection()}
+  `;
 
   c.innerHTML = html;
 }
