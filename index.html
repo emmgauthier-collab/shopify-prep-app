@@ -357,7 +357,7 @@ const state = {
   activeTab: 'dashboard',
   proxyUrl: '', appPassword: '', shop: '',
   isLoggedIn: false,
-  orders: [], pageInfo: null, currentIndex: 0, filterUrgent: false, currentCursor: null, currentDirection: 'forward',
+  orders: [], currentIndex: 0, filterUrgent: false,
   orderSearchActive: false, orderSearchQuery: '',
   supplierOrders: [], supplierSnapshot: [],
   // Print tab
@@ -630,34 +630,44 @@ const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName 
     customAttributes { key value }
   }}}`;
 
-async function fetchCustomOrders(cursor = null, direction = 'forward', urgent = false) {
-  const base = 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)';
-  const data = await gql(`query($first: Int, $after: String, $last: Int, $before: String, $q: String!) {
-    orders(first: $first, after: $after, last: $last, before: $before, query: $q) {
-      edges { node { ${ORDER_FIELDS} } }
-      pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
-    }
-  }`, {
-    first: direction === 'forward' ? 10 : null, after: direction === 'forward' ? cursor : null,
-    last: direction !== 'forward' ? 10 : null, before: direction !== 'forward' ? cursor : null,
-    q: urgent ? `${base} AND tag:urgent` : base,
+// Trie par "à traiter avant" (date_limite_traitement) croissant : l'échéance la plus proche en premier.
+// Les commandes sans échéance connue (webhook pas encore passé dessus) sont reléguées en fin de liste,
+// triées par ancienneté (les plus vieilles d'abord) pour ne pas les perdre de vue.
+function sortOrdersByDeadline(orders) {
+  return orders.slice().sort((a, b) => {
+    const da = a.dateLimiteTraitement?.value || null;
+    const db = b.dateLimiteTraitement?.value || null;
+    if (da && db) return da < db ? -1 : da > db ? 1 : 0;
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    return new Date(a.createdAt) - new Date(b.createdAt);
   });
-  state.orders = data.orders.edges.map(e => e.node);
-  state.pageInfo = data.orders.pageInfo;
+}
+
+async function fetchCustomOrders(urgent = false) {
+  const base = 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)';
+  const q = urgent ? `${base} AND tag:urgent` : base;
+  let orders = [], hasNext = true, cursor = null;
+  while (hasNext) {
+    const data = await gql(`query($first: Int!, $after: String, $q: String!) {
+      orders(first: $first, after: $after, query: $q) {
+        edges { node { ${ORDER_FIELDS} } }
+        pageInfo { hasNextPage endCursor }
+      }
+    }`, { first: 250, after: cursor, q });
+    orders.push(...data.orders.edges.map(e => e.node));
+    hasNext = data.orders.pageInfo.hasNextPage;
+    cursor = data.orders.pageInfo.endCursor;
+  }
+  state.orders = sortOrdersByDeadline(orders);
   state.currentIndex = 0;
-  // Sauvegarde le curseur courant pour pouvoir revenir sur la même page
-  state.currentCursor = cursor;
-  state.currentDirection = direction;
 }
 
 async function renderCustomTab(restorePage = false) {
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    // Si on revient sur le tab, recharge la même page
-    const cursor = restorePage ? state.currentCursor : null;
-    const direction = restorePage ? state.currentDirection : 'forward';
     const savedId = restorePage ? state.orders[state.currentIndex]?.id : null;
-    await fetchCustomOrders(cursor, direction, state.filterUrgent);
+    await fetchCustomOrders(state.filterUrgent);
     if (savedId) { const idx = state.orders.findIndex(o => o.id === savedId); if (idx !== -1) state.currentIndex = idx; }
     renderOrderView();
   }
@@ -703,9 +713,9 @@ function renderStatusBadges(tags) {
 function renderOrderView() {
   const c = document.getElementById('content');
   const order = state.orders[state.currentIndex] || null;
-  const hasPrev = state.currentIndex > 0 || state.pageInfo?.hasPreviousPage;
-  const hasNext = state.currentIndex < state.orders.length - 1 || state.pageInfo?.hasNextPage;
-  const counter = state.orders.length === 0 ? 'Aucune commande' : `${state.currentIndex + 1} / ${state.orders.length}${state.pageInfo?.hasNextPage ? '+' : ''}`;
+  const hasPrev = state.currentIndex > 0;
+  const hasNext = state.currentIndex < state.orders.length - 1;
+  const counter = state.orders.length === 0 ? 'Aucune commande' : `${state.currentIndex + 1} / ${state.orders.length}`;
 
   let html = `<div class="nav-bar">
     <button class="btn" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédent <kbd>J</kbd></button>
@@ -800,26 +810,16 @@ function renderOrderView() {
 
 async function prevOrder() {
   if (state.currentIndex > 0) { state.currentIndex--; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
-  else if (state.pageInfo?.hasPreviousPage) {
-    document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-    try { await fetchCustomOrders(state.pageInfo.startCursor, 'backward', state.filterUrgent); state.currentIndex = state.orders.length-1; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
-    catch(e) { showToast('Erreur: '+e.message, 'error'); }
-  }
 }
 async function nextOrder() {
   if (state.currentIndex < state.orders.length-1) { state.currentIndex++; renderOrderView(); }
-  else if (state.pageInfo?.hasNextPage) {
-    document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-    try { await fetchCustomOrders(state.pageInfo.endCursor, 'forward', state.filterUrgent); renderOrderView(); }
-    catch(e) { showToast('Erreur: '+e.message, 'error'); }
-  }
 }
 async function nextOrderAndScroll() { await nextOrder(); window.scrollTo({top:0,behavior:'smooth'}); }
 function jumpToOrder(idx) { state.currentIndex = parseInt(idx); renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
 async function toggleUrgentFilter() {
   state.filterUrgent = !state.filterUrgent;
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
+  try { await fetchCustomOrders(state.filterUrgent); renderOrderView(); }
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
@@ -841,7 +841,6 @@ async function searchOrderByNumber() {
       return;
     }
     state.orders = found;
-    state.pageInfo = null;
     state.currentIndex = 0;
     state.orderSearchActive = true;
     state.orderSearchQuery = raw;
@@ -857,7 +856,7 @@ async function clearOrderSearch() {
   state.orderSearchActive = false;
   state.orderSearchQuery = '';
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
-  try { await fetchCustomOrders(null, 'forward', state.filterUrgent); renderOrderView(); }
+  try { await fetchCustomOrders(state.filterUrgent); renderOrderView(); }
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
