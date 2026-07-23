@@ -368,6 +368,8 @@ const state = {
   printLots: [],         // historique des lots d'impression (commentaire, commandes, date)
   printLotsLoaded: false,
   printWizardStep: 1,    // étape affichée du cadre unique (1/2/3)
+  dashboardCalendarData: {},
+  calendarSelectedDay: null,
   // Délais & FOMO
   delaisLoaded: false,
   delais: {
@@ -546,11 +548,118 @@ document.addEventListener('DOMContentLoaded', () => {
 // ════════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// CALENDRIER DE TRAITEMENT (J-15 / J+15)
+// ════════════════════════════════════════════
+async function fetchDashboardCalendarData() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 60);
+  const cutoffIso = cutoff.toISOString().slice(0, 10);
+
+  let orders = [], hasNext = true, cursor = null;
+  while (hasNext) {
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){
+      orders(first:$first, after:$after, query:$q){
+        edges{node{
+          id name tags
+          dateLimiteTraitement: metafield(namespace:"custom", key:"date_limite_traitement"){value}
+          estRush: metafield(namespace:"custom", key:"est_rush"){value}
+          displayFulfillmentStatus
+        }}
+        pageInfo{hasNextPage endCursor}
+      }
+    }`, { first: 250, after: cursor, q: `tag:custom AND created_at:>'${cutoffIso}'` });
+    orders.push(...data.orders.edges.map(e => e.node));
+    hasNext = data.orders.pageInfo.hasNextPage; cursor = data.orders.pageInfo.endCursor;
+  }
+
+  // Regroupe par date limite de traitement (YYYY-MM-DD)
+  const byDate = {};
+  orders.forEach(o => {
+    const raw = o.dateLimiteTraitement && o.dateLimiteTraitement.value;
+    if (!raw) return;
+    const dateKey = raw.slice(0, 10); // supporte date pure ou date_time ISO
+    if (!byDate[dateKey]) byDate[dateKey] = [];
+    byDate[dateKey].push({
+      id: o.id,
+      name: o.name,
+      fulfilled: o.displayFulfillmentStatus === 'FULFILLED',
+      rush: o.estRush && o.estRush.value === 'true'
+    });
+  });
+  return byDate;
+}
+
+function renderDashboardCalendar() {
+  const byDate = state.dashboardCalendarData || {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = [];
+  for (let offset = -15; offset <= 15; offset++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + offset);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const dayOrders = byDate[key] || [];
+    const pending = dayOrders.filter(o => !o.fulfilled);
+    const rushPending = pending.some(o => o.rush);
+    let colorVar = 'transparent';
+    let title = 'Aucune commande';
+    if (dayOrders.length > 0) {
+      if (pending.length === 0) { colorVar = 'var(--success)'; title = `${dayOrders.length} commande${dayOrders.length>1?'s':''} — toutes traitées`; }
+      else { colorVar = rushPending ? 'var(--critical)' : 'var(--warning)'; title = `${pending.length} en attente sur ${dayOrders.length}${rushPending ? ' (dont rush)' : ''}`; }
+    }
+    days.push({ key, dayNum: d.getDate(), isToday: offset === 0, count: dayOrders.length, colorVar, title, monthLabel: d.toLocaleDateString('fr-FR', { month: 'short' }) });
+  }
+
+  const cellsHtml = days.map(d => {
+    const showMonth = d.dayNum === 1 || d === days[0];
+    return `<div onclick="showCalendarDayOrders('${d.key}')" title="${escapeHtml(d.title)}"
+      style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:34px;height:44px;flex-shrink:0;
+      border-radius:6px;cursor:pointer;border:${d.isToday ? '2px solid var(--primary)' : '1px solid var(--border)'};
+      background:${d.colorVar === 'transparent' ? 'var(--surface)' : d.colorVar}; ${d.colorVar !== 'transparent' ? 'color:#fff;' : ''}">
+      <div style="font-size:9px;opacity:.75;">${showMonth ? d.monthLabel : ''}</div>
+      <div style="font-weight:700;font-size:13px;">${d.dayNum}</div>
+      ${d.count > 0 ? `<div style="font-size:9px;">${d.count}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="card-title">📅 Calendrier de traitement (J-15 / J+15)</div>
+    <div style="display:flex;gap:8px;font-size:11px;color:var(--text-sub);margin-bottom:10px;">
+      <span>🟢 Traité</span> <span>🟡 En attente</span> <span>🔴 Rush en attente</span> <span>⚪ Aucune commande</span>
+    </div>
+    <div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;">${cellsHtml}</div>
+    <div id="calendar-day-detail" style="margin-top:10px;"></div>
+  </div>`;
+}
+
+function showCalendarDayOrders(dateKey) {
+  const byDate = state.dashboardCalendarData || {};
+  const orders = byDate[dateKey] || [];
+  const zone = document.getElementById('calendar-day-detail');
+  if (!zone) return;
+  if (state.calendarSelectedDay === dateKey) { state.calendarSelectedDay = null; zone.innerHTML = ''; return; }
+  state.calendarSelectedDay = dateKey;
+  const d = new Date(dateKey + 'T00:00:00');
+  const dateFr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  if (!orders.length) {
+    zone.innerHTML = `<div style="font-size:12px;color:var(--text-sub);">Aucune commande avec échéance le ${dateFr}.</div>`;
+    return;
+  }
+  zone.innerHTML = `<div style="border-top:1px solid var(--border);padding-top:8px;font-size:12px;">
+    <strong>${dateFr}</strong> — ${orders.length} commande${orders.length>1?'s':''}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+      ${orders.map(o => `<span class="badge ${o.fulfilled ? 'badge-info' : (o.rush ? 'badge-critical' : 'badge-urgent')}">${o.fulfilled ? '✅' : (o.rush ? '🔥' : '⏳')} ${escapeHtml(o.name)}</span>`).join('')}
+    </div>
+  </div>`;
+}
+
+
 async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    const [countsData, notesData] = await Promise.all([
+    const [countsData, notesData, calendarData] = await Promise.all([
       gql(`query {
         custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
         toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
@@ -561,8 +670,10 @@ async function renderDashboard() {
         orders(first: 50, query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") {
           edges { node { id name note createdAt customer { firstName lastName } } }
         }
-      }`)
+      }`),
+      fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; })
     ]);
+    state.dashboardCalendarData = calendarData;
 
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
     // ── Badges tous les onglets ──
@@ -609,6 +720,7 @@ async function renderDashboard() {
         <div class="stat-card" onclick="switchTab('print')"><div class="stat-label">Préparation impression</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
         <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
       </div>
+      ${renderDashboardCalendar()}
       <div class="card">
         <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
         ${notesHtml}
