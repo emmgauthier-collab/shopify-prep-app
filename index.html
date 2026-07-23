@@ -338,8 +338,8 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
     <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="tab-badge-urgent badge" style="display:none"></span><span id="tab-custom-badge-total" class="tab-badge-total badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur <span id="tab-supplier-badge" class="tab-badge-total badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
+    <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur <span id="tab-supplier-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-supplier-badge" class="tab-badge-total badge" style="display:none"></span></button>
+    <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">🖼️ Galerie</button>
     <button class="tab-btn" data-tab="delaisfomo" onclick="switchTab('delaisfomo')">⏱️ Délais &amp; FOMO</button>
   </div>
@@ -674,11 +674,79 @@ function showCalendarDayOrders(dateKey) {
 }
 
 
+// ════════════════════════════════════════════
+// ALERTES DE RETARD (fournisseur / impression)
+// ════════════════════════════════════════════
+async function fetchDelayAlerts() {
+  let orders = [], hasNext = true, cursor = null;
+  const data0 = await gql(`query{
+    shop{
+      alerteImpression: metafield(namespace:"custom", key:"alerte_delai_impression"){value}
+      alerteFournisseur: metafield(namespace:"custom", key:"alerte_delai_fournisseur"){value}
+    }
+  }`);
+  const seuilImpression = data0.shop.alerteImpression ? parseFloat(data0.shop.alerteImpression.value) : 1;
+  const seuilFournisseur = data0.shop.alerteFournisseur ? parseFloat(data0.shop.alerteFournisseur.value) : 2;
+
+  while (hasNext) {
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){
+      orders(first:$first, after:$after, query:$q){
+        edges{node{
+          id name tags
+          dateLimiteTraitement: metafield(namespace:"custom", key:"date_limite_traitement"){value}
+          estRush: metafield(namespace:"custom", key:"est_rush"){value}
+        }}
+        pageInfo{hasNextPage endCursor}
+      }
+    }`, { first: 100, after: cursor, q: 'tag:custom AND (tag:TOORDER OR tag:TODOPRINT) AND status:open' });
+    orders.push(...data.orders.edges.map(e => e.node));
+    hasNext = data.orders.pageInfo.hasNextPage; cursor = data.orders.pageInfo.endCursor;
+  }
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const alerts = [];
+  orders.forEach(o => {
+    const raw = o.dateLimiteTraitement && o.dateLimiteTraitement.value;
+    if (!raw) return;
+    const deadline = new Date(raw.slice(0, 10) + 'T00:00:00');
+    const daysRemaining = (deadline - today) / 86400000;
+    const isRush = o.estRush && o.estRush.value === 'true';
+    const stages = [];
+    if (o.tags.includes('TODOPRINT') && daysRemaining <= seuilImpression) stages.push('impression');
+    if (o.tags.includes('TOORDER') && daysRemaining <= seuilFournisseur) stages.push('fournisseur');
+    if (stages.length) alerts.push({ id: o.id, name: o.name, daysRemaining, isRush, stages });
+  });
+  alerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
+  return alerts;
+}
+
+function renderDelayAlertBanner(alerts) {
+  if (!alerts || !alerts.length) return '';
+  const rows = alerts.map(a => {
+    const label = a.daysRemaining < 0
+      ? `en retard de ${Math.abs(Math.round(a.daysRemaining))}j`
+      : (a.daysRemaining < 1 ? "aujourd'hui" : `dans ${Math.ceil(a.daysRemaining)}j`);
+    const stageBadges = a.stages.map(s => s === 'impression'
+      ? `<span class="badge" style="background:var(--critical);color:#fff;">🖨️ Impression</span>`
+      : `<span class="badge" style="background:var(--critical);color:#fff;">📦 Fournisseur</span>`
+    ).join(' ');
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;">
+      <div><strong>${escapeHtml(a.name)}</strong> ${a.isRush ? '<span class="badge badge-critical">🔥 RUSH</span>' : ''} ${stageBadges}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--critical);white-space:nowrap;">${label}</div>
+    </div>`;
+  }).join('');
+  return `<div class="card" style="border:2px solid var(--critical);margin-bottom:16px;">
+    <div class="card-title" style="color:var(--critical);">🚨 ${alerts.length} commande${alerts.length>1?'s':''} à risque de retard</div>
+    ${rows}
+  </div>`;
+}
+
+
 async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    const [countsData, notesData, calendarData] = await Promise.all([
+    const [countsData, notesData, calendarData, delayAlerts] = await Promise.all([
       gql(`query {
         custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
         toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
@@ -690,9 +758,11 @@ async function renderDashboard() {
           edges { node { id name note createdAt customer { firstName lastName } } }
         }
       }`),
-      fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; })
+      fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; }),
+      fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; })
     ]);
     state.dashboardCalendarData = calendarData;
+    state.dashboardDelayAlerts = delayAlerts;
 
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
     // ── Badges tous les onglets ──
@@ -712,6 +782,14 @@ async function renderDashboard() {
     // Impression (vert)
     badgePrint.style.display = counts.todoprint > 0 ? '' : 'none';
     if (counts.todoprint > 0) badgePrint.textContent = counts.todoprint;
+
+    // Points d'alerte retard (🚨) sur les onglets concernés
+    const alertDotSupplier = document.getElementById('tab-supplier-alert-dot');
+    const alertDotPrint = document.getElementById('tab-print-alert-dot');
+    const hasSupplierAlert = delayAlerts.some(a => a.stages.includes('fournisseur'));
+    const hasPrintAlert = delayAlerts.some(a => a.stages.includes('impression'));
+    if (alertDotSupplier) alertDotSupplier.style.display = hasSupplierAlert ? '' : 'none';
+    if (alertDotPrint) alertDotPrint.style.display = hasPrintAlert ? '' : 'none';
 
     const ordersWithNotes = notesData.orders.edges.map(e => e.node).filter(o => o.note?.trim());
     const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
@@ -733,6 +811,7 @@ async function renderDashboard() {
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
       </div>
+      ${renderDelayAlertBanner(delayAlerts)}
       <div class="dashboard-grid">
         <div class="stat-card" onclick="goToCustom(false)"><div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div></div>
         <div class="stat-card" onclick="switchTab('supplier')"><div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div></div>
@@ -2413,6 +2492,8 @@ const DELAIS_QUERY = `query {
     fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { value }
     fomoCode: metafield(namespace: "custom", key: "fomo_code") { value }
     fomoFin: metafield(namespace: "custom", key: "fomo_fin") { value }
+    alerteImpression: metafield(namespace: "custom", key: "alerte_delai_impression") { value }
+    alerteFournisseur: metafield(namespace: "custom", key: "alerte_delai_fournisseur") { value }
   }
 }`;
 
@@ -2436,6 +2517,8 @@ async function loadDelaisData() {
   d.delaiProduction = s.delaiProduction ? s.delaiProduction.value : '';
   d.delaiRush = s.delaiRush ? s.delaiRush.value : '';
   d.delaiPlancher = s.delaiPlancher ? s.delaiPlancher.value : '';
+  d.alerteImpression = s.alerteImpression ? s.alerteImpression.value : '1';
+  d.alerteFournisseur = s.alerteFournisseur ? s.alerteFournisseur.value : '2';
   d.fomoActif = s.fomoActif ? s.fomoActif.value === 'true' : false;
   d.fomoTexte = s.fomoTexte ? s.fomoTexte.value : '';
   d.fomoCode = s.fomoCode ? s.fomoCode.value : '';
@@ -2533,6 +2616,14 @@ function renderDelaisUI() {
     '</div>' +
 
     '<div class="card">' +
+    '<div class="card-title">\uD83D\uDEA8 Alertes de retard</div>' +
+    '<div class="settings-hint" style="margin-bottom:8px;">Signale, sur le tableau de bord et les onglets concern\u00e9s, les commandes dont l\u2019\u00e9ch\u00e9ance approche alors que l\u2019impression ou la commande fournisseur n\u2019a pas encore \u00e9t\u00e9 faite.</div>' +
+    '<div class="form-group"><label>Alerte impression \u2014 seuil (jours avant \u00e9ch\u00e9ance)</label><input type="number" step="0.5" id="df-alerte-impression" value="' + escapeHtml(d.alerteImpression) + '"><div class="settings-hint">D\u00e9clenche une alerte si une commande a encore la balise TODOPRINT \u00e0 moins de ce nombre de jours de l\u2019\u00e9ch\u00e9ance.</div></div>' +
+    '<div class="form-group"><label>Alerte commande fournisseur \u2014 seuil (jours avant \u00e9ch\u00e9ance)</label><input type="number" step="0.5" id="df-alerte-fournisseur" value="' + escapeHtml(d.alerteFournisseur) + '"><div class="settings-hint">D\u00e9clenche une alerte si une commande a encore la balise TOORDER \u00e0 moins de ce nombre de jours de l\u2019\u00e9ch\u00e9ance.</div></div>' +
+    '<button class="btn btn-primary" onclick="saveAlertesRetard()">Enregistrer les alertes</button>' +
+    '</div>' +
+
+    '<div class="card">' +
     '<div class="card-title">\uD83D\uDD25 Bandeau FOMO (page produit personnalisation) ' + fomoStatusBadge + '</div>' +
     '<div class="form-group"><label><input type="checkbox" id="df-fomo-actif" ' + (d.fomoActif ? 'checked' : '') + ' style="width:16px;height:16px;vertical-align:middle;margin-right:6px;accent-color:var(--primary);"> Bandeau actif</label></div>' +
     '<div class="form-group"><label>Texte de l\u2019offre</label><input type="text" id="df-fomo-texte" value="' + escapeHtml(d.fomoTexte) + '" placeholder="ex: -10% sur ta personnalisation"></div>' +
@@ -2581,6 +2672,17 @@ async function saveDelaisBase() {
     if (rush !== '') await metafieldsSetOne('delai_rush', rush, 'number_integer');
     if (plancher !== '') await metafieldsSetOne('delai_plancher_fermeture', plancher, 'number_integer');
     showToast('D\u00e9lais enregistr\u00e9s');
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function saveAlertesRetard() {
+  const alerteImpression = document.getElementById('df-alerte-impression').value.trim();
+  const alerteFournisseur = document.getElementById('df-alerte-fournisseur').value.trim();
+  try {
+    if (alerteImpression !== '') await metafieldsSetOne('alerte_delai_impression', alerteImpression, 'number_decimal');
+    if (alerteFournisseur !== '') await metafieldsSetOne('alerte_delai_fournisseur', alerteFournisseur, 'number_decimal');
+    showToast('Seuils d\u2019alerte enregistr\u00e9s');
     await loadDelaisData(); renderDelaisUI();
   } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
 }
