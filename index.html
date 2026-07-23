@@ -365,6 +365,8 @@ const state = {
   printSelected: new Set(), // IDs sélectionnés
   printZipDone: false,
   printZipOrderIds: [],  // IDs des commandes zippées (pour suppression tag)
+  printLots: [],         // historique des lots d'impression (commentaire, commandes, date)
+  printLotsLoaded: false,
   // Délais & FOMO
   delaisLoaded: false,
   delais: {
@@ -1071,6 +1073,129 @@ async function regenAndDownload(tag, type) {
 }
 
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// LOTS D'IMPRESSION — historique + commentaires
+// ════════════════════════════════════════════
+const PRINT_LOTS_NAMESPACE = 'rxwear_print';
+const PRINT_LOTS_KEY = 'lots';
+
+async function fetchPrintLots() {
+  const data = await gql(`query{ shop{ id printLots: metafield(namespace:"${PRINT_LOTS_NAMESPACE}", key:"${PRINT_LOTS_KEY}"){ value } } }`);
+  state.shopGid = data.shop.id;
+  let lots = [];
+  const raw = data.shop && data.shop.printLots ? data.shop.printLots.value : null;
+  if (raw) { try { lots = JSON.parse(raw); } catch (e) { lots = []; } }
+  if (!Array.isArray(lots)) lots = [];
+  lots.sort(function (a, b) { return (b.dateGeneration || '').localeCompare(a.dateGeneration || ''); });
+  return lots;
+}
+
+async function savePrintLotsData(lots) {
+  await ensureShopGid();
+  await metafieldsSetOne(PRINT_LOTS_KEY, JSON.stringify(lots), 'json', PRINT_LOTS_NAMESPACE);
+}
+
+async function addPrintLot(lot) {
+  let lots = [];
+  try { lots = await fetchPrintLots(); } catch (e) { lots = state.printLots || []; }
+  lots.unshift(lot);
+  await savePrintLotsData(lots);
+  state.printLots = lots;
+}
+
+async function savePrintLotComment(lotId) {
+  const ta = document.getElementById(`lot-comment-${lotId}`);
+  if (!ta) return;
+  const comment = ta.value;
+  const btn = event.target; btn.disabled = true; btn.textContent = '⏳...';
+  try {
+    let lots = state.printLots.slice();
+    const idx = lots.findIndex(function (l) { return l.lotId === lotId; });
+    if (idx === -1) throw new Error('Lot introuvable');
+    lots[idx] = Object.assign({}, lots[idx], { comment: comment });
+    await savePrintLotsData(lots);
+    state.printLots = lots;
+    showToast('💾 Commentaire enregistré');
+  } catch (e) {
+    showToast('Erreur: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Enregistrer le commentaire';
+  }
+}
+
+async function regenPrintLotZip(lotId) {
+  const lot = state.printLots.find(function (l) { return l.lotId === lotId; });
+  if (!lot) return;
+  const zone = document.getElementById(`lot-zip-result-${lotId}`);
+  const btn = event.target; btn.disabled = true; btn.textContent = '⏳ Régénération...';
+  try {
+    const data = await gql(`query($ids:[ID!]!){ nodes(ids:$ids){ ... on Order {
+      id name note
+      lineItems(first:250){edges{node{
+        id title quantity
+        customAttributes{key value}
+      }}}
+    } } }`, { ids: lot.orderIds });
+    const orders = (data.nodes || []).filter(Boolean);
+    const gasOrders = [];
+    for (const order of orders) {
+      for (const { node: li } of order.lineItems.edges) {
+        const liAttrs = Object.fromEntries((li.customAttributes || []).map(a => [a.key, a.value]));
+        const designUrls = Object.entries(liAttrs)
+          .filter(([k]) => k.startsWith('_tib_design_link_'))
+          .map(([, v]) => v)
+          .filter(u => u && u.startsWith('http'));
+        const annexeJson = JSON.stringify(
+          Object.entries(liAttrs)
+            .filter(([k, v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
+            .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {})
+        );
+        gasOrders.push({ orderName: order.name, quantity: li.quantity, note: order.note || '', designUrls, customizationJson: annexeJson });
+      }
+    }
+    const result = await callGas(gasOrders);
+    const zipLinks = result.zips.map(z => `<a href="${z.url}" target="_blank">📦 ${z.name}</a>`).join('<br/>');
+    if (zone) zone.innerHTML = `<div class="zip-result" style="margin-top:8px;">${zipLinks}</div>`;
+    showToast('✅ ZIP régénéré');
+  } catch (e) {
+    if (zone) zone.innerHTML = `<div class="alert alert-critical" style="margin-top:8px;"><strong>Erreur :</strong> ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '↺ Régénérer le ZIP';
+  }
+}
+
+function renderPrintLotsSection() {
+  const lots = state.printLots || [];
+  if (!lots.length) {
+    return `<div class="card" style="margin-top:20px;">
+      <div class="card-title">📋 Historique des lots d'impression</div>
+      <div style="color:var(--text-sub);font-size:13px;">Aucun lot généré pour l'instant.</div>
+    </div>`;
+  }
+  const rows = lots.map(lot => {
+    const d = new Date(lot.dateGeneration);
+    const dateFr = isNaN(d.getTime()) ? '—' : `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} à ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const count = (lot.orderIds || []).length;
+    const namesPreview = (lot.orderNames || []).slice(0, 6).join(', ') + ((lot.orderNames || []).length > 6 ? '…' : '');
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div><strong>${dateFr}</strong> — ${count} commande${count>1?'s':''} <span class="badge badge-info">${escapeHtml(lot.tag||'')}</span></div>
+          <div style="font-size:11px;color:var(--text-sub);margin-top:2px;">${escapeHtml(namesPreview)}</div>
+        </div>
+        <button class="btn" onclick="regenPrintLotZip('${lot.lotId}')">↺ Régénérer le ZIP</button>
+      </div>
+      <textarea id="lot-comment-${lot.lotId}" placeholder="Commentaire (optionnel)..." style="width:100%;font-size:12px;padding:6px;border:1px solid var(--border);border-radius:var(--radius);margin-top:8px;box-sizing:border-box;" rows="2">${escapeHtml(lot.comment||'')}</textarea>
+      <button class="btn" style="margin-top:4px;" onclick="savePrintLotComment('${lot.lotId}')">💾 Enregistrer le commentaire</button>
+      <div id="lot-zip-result-${lot.lotId}"></div>
+    </div>`;
+  }).join('');
+  return `<div class="card" style="margin-top:20px;">
+    <div class="card-title">📋 Historique des lots d'impression</div>
+    ${rows}
+  </div>`;
+}
+
 // PRINT TAB — Préparation impression
 // ════════════════════════════════════════════
 async function renderPrintTab() {
@@ -1101,6 +1226,8 @@ async function renderPrintTab() {
     state.printSelected = new Set(orders.map(o => o.id));
     state.printZipDone = false;
     state.printZipOrderIds = [];
+    try { state.printLots = await fetchPrintLots(); state.printLotsLoaded = true; }
+    catch (e) { state.printLots = []; state.printLotsLoaded = false; console.log('Erreur chargement lots impression:', e.message); }
     renderPrintView();
   } catch(e) {
     c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
@@ -1206,6 +1333,8 @@ function renderPrintView() {
           `}
         </div>
       </div>
+
+      ${renderPrintLotsSection()}
 
     </div>`;
 
@@ -1334,6 +1463,23 @@ async function validatePrintOrders() {
   }
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) archivées — tag ${printTag} ajouté`);
+
+  // Enregistre le lot d'impression (historique + commentaire éventuel)
+  try {
+    const zippedOrders = state.printOrders.filter(o => state.printZipOrderIds.includes(o.id));
+    const newLot = {
+      lotId: 'lot_' + Date.now(),
+      dateGeneration: new Date().toISOString(),
+      tag: printTag,
+      orderIds: state.printZipOrderIds.slice(),
+      orderNames: zippedOrders.map(o => o.name),
+      comment: ''
+    };
+    await addPrintLot(newLot);
+  } catch (e) {
+    showToast('⚠️ Tag posé mais erreur sauvegarde historique lot: ' + e.message, 'warning');
+  }
+
   // Spinner pendant le rechargement
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Mise à jour...</div>`;
   // Petit délai pour laisser Shopify indexer les tags
@@ -2270,12 +2416,20 @@ function renderDelaisUI() {
     '</div>';
 }
 
-async function metafieldsSetOne(key, value, type) {
+async function metafieldsSetOne(key, value, type, namespace) {
+  namespace = namespace || 'custom';
   const mutation = 'mutation($mf:[MetafieldsSetInput!]!){ metafieldsSet(metafields:$mf){ metafields{ id } userErrors{ field message } } }';
-  const vars = { mf: [{ ownerId: state.shopGid, namespace: 'custom', key: key, value: String(value), type: type }] };
+  const vars = { mf: [{ ownerId: state.shopGid, namespace: namespace, key: key, value: String(value), type: type }] };
   const data = await gql(mutation, vars);
   const errs = data.metafieldsSet.userErrors;
   if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
+}
+
+async function ensureShopGid() {
+  if (state.shopGid) return state.shopGid;
+  const data = await gql('query{ shop{ id } }');
+  state.shopGid = data.shop.id;
+  return state.shopGid;
 }
 
 async function saveDelaisBase() {
