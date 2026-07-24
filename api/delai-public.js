@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       delaiRush: config.delaiRush,
       plancher: config.delaiPlancher,
       periodes: config.periodes,
-      rushConfigured: !!config.rushProductId,
+      rushConfigured: !!config.rushProductId && !!config.rushActif,
     });
 
     // Cache CDN 2 minutes, avec revalidation en arriere-plan jusqu'a 5 minutes.
