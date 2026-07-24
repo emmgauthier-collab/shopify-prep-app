@@ -401,7 +401,7 @@ const state = {
   delaisLoaded: false,
   delais: {
     delaiProduction: '', delaiRush: '', delaiPlancher: '',
-    rushProductId: '', rushProductTitle: '', rushActif: false,
+    rushProductId: '', rushProductTitle: '', delaiRushCache: '',
     fomoActif: false, fomoTexte: '', fomoCode: '', fomoFin: '',
     periodes: [], // [{id, debut, fin, label}]
   },
@@ -781,9 +781,7 @@ function renderQuickSettingsBar() {
     : '';
 
   let chipRush;
-  if (!d.delaiRush) {
-    chipRush = '<div class="recap-chip off"><span class="recap-dot"></span> Rush non configur\u00e9</div>';
-  } else if (d.rushActif) {
+  if (d.delaiRush) {
     chipRush = '<div class="recap-chip ok"><span class="recap-dot"></span> Rush dispo : ' + escapeHtml(d.delaiRush) + 'j ouvr\u00e9s</div>';
   } else {
     chipRush = '<div class="recap-chip off"><span class="recap-dot"></span> Rush d\u00e9sactiv\u00e9</div>';
@@ -807,7 +805,7 @@ function renderQuickSettingsBar() {
     '<div class="quick-bar-top"><div class="quick-bar-title">\u26A1 Param\u00e8tres rapides</div></div>' +
     '<div class="quick-bar-recap">' + chipDelai + chipRush + chipFermeture + chipFomo + '</div>' +
     '<div class="quick-bar-toggles">' +
-      '<div class="toggle-row"><label class="switch"><input type="checkbox" ' + (d.rushActif ? 'checked' : '') + ' onchange="toggleQuickSetting(\'rushActif\',\'rush_actif\',this.checked)"><span class="slider"></span></label>' +
+      '<div class="toggle-row"><label class="switch"><input type="checkbox" ' + (d.delaiRush ? 'checked' : '') + ' onchange="toggleRushActif(this.checked)"><span class="slider"></span></label>' +
         '<div><div class="toggle-label">Option Rush disponible</div><div class="toggle-sub">Visible sur la boutique</div></div></div>' +
       '<div class="toggle-row"><label class="switch"><input type="checkbox" ' + (d.fomoActif ? 'checked' : '') + ' onchange="toggleQuickSetting(\'fomoActif\',\'fomo_actif\',this.checked)"><span class="slider"></span></label>' +
         '<div><div class="toggle-label">Bandeau FOMO</div><div class="toggle-sub">Page personnalisation</div></div></div>' +
@@ -825,6 +823,37 @@ async function toggleQuickSetting(stateKey, metaKey, checked) {
   } catch (e) {
     state.delais[stateKey] = prev; // revert si erreur
     showToast('Erreur: ' + e.message, 'error');
+  }
+  const bar = document.getElementById('quick-settings-bar');
+  if (bar) bar.outerHTML = renderQuickSettingsBar();
+}
+
+// Le rush n'a pas de metafield dédié : "désactivé" = champ delai_rush vide,
+// comme dans l'onglet Délais & FOMO ("laisser vide si non disponible").
+async function toggleRushActif(checked) {
+  const d = state.delais;
+  if (checked) {
+    const val = d.delaiRushCache || d.delaiRush;
+    if (!val) {
+      showToast('Renseigne d\u2019abord un d\u00e9lai rush dans l\u2019onglet D\u00e9lais & FOMO', 'error');
+      const bar0 = document.getElementById('quick-settings-bar');
+      if (bar0) bar0.outerHTML = renderQuickSettingsBar();
+      return;
+    }
+    try {
+      await ensureShopGid();
+      await metafieldsSetOne('delai_rush', val, 'number_integer');
+      d.delaiRush = val;
+      showToast('Rush activ\u00e9');
+    } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+  } else {
+    d.delaiRushCache = d.delaiRush; // mémorisé pour réactivation rapide
+    try {
+      await ensureShopGid();
+      await metafieldsDeleteOne('delai_rush');
+      d.delaiRush = '';
+      showToast('Rush d\u00e9sactiv\u00e9');
+    } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
   }
   const bar = document.getElementById('quick-settings-bar');
   if (bar) bar.outerHTML = renderQuickSettingsBar();
@@ -2577,7 +2606,6 @@ const DELAIS_QUERY = `query {
     delaiRush: metafield(namespace: "custom", key: "delai_rush") { value }
     delaiPlancher: metafield(namespace: "custom", key: "delai_plancher_fermeture") { value }
     rushProduct: metafield(namespace: "custom", key: "rush_product") { value }
-    rushActif: metafield(namespace: "custom", key: "rush_actif") { value }
     vacances: metafield(namespace: "custom", key: "vacances") { value }
     fomoActif: metafield(namespace: "custom", key: "fomo_actif") { value }
     fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { value }
@@ -2610,7 +2638,6 @@ async function loadDelaisData() {
   d.delaiPlancher = s.delaiPlancher ? s.delaiPlancher.value : '';
   d.alerteImpression = s.alerteImpression ? s.alerteImpression.value : '1';
   d.alerteFournisseur = s.alerteFournisseur ? s.alerteFournisseur.value : '2';
-  d.rushActif = s.rushActif ? s.rushActif.value === 'true' : false;
   d.fomoActif = s.fomoActif ? s.fomoActif.value === 'true' : false;
   d.fomoTexte = s.fomoTexte ? s.fomoTexte.value : '';
   d.fomoCode = s.fomoCode ? s.fomoCode.value : '';
@@ -2745,6 +2772,15 @@ async function metafieldsSetOne(key, value, type, namespace) {
   const vars = { mf: [{ ownerId: state.shopGid, namespace: namespace, key: key, value: String(value), type: type }] };
   const data = await gql(mutation, vars);
   const errs = data.metafieldsSet.userErrors;
+  if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
+}
+
+async function metafieldsDeleteOne(key, namespace) {
+  namespace = namespace || 'custom';
+  const mutation = 'mutation($mf:[MetafieldIdentifierInput!]!){ metafieldsDelete(metafields:$mf){ deletedMetafields{ key } userErrors{ field message } } }';
+  const vars = { mf: [{ ownerId: state.shopGid, namespace: namespace, key: key }] };
+  const data = await gql(mutation, vars);
+  const errs = data.metafieldsDelete.userErrors;
   if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
 }
 
