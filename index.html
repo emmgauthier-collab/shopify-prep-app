@@ -103,6 +103,33 @@
     .card + .card { margin-top: 12px; }
     .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
+    /* ── Bandeau paramètres rapides (tableau de bord) ── */
+    .quick-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; margin-bottom: 16px; }
+    .quick-bar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .quick-bar-title { font-size: 13px; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: .03em; }
+    .quick-bar-recap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .recap-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 14px; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; }
+    .recap-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .recap-chip.ok { background: var(--success-bg); color: var(--success); border-color: #95c9b4; }
+    .recap-chip.ok .recap-dot { background: var(--success); }
+    .recap-chip.off { background: var(--info-bg); color: var(--text-sub); border-color: var(--border); }
+    .recap-chip.off .recap-dot { background: #b7bdc2; }
+    .recap-chip.warn { background: var(--warning-bg); color: var(--warning); border-color: #eecf8b; }
+    .recap-chip.warn .recap-dot { background: var(--warning); }
+    .recap-chip.critical { background: var(--critical-bg); color: var(--critical); border-color: var(--critical-border); }
+    .recap-chip.critical .recap-dot { background: var(--critical); }
+    .quick-bar-toggles { display: flex; flex-wrap: wrap; gap: 10px 22px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .toggle-row { display: flex; align-items: center; gap: 9px; }
+    .toggle-label { font-size: 13px; font-weight: 500; }
+    .toggle-sub { font-size: 11px; color: var(--text-sub); }
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch .slider { position: absolute; inset: 0; background: var(--critical); border-radius: 22px; transition: background .18s; }
+    .switch .slider::before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .18s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+    .switch input:checked + .slider { background: var(--success); }
+    .switch input:checked + .slider::before { transform: translateX(18px); }
+    .switch input:disabled + .slider { opacity: .5; cursor: not-allowed; }
+
     .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: box-shadow .15s, transform .1s; box-shadow: var(--shadow); }
     .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.15); transform: translateY(-1px); }
@@ -374,7 +401,7 @@ const state = {
   delaisLoaded: false,
   delais: {
     delaiProduction: '', delaiRush: '', delaiPlancher: '',
-    rushProductId: '', rushProductTitle: '',
+    rushProductId: '', rushProductTitle: '', rushActif: false,
     fomoActif: false, fomoTexte: '', fomoCode: '', fomoFin: '',
     periodes: [], // [{id, debut, fin, label}]
   },
@@ -744,11 +771,70 @@ function renderDelayAlertBanner(alerts) {
 }
 
 
+// ── Bandeau paramètres rapides (récap + interrupteurs) ──
+function renderQuickSettingsBar() {
+  const d = state.delais;
+  const now = new Date();
+
+  const chipDelai = d.delaiProduction
+    ? '<div class="recap-chip ok"><span class="recap-dot"></span> D\u00e9lai normal : ' + escapeHtml(d.delaiProduction) + 'j ouvr\u00e9s</div>'
+    : '';
+
+  let chipRush;
+  if (!d.delaiRush) {
+    chipRush = '<div class="recap-chip off"><span class="recap-dot"></span> Rush non configur\u00e9</div>';
+  } else if (d.rushActif) {
+    chipRush = '<div class="recap-chip ok"><span class="recap-dot"></span> Rush dispo : ' + escapeHtml(d.delaiRush) + 'j ouvr\u00e9s</div>';
+  } else {
+    chipRush = '<div class="recap-chip off"><span class="recap-dot"></span> Rush d\u00e9sactiv\u00e9</div>';
+  }
+
+  const periodes = d.periodes || [];
+  const enCours = periodes.find(function (p) { return new Date(p.debut) <= now && new Date(p.fin) >= now; });
+  const aVenir = periodes.filter(function (p) { return new Date(p.debut) > now; }).sort(function (a, b) { return a.debut < b.debut ? -1 : 1; })[0];
+  let chipFermeture = '<div class="recap-chip off"><span class="recap-dot"></span> Aucune fermeture pr\u00e9vue</div>';
+  if (enCours) {
+    chipFermeture = '<div class="recap-chip critical"><span class="recap-dot"></span> Fermeture en cours (jusqu\u2019au ' + escapeHtml(enCours.fin) + ')</div>';
+  } else if (aVenir) {
+    chipFermeture = '<div class="recap-chip warn"><span class="recap-dot"></span> Fermeture \u00e0 venir : ' + escapeHtml(aVenir.debut) + ' \u2192 ' + escapeHtml(aVenir.fin) + '</div>';
+  }
+
+  const chipFomo = d.fomoActif
+    ? '<div class="recap-chip ok"><span class="recap-dot"></span> FOMO actif</div>'
+    : '<div class="recap-chip off"><span class="recap-dot"></span> FOMO inactif</div>';
+
+  return '<div class="quick-bar" id="quick-settings-bar">' +
+    '<div class="quick-bar-top"><div class="quick-bar-title">\u26A1 Param\u00e8tres rapides</div></div>' +
+    '<div class="quick-bar-recap">' + chipDelai + chipRush + chipFermeture + chipFomo + '</div>' +
+    '<div class="quick-bar-toggles">' +
+      '<div class="toggle-row"><label class="switch"><input type="checkbox" ' + (d.rushActif ? 'checked' : '') + ' onchange="toggleQuickSetting(\'rushActif\',\'rush_actif\',this.checked)"><span class="slider"></span></label>' +
+        '<div><div class="toggle-label">Option Rush disponible</div><div class="toggle-sub">Visible sur la boutique</div></div></div>' +
+      '<div class="toggle-row"><label class="switch"><input type="checkbox" ' + (d.fomoActif ? 'checked' : '') + ' onchange="toggleQuickSetting(\'fomoActif\',\'fomo_actif\',this.checked)"><span class="slider"></span></label>' +
+        '<div><div class="toggle-label">Bandeau FOMO</div><div class="toggle-sub">Page personnalisation</div></div></div>' +
+    '</div>' +
+  '</div>';
+}
+
+async function toggleQuickSetting(stateKey, metaKey, checked) {
+  const prev = state.delais[stateKey];
+  state.delais[stateKey] = checked; // optimiste
+  try {
+    await ensureShopGid();
+    await metafieldsSetOne(metaKey, checked, 'boolean');
+    showToast(checked ? 'Activ\u00e9' : 'D\u00e9sactiv\u00e9');
+  } catch (e) {
+    state.delais[stateKey] = prev; // revert si erreur
+    showToast('Erreur: ' + e.message, 'error');
+  }
+  const bar = document.getElementById('quick-settings-bar');
+  if (bar) bar.outerHTML = renderQuickSettingsBar();
+}
+
 async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    const [countsData, notesData, calendarData, delayAlerts] = await Promise.all([
+    const [countsData, notesData, calendarData, delayAlerts, /* quickSettings */] = await Promise.all([
       gql(`query {
         custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
         toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
@@ -761,7 +847,8 @@ async function renderDashboard() {
         }
       }`),
       fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; }),
-      fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; })
+      fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; }),
+      loadDelaisData().catch(e => { console.log('Erreur param\u00e8tres rapides:', e.message); })
     ]);
     state.dashboardCalendarData = calendarData;
     state.dashboardDelayAlerts = delayAlerts;
@@ -810,6 +897,7 @@ async function renderDashboard() {
         }).join('')}</div>`;
 
     c.innerHTML = `
+      ${renderQuickSettingsBar()}
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
       </div>
@@ -2489,6 +2577,7 @@ const DELAIS_QUERY = `query {
     delaiRush: metafield(namespace: "custom", key: "delai_rush") { value }
     delaiPlancher: metafield(namespace: "custom", key: "delai_plancher_fermeture") { value }
     rushProduct: metafield(namespace: "custom", key: "rush_product") { value }
+    rushActif: metafield(namespace: "custom", key: "rush_actif") { value }
     vacances: metafield(namespace: "custom", key: "vacances") { value }
     fomoActif: metafield(namespace: "custom", key: "fomo_actif") { value }
     fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { value }
@@ -2521,6 +2610,7 @@ async function loadDelaisData() {
   d.delaiPlancher = s.delaiPlancher ? s.delaiPlancher.value : '';
   d.alerteImpression = s.alerteImpression ? s.alerteImpression.value : '1';
   d.alerteFournisseur = s.alerteFournisseur ? s.alerteFournisseur.value : '2';
+  d.rushActif = s.rushActif ? s.rushActif.value === 'true' : false;
   d.fomoActif = s.fomoActif ? s.fomoActif.value === 'true' : false;
   d.fomoTexte = s.fomoTexte ? s.fomoTexte.value : '';
   d.fomoCode = s.fomoCode ? s.fomoCode.value : '';
