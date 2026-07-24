@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       delaiRush: config.delaiRush,
       plancher: config.delaiPlancher,
       periodes: config.periodes,
-      rushConfigured: !!config.rushProductId,
+      rushConfigured: !!config.rushProductId && !!config.rushActif,
     });
 
     const dateLimite = estRush ? r.dateRushISO : r.dateNormaleISO;
