@@ -776,6 +776,13 @@ function renderQuickSettingsBar() {
   const d = state.delais;
   const now = new Date();
 
+  if (!state.delaisLoaded) {
+    return '<div class="quick-bar" id="quick-settings-bar">' +
+      '<div class="quick-bar-top"><div class="quick-bar-title">\u26A1 Param\u00e8tres rapides</div></div>' +
+      '<div class="quick-bar-recap"><div class="recap-chip off"><span class="recap-dot"></span> Chargement\u2026</div></div>' +
+    '</div>';
+  }
+
   const chipDelai = d.delaiProduction
     ? '<div class="recap-chip ok"><span class="recap-dot"></span> D\u00e9lai normal : ' + escapeHtml(d.delaiProduction) + 'j ouvr\u00e9s</div>'
     : '';
@@ -848,7 +855,7 @@ async function renderDashboard() {
       }`),
       fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; }),
       fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; }),
-      loadDelaisData().catch(e => { console.log('Erreur param\u00e8tres rapides:', e.message); })
+      loadDelaisData().catch(function () { return loadDelaisData(); }).catch(e => { console.log('Erreur param\u00e8tres rapides:', e.message); })
     ]);
     state.dashboardCalendarData = calendarData;
     state.dashboardDelayAlerts = delayAlerts;
