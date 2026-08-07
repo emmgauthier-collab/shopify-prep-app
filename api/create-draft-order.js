@@ -66,6 +66,37 @@ const GET_FILE =
   '  }' +
   '}';
 
+// Recherche les commandes précédentes de ce client (par email), pour repérer une
+// éventuelle commande "essai" (< 10 pièces) à créditer manuellement sur ce devis —
+// politique commerciale "avoir échantillon" : aucun calcul/crédit automatique ici,
+// juste un signalement pour que l'équipe vérifie et applique le geste elle-même.
+const PRIOR_ORDERS_QUERY =
+  'query priorOrders($query: String!) {' +
+  '  orders(first: 5, query: $query, sortKey: CREATED_AT, reverse: true) {' +
+  '    nodes {' +
+  '      name' +
+  '      createdAt' +
+  '      totalPriceSet { shopMoney { amount currencyCode } }' +
+  '      lineItems(first: 50) { nodes { quantity } }' +
+  '    }' +
+  '  }' +
+  '}';
+
+async function findPossibleSampleOrders(email) {
+  if (!email) return [];
+  try {
+    const data = await adminGql(PRIOR_ORDERS_QUERY, { query: 'email:' + JSON.stringify(email) });
+    return (data.orders.nodes || []).filter(function (order) {
+      var totalQty = (order.lineItems.nodes || []).reduce(function (sum, li) { return sum + li.quantity; }, 0);
+      return totalQty > 0 && totalQty < 10;
+    });
+  } catch (e) {
+    // Non bloquant : si la recherche échoue, on crée quand même le devis normalement,
+    // simplement sans le rappel automatique dans la note.
+    return [];
+  }
+}
+
 function parseDataUrl(dataUrl) {
   var match = /^data:([^;]+);base64,([\s\S]*)$/.exec(dataUrl || '');
   if (!match) return null;
@@ -215,12 +246,22 @@ export default async function handler(req, res) {
     if (logoFrontUrl) customAttributes.push({ key: 'Logo avant', value: String(logoFrontUrl).slice(0, 500) });
     if (logoBackUrl) customAttributes.push({ key: 'Logo dos', value: String(logoBackUrl).slice(0, 500) });
 
+    const sampleOrders = await findPossibleSampleOrders(email);
+
     const noteParts = [];
     if (boxName) noteParts.push('Box : ' + boxName);
     if (contactName) noteParts.push('Contact : ' + contactName);
     if (phone) noteParts.push('Téléphone : ' + phone);
     if (deliveryDate) noteParts.push('Livraison souhaitée : ' + deliveryDate);
     if (message) noteParts.push('Message : ' + message);
+    if (sampleOrders.length > 0) {
+      noteParts.push('⚠️ AVOIR ÉCHANTILLON À VÉRIFIER — cet email a ' + sampleOrders.length +
+        ' commande(s) précédente(s) de moins de 10 pièces : ' +
+        sampleOrders.map(function (o) {
+          return o.name + ' (' + o.totalPriceSet.shopMoney.amount + ' ' + o.totalPriceSet.shopMoney.currencyCode + ', le ' + o.createdAt.slice(0, 10) + ')';
+        }).join(', ') +
+        '. Politique : montant payé déductible de ce devis si 10+ pièces — à appliquer manuellement.');
+    }
     noteParts.push('— Demande de devis via la landing "Collection Box"');
 
     const input = {
