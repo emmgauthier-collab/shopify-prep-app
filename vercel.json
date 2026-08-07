@@ -1,8 +1,24 @@
 {
   "rewrites": [
-    { "source": "/api/shopify", "destination": "/api/shopify.js" },
-    { "source": "/api/gallery", "destination": "/api/gallery.js" },
-    { "source": "/api/delai-public", "destination": "/api/delai-public.js" },
-    { "source": "/api/order-delai-webhook", "destination": "/api/order-delai-webhook.js" }
+    {
+      "source": "/api/shopify",
+      "destination": "/api/shopify.js"
+    },
+    {
+      "source": "/api/gallery",
+      "destination": "/api/gallery.js"
+    },
+    {
+      "source": "/api/delai-public",
+      "destination": "/api/delai-public.js"
+    },
+    {
+      "source": "/api/order-delai-webhook",
+      "destination": "/api/order-delai-webhook.js"
+    },
+    {
+      "source": "/api/create-draft-order",
+      "destination": "/api/create-draft-order.js"
+    }
   ]
 }
