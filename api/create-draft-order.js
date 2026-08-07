@@ -87,6 +87,7 @@ export default async function handler(req, res) {
       note: noteParts.join('\n'),
       customAttributes: customAttributes,
       tags: ['devis-box', 'landing-collection-box'],
+      acceptAutomaticDiscounts: true,
     };
     if (phone) input.phone = phone;
 
