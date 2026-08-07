@@ -72,6 +72,21 @@ function parseDataUrl(dataUrl) {
   return { mimeType: match[1], buffer: Buffer.from(match[2], 'base64') };
 }
 
+// Déduit une extension de fichier plausible à partir du type MIME de la data URL,
+// puisqu'on accepte désormais n'importe quel format (AI, SVG, PDF, PNG, JPG, EPS...).
+const MIME_TO_EXT = {
+  'image/svg+xml': 'svg',
+  'application/pdf': 'pdf',
+  'application/postscript': 'ai', // .ai et .eps partagent souvent ce type MIME générique
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'application/illustrator': 'ai',
+  'application/octet-stream': 'bin',
+};
+function extFromMimeType(mimeType) {
+  return MIME_TO_EXT[mimeType] || 'dat';
+}
+
 function sleep(ms) {
   return new Promise(function (resolve) { setTimeout(resolve, ms); });
 }
@@ -86,13 +101,14 @@ function extractFileUrl(file) {
 // mais n'attend jamais indéfiniment le traitement final du fichier (quelques relances
 // courtes seulement, sinon on renvoie le lien vers la fiche fichier même si l'URL
 // n'est pas encore disponible).
-async function uploadLogoToFiles(dataUrl, filename) {
+async function uploadLogoToFiles(dataUrl, baseFilename) {
   if (!dataUrl) return null;
   var parsed = parseDataUrl(dataUrl);
   if (!parsed) throw new Error('logo : format de données invalide (data URL attendue)');
   if (parsed.buffer.length > MAX_LOGO_BYTES) {
-    throw new Error('logo "' + filename + '" trop volumineux (max ' + (MAX_LOGO_BYTES / 1024 / 1024) + ' Mo)');
+    throw new Error('logo "' + baseFilename + '" trop volumineux (max ' + (MAX_LOGO_BYTES / 1024 / 1024) + ' Mo)');
   }
+  var filename = baseFilename + '.' + extFromMimeType(parsed.mimeType);
 
   var staged = await adminGql(STAGED_UPLOADS_CREATE, {
     input: [{ resource: 'FILE', filename: filename, mimeType: parsed.mimeType, httpMethod: 'POST' }],
@@ -184,8 +200,8 @@ export default async function handler(req, res) {
     let logoBackUrl = null;
     try {
       const boxSlug = (boxName || 'box').toString().slice(0, 40).replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-      if (logoFront) logoFrontUrl = await uploadLogoToFiles(logoFront, 'logo-avant-' + boxSlug + '.svg');
-      if (logoBack) logoBackUrl = await uploadLogoToFiles(logoBack, 'logo-dos-' + boxSlug + '.svg');
+      if (logoFront) logoFrontUrl = await uploadLogoToFiles(logoFront, 'logo-avant-' + boxSlug);
+      if (logoBack) logoBackUrl = await uploadLogoToFiles(logoBack, 'logo-dos-' + boxSlug);
     } catch (uploadErr) {
       res.status(400).json({ error: 'Échec de l\'envoi du logo : ' + uploadErr.message });
       return;
