@@ -229,6 +229,61 @@ async function fetchAllOrdersWithImages(cursor = null) {
 }
 
 
+const NICHE_PRODUCTS_KEY = 'niche_products';
+
+// Récupérer la config "produits partagés par niche" ({ cf: [...], running: [...] })
+async function getNicheProducts() {
+  const data = await shopifyGql(`{
+    shop {
+      metafield(namespace: "${NAMESPACE}", key: "${NICHE_PRODUCTS_KEY}") { id value }
+    }
+  }`);
+  const raw = data?.data?.shop?.metafield?.value;
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+// Sauvegarder la config "produits partagés par niche"
+async function saveNicheProducts(nicheProducts) {
+  const shopData = await shopifyGql(`{ shop { id } }`);
+  const shopId = shopData?.data?.shop?.id;
+  if (!shopId) throw new Error('Shop ID introuvable');
+
+  const data = await shopifyGql(`
+    mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        metafields { id key namespace value }
+        userErrors { field message }
+      }
+    }
+  `, {
+    metafields: [{
+      ownerId: shopId,
+      namespace: NAMESPACE,
+      key: NICHE_PRODUCTS_KEY,
+      type: 'json',
+      value: JSON.stringify(nicheProducts),
+    }]
+  });
+
+  const errors = data?.data?.metafieldsSet?.userErrors;
+  if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
+  return data?.data?.metafieldsSet?.metafields?.[0];
+}
+
+// Recherche de produits par titre (pour peupler la liste "produits partagés" d'une niche)
+async function searchProducts(term) {
+  const data = await shopifyGql(`
+    query($q: String!) {
+      products(first: 10, query: $q) {
+        edges { node { id title handle featuredImage { url } } }
+      }
+    }
+  `, { q: `title:*${term}*` });
+  if (data?.errors?.length) throw new Error(data.errors.map(e => e.message).join(', '));
+  return (data?.data?.products?.edges || []).map(e => e.node);
+}
+
 const ICONS_KEY = 'tag_icons';
 
 // Récupérer les icônes de tags depuis le metafield shop
@@ -394,6 +449,25 @@ export default async function handler(req, res) {
     }
     if (action === 'fetchOrdersAll') {
       res.status(200).json(await fetchAllOrdersWithImages(cursor || null)); return;
+    }
+
+    if (action === 'getNicheProducts') {
+      res.status(200).json({ nicheProducts: await getNicheProducts() }); return;
+    }
+
+    if (action === 'saveNicheProducts') {
+      const { nicheProducts } = body;
+      if (!nicheProducts || typeof nicheProducts !== 'object' || Array.isArray(nicheProducts)) {
+        res.status(400).json({ error: 'nicheProducts doit être un objet { niche: [...] }' }); return;
+      }
+      await saveNicheProducts(nicheProducts);
+      res.status(200).json({ ok: true, nicheProducts }); return;
+    }
+
+    if (action === 'searchProducts') {
+      const { term } = body;
+      if (!term || !term.trim()) { res.status(200).json({ products: [] }); return; }
+      res.status(200).json({ products: await searchProducts(term.trim()) }); return;
     }
 
     if (action === 'getTagIcons') {
