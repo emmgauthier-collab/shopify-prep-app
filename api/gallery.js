@@ -344,6 +344,98 @@ async function saveTagIcons(icons) {
   return data?.data?.metafieldsSet?.metafields?.[0];
 }
 
+const TITLE_KEY_PREFIX = 'tag_title_';
+
+// Mirror du filtre "handleize" de Liquid — même logique que côté thème
+function handleize(str) {
+  return (str || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // enlève les accents
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Récupérer tous les titres de tags (metafields shop.rxwear_gallery.tag_title_<slug>)
+async function getTagTitles() {
+  const data = await shopifyGql(`{
+    shop {
+      metafields(namespace: "${NAMESPACE}", first: 250) {
+        edges { node { key value } }
+      }
+    }
+  }`);
+  const edges = data?.data?.shop?.metafields?.edges || [];
+  const titles = {};
+  edges.forEach(({ node }) => {
+    if (node.key.startsWith(TITLE_KEY_PREFIX)) {
+      const slug = node.key.slice(TITLE_KEY_PREFIX.length);
+      titles[slug] = node.value;
+    }
+  });
+  return titles;
+}
+
+// Créer la définition du metafield si elle n'existe pas encore (nécessaire pour que le champ
+// soit traduisible nativement via Shopify Translate & Adapt)
+async function ensureTagTitleDefinition(slug) {
+  const key = `${TITLE_KEY_PREFIX}${slug}`;
+  const data = await shopifyGql(`
+    mutation metafieldDefinitionCreate($definition: MetafieldDefinitionInput!) {
+      metafieldDefinitionCreate(definition: $definition) {
+        createdDefinition { id }
+        userErrors { field message code }
+      }
+    }
+  `, {
+    definition: {
+      name: `Titre du tag: ${slug}`,
+      namespace: NAMESPACE,
+      key,
+      type: 'single_line_text_field',
+      ownerType: 'SHOP',
+    }
+  });
+
+  const errors = data?.data?.metafieldDefinitionCreate?.userErrors;
+  // On tolère l'erreur "existe déjà" (la définition a probablement déjà été créée manuellement ou lors d'un appel précédent)
+  if (errors?.length) {
+    const alreadyExists = errors.every(e => e.code === 'TAKEN' || /already exists|déjà/i.test(e.message));
+    if (!alreadyExists) throw new Error(errors.map(e => e.message).join(', '));
+  }
+}
+
+// Sauvegarder le titre d'un tag (crée la définition si besoin, puis écrit la valeur)
+async function saveTagTitle(tag, title) {
+  const slug = handleize(tag);
+  await ensureTagTitleDefinition(slug);
+
+  const shopData = await shopifyGql(`{ shop { id } }`);
+  const shopId = shopData?.data?.shop?.id;
+  if (!shopId) throw new Error('Shop ID introuvable');
+
+  const data = await shopifyGql(`
+    mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        metafields { id key namespace value }
+        userErrors { field message }
+      }
+    }
+  `, {
+    metafields: [{
+      ownerId: shopId,
+      namespace: NAMESPACE,
+      key: `${TITLE_KEY_PREFIX}${slug}`,
+      type: 'single_line_text_field',
+      value: title,
+    }]
+  });
+
+  const errors = data?.data?.metafieldsSet?.userErrors;
+  if (errors?.length) throw new Error(errors.map(e => e.message).join(', '));
+  return data?.data?.metafieldsSet?.metafields?.[0];
+}
+
 // Upload d'un fichier image vers Shopify Files (base64 -> staged upload -> fileCreate)
 async function uploadIconFile(base64Data, filename, mimeType) {
   // 1. Décoder le base64 et obtenir la taille
@@ -521,6 +613,18 @@ export default async function handler(req, res) {
       if (!base64Data || !filename) { res.status(400).json({ error: 'base64Data et filename requis' }); return; }
       const imageUrl = await uploadIconFile(base64Data, filename, mimeType || 'image/png');
       res.status(200).json({ ok: true, imageUrl }); return;
+    }
+
+    if (action === 'getTagTitles') {
+      res.status(200).json({ titles: await getTagTitles() }); return;
+    }
+
+    if (action === 'saveTagTitle') {
+      const { tag, title } = body;
+      if (!tag || !title || !title.trim()) { res.status(400).json({ error: 'tag et title requis' }); return; }
+      const metafield = await saveTagTitle(tag, title.trim());
+      const titles = await getTagTitles();
+      res.status(200).json({ ok: true, metafield, titles }); return;
     }
 
     if (action === 'uploadIcon') {
