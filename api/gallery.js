@@ -1,4 +1,6 @@
 // api/gallery.js — Proxy Vercel pour la galerie inspirationnelle RX WEAR
+const { syncDesignPages, installDesignTemplate } = require('../lib/designPageSync.js');
+
 const SHOP = process.env.SHOPIFY_SHOP;
 const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
@@ -635,6 +637,16 @@ export default async function handler(req, res) {
       icons[tag] = imageUrl;
       await saveTagIcons(icons);
       res.status(200).json({ ok: true, imageUrl, icons }); return;
+    }
+
+    if (action === 'syncDesignPages') {
+      const report = await syncDesignPages();
+      res.status(200).json({ ok: true, report }); return;
+    }
+
+    if (action === 'installDesignTemplate') {
+      const result = await installDesignTemplate();
+      res.status(200).json({ ok: true, result }); return;
     }
 
     res.status(400).json({ error: `Action inconnue: ${action}` });

@@ -2231,7 +2231,62 @@ function renderParamsPanel() {
   h += '</div>';
 
   h += '</div></div>';
+
+  h += renderDesignPagesPanel();
   return h;
+}
+
+function renderDesignPagesPanel() {
+  var h = '<div class="gallery-panel" style="margin-top:16px;"><div class="gallery-panel-header"><h3>&#127760; Pages designs (SEO)</h3></div>';
+  h += '<div class="gallery-panel-body">';
+  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">Chaque design signature (coché "Créer une page SEO" dans l\'ajout manuel) devient une vraie page Shopify — template dédié, contenu piloté par metafields, éditable dans le thème. Rien n\'est automatique : cliquer sur "Synchroniser" pour appliquer les derniers changements (nouveaux designs, descriptions modifiées, produits alternatifs modifiés).</p>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+  h += '<button class="btn" id="btn-install-template" onclick="installDesignTemplateUI()">&#128295; Installer / mettre à jour le template</button>';
+  h += '<button class="btn btn-primary" id="btn-sync-pages" onclick="syncDesignPagesUI()">&#128260; Synchroniser les pages designs</button>';
+  h += '</div>';
+  h += '<div id="design-pages-report" style="font-size:12px;"></div>';
+  h += '</div></div>';
+  return h;
+}
+
+async function installDesignTemplateUI() {
+  var btn = document.getElementById('btn-install-template');
+  var report = document.getElementById('design-pages-report');
+  if (btn) { btn.disabled = true; btn.textContent = 'Installation...'; }
+  try {
+    var r = await galleryApi('installDesignTemplate', {});
+    showToast('Template installé sur le thème "' + r.result.themeName + '"');
+    if (report) report.innerHTML = '<div style="color:var(--success,#1a7f37);">Template installé sur le thème live ("' + escapeHtml(r.result.themeName) + '") : ' + r.result.files.map(function(f){return escapeHtml(f.filename);}).join(', ') + '</div>';
+  } catch (e) {
+    showToast('Erreur: ' + e.message, 'error');
+    if (report) report.innerHTML = '<div style="color:var(--critical);">Erreur installation template : ' + escapeHtml(e.message) + '</div>';
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🔧 Installer / mettre à jour le template'; }
+}
+
+async function syncDesignPagesUI() {
+  var btn = document.getElementById('btn-sync-pages');
+  var report = document.getElementById('design-pages-report');
+  if (btn) { btn.disabled = true; btn.textContent = 'Synchronisation...'; }
+  try {
+    var r = await galleryApi('syncDesignPages', {});
+    var rep = r.report;
+    showToast('Synchro terminée : ' + rep.created + ' créée(s), ' + rep.updated + ' mise(s) à jour');
+    var html = '<div style="background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;">';
+    html += '<div>&#9989; ' + rep.created + ' page(s) créée(s) &middot; ' + rep.updated + ' mise(s) à jour &middot; ' + rep.unpublished + ' dépubliée(s) &middot; ' + rep.skipped + ' ignorée(s)</div>';
+    if (rep.errors && rep.errors.length) {
+      html += '<div style="color:var(--critical);margin-top:6px;">' + rep.errors.length + ' erreur(s) :<ul style="margin:4px 0 0 18px;padding:0;">' + rep.errors.map(function(e){return '<li>' + escapeHtml(e.title || '?') + ' — ' + escapeHtml(e.message) + '</li>';}).join('') + '</ul></div>';
+    }
+    html += '</div>';
+    if (report) report.innerHTML = html;
+    // Les items ont pu être mis à jour côté serveur (pageId/pageHandle) : on recharge.
+    var fresh = await galleryApi('get', {});
+    galleryState.savedItems = fresh.items || [];
+  } catch (e) {
+    showToast('Erreur: ' + e.message, 'error');
+    if (report) report.innerHTML = '<div style="color:var(--critical);">Erreur synchro : ' + escapeHtml(e.message) + '</div>';
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Synchroniser les pages designs'; }
 }
 
 // ── Drag & drop entre listes ──
@@ -2668,7 +2723,9 @@ function renderManualForm(){
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Niche</label><select id="mf-niche" onchange="onManualNicheChange()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);"><option value="">-- Choisir --</option><option value="running">Running</option><option value="cf">CrossFit</option></select></div>';
   h+='</div><div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
   h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;"><input id="mf-also-inspiration" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Aussi visible dans la galerie Inspiration (en plus des pages Designs signature)</label></div>';
-  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Produits partagés (popup de choix) — <a href="#" onclick="event.preventDefault();galleryState.galleryTab=\'params\';renderGalleryUI();">gérer la liste</a></label><div style="font-size:10px;color:var(--text-sub);margin-bottom:6px;">Coche uniquement les produits où CE design existe vraiment, avec son propre customization-id Teeinblue. Laissé vide : pas de popup, lien direct classique.</div><div id="mf-campaign-products" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg);">'+buildCampaignProductsHtml('', [])+'</div></div>';
+  h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#eafaf1;border:1px solid #b7e4c7;border-radius:var(--radius);padding:6px 8px;"><input id="mf-create-page" type="checkbox" checked style="width:15px;height:15px;cursor:pointer;" /> Créer une page SEO pour ce design</label><div style="font-size:10px;color:var(--text-sub);margin-top:4px;">Coché : ce design aura sa propre page (/pages/design-...), générée/actualisée au prochain clic sur "Synchroniser les pages designs" (onglet Paramètres). Décoché : la page existante (s\'il y en a une) sera dépubliée, jamais supprimée.</div></div>';
+  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Description de la page</label><textarea id="mf-page-desc" rows="3" placeholder="Texte affiché sur la page du design (et utilisé pour la meta description SEO)..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;resize:vertical;"></textarea></div>';
+  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Produits partagés (popup de choix) — <a href="#" onclick="event.preventDefault();galleryState.galleryTab=\'params\';renderGalleryUI();">gérer la liste</a></label><div style="font-size:10px;color:var(--text-sub);margin-bottom:6px;">Coche uniquement les produits où CE design existe vraiment, avec son propre customization-id Teeinblue. Laissé vide : pas de popup, lien direct classique. Sert aussi au bloc "Aussi personnalisable sur" de la page SEO du design.</div><div id="mf-campaign-products" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg);">'+buildCampaignProductsHtml('', [])+'</div></div>';
   h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';
   if(allTags.length){h+='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="var i=document.getElementById(\'mf-tags\');i.value=(i.value?i.value+\',\':\'\')+\''+t+'\'">'+t+'</button>';}).join('')+'</div>';}
   h+='</div><div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-primary" onclick="submitManual()" style="flex:1;">'+(isEditing?'Enregistrer les modifications':'Ajouter')+'</button><div style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;"><img id="mf-prev" src="" style="width:100%;height:100%;object-fit:cover;display:none;" /></div></div>';
@@ -2802,6 +2859,8 @@ function renderGalleryUI() {
         document.getElementById('mf-niche').value = editItem.niche || '';
         document.getElementById('mf-official').checked = editItem.source === 'official';
         document.getElementById('mf-also-inspiration').checked = editItem.showInInspiration === true;
+        document.getElementById('mf-create-page').checked = editItem.createPage !== false;
+        document.getElementById('mf-page-desc').value = editItem.pageDescription || '';
         document.getElementById('mf-tags').value = (editItem.tags || []).join(', ');
         var cpContainer = document.getElementById('mf-campaign-products');
         if (cpContainer) cpContainer.innerHTML = buildCampaignProductsHtml(editItem.niche || '', editItem.campaignProducts || []);
@@ -2847,6 +2906,8 @@ async function submitManual(){
   var tags=document.getElementById('mf-tags').value.split(',').map(function(t){return t.trim().toLowerCase();}).filter(Boolean);
   var isOfficial=document.getElementById('mf-official').checked;
   var alsoInspiration=document.getElementById('mf-also-inspiration').checked;
+  var createPage=document.getElementById('mf-create-page').checked;
+  var pageDescription=document.getElementById('mf-page-desc').value.trim();
   var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
   var err=document.getElementById('mf-err');
   if(!url||!cid||!hdl){err.textContent='URL, ID et Handle obligatoires';err.style.display='block';return;}
@@ -2856,10 +2917,14 @@ async function submitManual(){
   try{
     var newItems=galleryState.savedItems.slice();
     var campaignProducts=niche?collectCampaignProducts(niche):[];
-    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',showInInspiration:alsoInspiration,campaignProducts:campaignProducts,addedAt:new Date().toISOString()};
+    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',showInInspiration:alsoInspiration,campaignProducts:campaignProducts,createPage:createPage,pageDescription:pageDescription,addedAt:new Date().toISOString()};
     if(isEditing){
       var existing=galleryState.savedItems[galleryState.editingItemIndex];
       itemData.addedAt=(existing&&existing.addedAt)||itemData.addedAt;
+      // On conserve les infos de la page déjà générée (pageId/handle/url) : la
+      // synchro (bouton "Synchroniser les pages designs") s'en sert pour mettre
+      // à jour la page existante au lieu d'en recréer une nouvelle.
+      if(existing){itemData.pageId=existing.pageId||null;itemData.pageHandle=existing.pageHandle||null;itemData.pageUrl=existing.pageUrl||null;}
       newItems[galleryState.editingItemIndex]=itemData;
     }else{
       newItems.push(itemData);
