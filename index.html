@@ -1906,10 +1906,11 @@ const galleryState = {
   tagIcons: {},
   tagIconsLoaded: false,
   uploadingIcon: null,
-  nicheProducts: {},        // { cf: [{productHandle,title,imageUrl}], running: [...] }
+  nicheProducts: {},        // { cf: {lists:[{id,name,products:[{productHandle,title,imageUrl}]}]}, running: {...} }
   nicheProductsLoaded: false,
   paramsNiche: 'cf',
   paramsSearchResults: [],
+  paramsSyncing: false,
 };
 
 // ── Persistance position ──
@@ -2097,13 +2098,40 @@ function renderIconsPanel() {
   return h;
 }
 
-// ── Onglet Paramètres : produits partagés par niche (même artwork) ──
+// ── Onglet Paramètres : listes de produits par niche (même artwork) ──
+// Structure: galleryState.nicheProducts[niche] = { lists: [{id,name,products:[{productHandle,title,imageUrl}]}] }
+// Un produit ne peut appartenir qu'à une seule liste. La 1ère liste ("default") est le bac
+// par défaut où atterrissent les nouveaux produits (recherche manuelle ou sync Shopify).
+function ensureNicheLists(niche) {
+  if (!galleryState.nicheProducts) galleryState.nicheProducts = {};
+  var entry = galleryState.nicheProducts[niche];
+  if (!entry || Array.isArray(entry)) {
+    // Migration depuis l'ancien format (tableau plat) ou 1ère utilisation.
+    var products = Array.isArray(entry) ? entry : [];
+    entry = { lists: [{ id: 'default', name: 'Tous / non classés', products: products }] };
+    galleryState.nicheProducts[niche] = entry;
+  }
+  if (!entry.lists || !entry.lists.length) {
+    entry.lists = [{ id: 'default', name: 'Tous / non classés', products: [] }];
+  }
+  return entry;
+}
+function allNicheProductHandles(niche) {
+  var entry = ensureNicheLists(niche);
+  var handles = {};
+  entry.lists.forEach(function (l) { l.products.forEach(function (p) { handles[p.productHandle] = true; }); });
+  return handles;
+}
+async function persistNicheProducts() {
+  await galleryApi('saveNicheProducts', { nicheProducts: galleryState.nicheProducts });
+}
+
 function renderParamsPanel() {
   var niche = galleryState.paramsNiche || 'cf';
-  var list = (galleryState.nicheProducts && galleryState.nicheProducts[niche]) || [];
+  var entry = ensureNicheLists(niche);
   var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>&#9881;&#65039; Produits partagés par niche</h3></div>';
   h += '<div class="gallery-panel-body">';
-  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Définis, pour chaque niche, la liste des produits sur lesquels un même artwork peut être proposé. Cette liste sert ensuite, design par design (onglet &#9999;&#65039; Ajout manuel), à choisir quels produits proposer dans la popup — chacun avec son propre customization-id Teeinblue.</p>';
+  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Organise les produits de chaque niche en listes (ex : "T-shirt oversize + T-shirt", "Tank", "Crop"). Un produit ne peut être que dans une seule liste — glisse-le d\'une liste à l\'autre pour le reclasser. Ces listes servent ensuite, design par design (onglet &#9999;&#65039; Ajout manuel), à choisir quels produits proposer dans la popup — chacun avec son propre customization-id Teeinblue.</p>';
 
   h += '<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:14px;">';
   [{id:'cf',label:'🏋️ CrossFit',color:'#d93025'},{id:'running',label:'🏃 Running',color:'#1a73e8'}].forEach(function(t){
@@ -2112,31 +2140,128 @@ function renderParamsPanel() {
   });
   h += '</div>';
 
-  if (!list.length) {
-    h += '<div class="gallery-empty" style="padding:20px;">Aucun produit configuré pour cette niche pour l\'instant.</div>';
-  } else {
-    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px;">';
-    list.forEach(function(p) {
-      h += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center;background:var(--surface);position:relative;">';
-      h += '<button onclick="removeNicheProduct(\''+niche+'\',\''+p.productHandle+'\')" title="Retirer" style="position:absolute;top:4px;right:4px;background:var(--critical);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:1;">&#x2715;</button>';
-      h += '<div style="width:56px;height:56px;margin:0 auto 6px;border-radius:6px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-      h += p.imageUrl ? '<img src="'+p.imageUrl+'" alt="" style="width:100%;height:100%;object-fit:cover;" />' : '<div style="font-size:20px;opacity:.3;">&#128230;</div>';
-      h += '</div>';
-      h += '<div style="font-size:11px;font-weight:600;">'+escapeHtml(p.title||p.productHandle)+'</div>';
-      h += '<div style="font-size:9px;color:var(--text-sub);">'+escapeHtml(p.productHandle)+'</div>';
-      h += '</div>';
-    });
+  h += '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">';
+  h += '<button class="btn" onclick="syncNicheFromShopify(\''+niche+'\')" '+(galleryState.paramsSyncing?'disabled':'')+'>'+(galleryState.paramsSyncing?'Synchronisation...':'&#128260; Synchroniser depuis Shopify')+'</button>';
+  h += '<button class="btn btn-primary" onclick="createNicheList()">&#10133; Nouvelle liste</button>';
+  h += '</div>';
+
+  entry.lists.forEach(function(list) {
+    var isDefault = list.id === 'default';
+    h += '<div class="gallery-panel" style="margin-bottom:14px;border:1px dashed var(--border);" ondragover="onParamsDragOver(event)" ondrop="onParamsDrop(event,\''+niche+'\',\''+list.id+'\')">';
+    h += '<div class="gallery-panel-header" style="padding:8px 12px;flex-wrap:wrap;gap:6px;">';
+    if (isDefault) {
+      h += '<h3 style="font-size:13px;">'+escapeHtml(list.name)+' <span style="font-weight:400;color:var(--text-sub);">('+list.products.length+')</span></h3>';
+    } else {
+      h += '<input type="text" value="'+escapeHtml(list.name)+'" onchange="renameNicheList(\''+niche+'\',\''+list.id+'\',this.value)" style="font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface);padding:3px 6px;border-radius:4px;flex:1;min-width:100px;" />';
+      h += '<span style="font-size:11px;color:var(--text-sub);">('+list.products.length+')</span>';
+      h += '<button class="btn" style="font-size:11px;padding:3px 8px;color:var(--critical);" onclick="deleteNicheList(\''+niche+'\',\''+list.id+'\')">Supprimer la liste</button>';
+    }
     h += '</div>';
-  }
+    h += '<div class="gallery-panel-body" style="padding:10px 12px;min-height:70px;">';
+    if (!list.products.length) {
+      h += '<div style="font-size:11px;color:var(--text-sub);padding:14px;text-align:center;border:1px dashed var(--border);border-radius:6px;">Glisse des produits ici</div>';
+    } else {
+      h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">';
+      list.products.forEach(function(p) {
+        h += '<div draggable="true" ondragstart="onParamsDragStart(event,\''+niche+'\',\''+list.id+'\',\''+p.productHandle+'\')" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px;text-align:center;background:var(--surface);position:relative;cursor:grab;">';
+        h += '<button onclick="removeNicheProduct(\''+niche+'\',\''+list.id+'\',\''+p.productHandle+'\')" title="Retirer" style="position:absolute;top:3px;right:3px;background:var(--critical);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;">&#x2715;</button>';
+        h += '<div style="width:44px;height:44px;margin:0 auto 4px;border-radius:6px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
+        h += p.imageUrl ? '<img src="'+p.imageUrl+'" alt="" style="width:100%;height:100%;object-fit:cover;" />' : '<div style="font-size:16px;opacity:.3;">&#128230;</div>';
+        h += '</div>';
+        h += '<div style="font-size:10px;font-weight:600;">'+escapeHtml(p.title||p.productHandle)+'</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    h += '</div></div>';
+  });
 
   h += '<div style="border-top:1px solid var(--border);padding-top:12px;">';
-  h += '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Ajouter un produit à cette niche</label>';
+  h += '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Ajouter un produit manuellement (atterrit dans "'+escapeHtml(entry.lists[0].name)+'")</label>';
   h += '<input type="text" id="params-search-input" placeholder="Rechercher un produit par titre..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" oninput="searchParamProductDebounced(this.value)" />';
   h += '<div id="params-search-results" style="margin-top:6px;"></div>';
   h += '</div>';
 
   h += '</div></div>';
   return h;
+}
+
+// ── Drag & drop entre listes ──
+var _paramsDrag = null;
+function onParamsDragStart(e, niche, listId, handle) {
+  _paramsDrag = { niche: niche, listId: listId, handle: handle };
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onParamsDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+async function onParamsDrop(e, niche, targetListId) {
+  e.preventDefault();
+  if (!_paramsDrag || _paramsDrag.niche !== niche) { _paramsDrag = null; return; }
+  if (_paramsDrag.listId === targetListId) { _paramsDrag = null; return; }
+  var entry = ensureNicheLists(niche);
+  var srcList = entry.lists.find(function (l) { return l.id === _paramsDrag.listId; });
+  var dstList = entry.lists.find(function (l) { return l.id === targetListId; });
+  var handle = _paramsDrag.handle;
+  _paramsDrag = null;
+  if (!srcList || !dstList) return;
+  var idx = srcList.products.findIndex(function (p) { return p.productHandle === handle; });
+  if (idx === -1) return;
+  var moved = srcList.products.splice(idx, 1)[0];
+  dstList.products.push(moved);
+  try { await persistNicheProducts(); showToast('Produit déplacé vers "' + dstList.name + '"'); }
+  catch (e2) { showToast('Erreur: ' + e2.message, 'error'); }
+  renderGalleryUI();
+}
+
+async function createNicheList() {
+  var name = prompt('Nom de la nouvelle liste (ex: Tank, Crop...)');
+  if (!name || !name.trim()) return;
+  var niche = galleryState.paramsNiche || 'cf';
+  var entry = ensureNicheLists(niche);
+  var id = 'list-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  entry.lists.push({ id: id, name: name.trim(), products: [] });
+  try { await persistNicheProducts(); showToast('Liste créée'); } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+  renderGalleryUI();
+}
+async function renameNicheList(niche, listId, newName) {
+  if (!newName || !newName.trim()) { renderGalleryUI(); return; }
+  var entry = ensureNicheLists(niche);
+  var list = entry.lists.find(function (l) { return l.id === listId; });
+  if (!list) return;
+  list.name = newName.trim();
+  try { await persistNicheProducts(); showToast('Liste renommée'); } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+  renderGalleryUI();
+}
+async function deleteNicheList(niche, listId) {
+  var entry = ensureNicheLists(niche);
+  var list = entry.lists.find(function (l) { return l.id === listId; });
+  if (!list) return;
+  if (!confirm('Supprimer la liste "' + list.name + '" ? Ses produits (' + list.products.length + ') seront renvoyés dans "' + entry.lists[0].name + '".')) return;
+  entry.lists = entry.lists.filter(function (l) { return l.id !== listId; });
+  entry.lists[0].products = entry.lists[0].products.concat(list.products);
+  try { await persistNicheProducts(); showToast('Liste supprimée'); } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+  renderGalleryUI();
+}
+
+async function syncNicheFromShopify(niche) {
+  galleryState.paramsSyncing = true;
+  renderGalleryUI();
+  try {
+    var r = await galleryApi('getNicheTaggedProducts', { niche: niche });
+    var found = r.products || [];
+    var entry = ensureNicheLists(niche);
+    var already = allNicheProductHandles(niche);
+    var added = 0;
+    found.forEach(function (p) {
+      if (already[p.handle]) return;
+      entry.lists[0].products.push({ productHandle: p.handle, title: p.title, imageUrl: (p.featuredImage && p.featuredImage.url) || null });
+      already[p.handle] = true;
+      added++;
+    });
+    if (added > 0) { await persistNicheProducts(); showToast(added + ' produit(s) ajouté(s) depuis Shopify'); }
+    else showToast('Déjà à jour, aucun nouveau produit');
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+  galleryState.paramsSyncing = false;
+  renderGalleryUI();
 }
 
 let _paramsSearchTimer = null;
@@ -2158,14 +2283,14 @@ function renderParamsSearchResults() {
   if (!box) return;
   var products = galleryState.paramsSearchResults || [];
   var niche = galleryState.paramsNiche || 'cf';
-  var already = (galleryState.nicheProducts[niche] || []).map(function (x) { return x.productHandle; });
+  var already = allNicheProductHandles(niche);
   if (!products.length) { box.innerHTML = '<div style="font-size:11px;color:var(--text-sub);">Aucun résultat</div>'; return; }
   box.innerHTML = products.map(function (p, i) {
-    var inList = already.indexOf(p.handle) > -1;
+    var inList = !!already[p.handle];
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);margin-top:4px;'+(inList?'opacity:.5;':'cursor:pointer;')+'" '+(inList?'':'onclick="addNicheProduct('+i+')"')+'>' +
       (p.featuredImage && p.featuredImage.url ? '<img src="' + p.featuredImage.url + '" style="width:28px;height:28px;object-fit:cover;border-radius:4px;" />' : '') +
       '<span style="font-size:12px;">' + escapeHtml(p.title) + ' <span style="color:var(--text-sub);">(' + escapeHtml(p.handle) + ')</span></span>' +
-      (inList ? '<span style="margin-left:auto;font-size:10px;color:var(--success);">&#10003; déjà ajouté</span>' : '') +
+      (inList ? '<span style="margin-left:auto;font-size:10px;color:var(--success);">&#10003; déjà dans une liste</span>' : '') +
       '</div>';
   }).join('');
 }
@@ -2173,23 +2298,26 @@ async function addNicheProduct(resultIdx) {
   var p = (galleryState.paramsSearchResults || [])[resultIdx];
   if (!p) return;
   var niche = galleryState.paramsNiche || 'cf';
-  if (!galleryState.nicheProducts[niche]) galleryState.nicheProducts[niche] = [];
-  if (galleryState.nicheProducts[niche].some(function (x) { return x.productHandle === p.handle; })) { showToast('Déjà dans la liste', 'warning'); return; }
-  galleryState.nicheProducts[niche].push({ productHandle: p.handle, title: p.title, imageUrl: (p.featuredImage && p.featuredImage.url) || null });
+  var entry = ensureNicheLists(niche);
+  var already = allNicheProductHandles(niche);
+  if (already[p.handle]) { showToast('Déjà dans une liste', 'warning'); return; }
+  entry.lists[0].products.push({ productHandle: p.handle, title: p.title, imageUrl: (p.featuredImage && p.featuredImage.url) || null });
   try {
-    await galleryApi('saveNicheProducts', { nicheProducts: galleryState.nicheProducts });
-    showToast('Produit ajouté à la niche');
+    await persistNicheProducts();
+    showToast('Produit ajouté à "' + entry.lists[0].name + '"');
   } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
   galleryState.paramsSearchResults = [];
   var inp = document.getElementById('params-search-input'); if (inp) inp.value = '';
   renderGalleryUI();
 }
-async function removeNicheProduct(niche, handle) {
-  if (!galleryState.nicheProducts[niche]) return;
-  if (!confirm('Retirer ce produit de la liste "' + nicheLabel(niche) + '" ? Les designs qui l\'avaient déjà coché dans leur popup garderont leur entrée (à retirer manuellement si besoin).')) return;
-  galleryState.nicheProducts[niche] = galleryState.nicheProducts[niche].filter(function (x) { return x.productHandle !== handle; });
+async function removeNicheProduct(niche, listId, handle) {
+  var entry = ensureNicheLists(niche);
+  var list = entry.lists.find(function (l) { return l.id === listId; });
+  if (!list) return;
+  if (!confirm('Retirer ce produit de la liste "' + list.name + '" ? Les designs qui l\'avaient déjà coché dans leur popup garderont leur entrée (à retirer manuellement si besoin).')) return;
+  list.products = list.products.filter(function (x) { return x.productHandle !== handle; });
   try {
-    await galleryApi('saveNicheProducts', { nicheProducts: galleryState.nicheProducts });
+    await persistNicheProducts();
     showToast('Produit retiré');
   } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
   renderGalleryUI();
@@ -2199,18 +2327,25 @@ async function removeNicheProduct(niche, handle) {
 function buildCampaignProductsHtml(niche, existingList) {
   existingList = existingList || [];
   if (!niche) return '<div style="font-size:11px;color:var(--text-sub);">Choisis d\'abord une niche ci-dessus.</div>';
-  var list = (galleryState.nicheProducts && galleryState.nicheProducts[niche]) || [];
-  if (!list.length) return '<div style="font-size:11px;color:var(--text-sub);">Aucun produit partagé configuré pour cette niche. Va dans l\'onglet &#9881;&#65039; Paramètres pour en ajouter.</div>';
+  var entry = ensureNicheLists(niche);
+  var hasAny = entry.lists.some(function (l) { return l.products.length > 0; });
+  if (!hasAny) return '<div style="font-size:11px;color:var(--text-sub);">Aucun produit configuré pour cette niche. Va dans l\'onglet &#9881;&#65039; Paramètres pour en ajouter.</div>';
   var h = '';
-  list.forEach(function (p, i) {
-    var existing = existingList.find(function (cp) { return cp.productHandle === p.productHandle; });
-    var checked = !!existing;
-    h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">';
-    h += '<input type="checkbox" id="mf-cp-check-' + i + '" ' + (checked ? 'checked' : '') + ' onchange="toggleCampaignProductRow(' + i + ')" style="cursor:pointer;flex-shrink:0;" />';
-    h += '<span style="flex:0 0 120px;font-size:11px;" title="' + escapeHtml(p.productHandle) + '">' + escapeHtml(p.title || p.productHandle) + '</span>';
-    h += '<input type="text" id="mf-cp-cid-' + i + '" placeholder="Customization ID *" value="' + escapeHtml(existing && existing.customizationId || '') + '" style="flex:1;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;min-width:0;" ' + (checked ? '' : 'disabled') + ' />';
-    h += '<input type="text" id="mf-cp-vid-' + i + '" placeholder="Variant ID" value="' + escapeHtml(existing && existing.variantId || '') + '" style="flex:0 0 110px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;" ' + (checked ? '' : 'disabled') + ' />';
-    h += '</div>';
+  var i = 0;
+  entry.lists.forEach(function (list) {
+    if (!list.products.length) return;
+    h += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-sub);margin:8px 0 3px;">' + escapeHtml(list.name) + '</div>';
+    list.products.forEach(function (p) {
+      var thisIdx = i++;
+      var existing = existingList.find(function (cp) { return cp.productHandle === p.productHandle; });
+      var checked = !!existing;
+      h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">';
+      h += '<input type="checkbox" id="mf-cp-check-' + thisIdx + '" data-handle="' + escapeHtml(p.productHandle) + '" ' + (checked ? 'checked' : '') + ' onchange="toggleCampaignProductRow(' + thisIdx + ')" style="cursor:pointer;flex-shrink:0;" />';
+      h += '<span style="flex:0 0 120px;font-size:11px;" title="' + escapeHtml(p.productHandle) + '">' + escapeHtml(p.title || p.productHandle) + '</span>';
+      h += '<input type="text" id="mf-cp-cid-' + thisIdx + '" placeholder="Customization ID *" value="' + escapeHtml(existing && existing.customizationId || '') + '" style="flex:1;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;min-width:0;" ' + (checked ? '' : 'disabled') + ' />';
+      h += '<input type="text" id="mf-cp-vid-' + thisIdx + '" placeholder="Variant ID" value="' + escapeHtml(existing && existing.variantId || '') + '" style="flex:0 0 110px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;" ' + (checked ? '' : 'disabled') + ' />';
+      h += '</div>';
+    });
   });
   return h;
 }
@@ -2227,17 +2362,20 @@ function onManualNicheChange() {
   if (container) container.innerHTML = buildCampaignProductsHtml(niche, []);
 }
 function collectCampaignProducts(niche) {
-  var list = (galleryState.nicheProducts && galleryState.nicheProducts[niche]) || [];
+  var container = document.getElementById('mf-campaign-products');
+  if (!container) return [];
   var out = [];
-  list.forEach(function (p, i) {
-    var chk = document.getElementById('mf-cp-check-' + i);
-    if (!chk || !chk.checked) return;
-    var cidEl = document.getElementById('mf-cp-cid-' + i);
-    var vidEl = document.getElementById('mf-cp-vid-' + i);
+  var checks = container.querySelectorAll('input[type="checkbox"][id^="mf-cp-check-"]');
+  checks.forEach(function (chk) {
+    if (!chk.checked) return;
+    var handle = chk.getAttribute('data-handle');
+    var idx = chk.id.replace('mf-cp-check-', '');
+    var cidEl = document.getElementById('mf-cp-cid-' + idx);
+    var vidEl = document.getElementById('mf-cp-vid-' + idx);
     var cid = (cidEl && cidEl.value || '').trim();
     var vid = (vidEl && vidEl.value || '').trim();
     if (!cid) return; // sans customization-id, l'entrée ne sert à rien côté front
-    out.push({ productHandle: p.productHandle, customizationId: cid, variantId: vid || null });
+    out.push({ productHandle: handle, customizationId: cid, variantId: vid || null });
   });
   return out;
 }
