@@ -1906,6 +1906,9 @@ const galleryState = {
   tagIcons: {},
   tagIconsLoaded: false,
   uploadingIcon: null,
+  tagTitles: {},
+  tagTitlesLoaded: false,
+  savingTitle: null,
   nicheProducts: {},        // { cf: {lists:[{id,name,products:[{productHandle,title,imageUrl}]}]}, running: {...} }
   nicheProductsLoaded: false,
   paramsNiche: 'cf',
@@ -1984,6 +1987,40 @@ async function loadTagIcons() {
     galleryState.tagIcons = r.icons || {};
   } catch(e) { galleryState.tagIcons = {}; }
   galleryState.tagIconsLoaded = true;
+}
+
+// Mirror du filtre "handleize" de Liquid — même logique que côté thème et que l'API
+function handleizeTag(str) {
+  return (str || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function loadTagTitles() {
+  if (galleryState.tagTitlesLoaded) return;
+  try {
+    const r = await galleryApi('getTagTitles');
+    galleryState.tagTitles = r.titles || {};
+  } catch(e) { galleryState.tagTitles = {}; }
+  galleryState.tagTitlesLoaded = true;
+}
+
+async function saveTagTitleValue(tag, title) {
+  if (!title || !title.trim()) { showToast('Titre vide', 'error'); return; }
+  galleryState.savingTitle = tag;
+  renderGalleryUI();
+  try {
+    var r = await galleryApi('saveTagTitle', { tag: tag, title: title.trim() });
+    galleryState.tagTitles = r.titles || galleryState.tagTitles;
+    showToast('Titre enregistré pour "' + tag + '"');
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
+  galleryState.savingTitle = null;
+  renderGalleryUI();
 }
 
 function fileToBase64(file) {
@@ -2069,13 +2106,17 @@ function renderIconsPanel() {
 
   var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>Ic\u00f4nes des filtres</h3></div>';
   h += '<div class="gallery-panel-body">';
-  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Importe une image (PNG, SVG, JPG) pour chaque tag. Elle remplacera le texte/emoji dans les filtres du front.</p>';
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">';
+  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Importe une image (PNG, SVG, JPG) pour chaque tag. Elle remplacera le texte/emoji dans les filtres du front. Le titre est affiché à côté de l’icône et est traduisible nativement dans Shopify (Traduire le contenu).</p>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">';
 
   displayTags.forEach(function(tag) {
     var iconUrl = galleryState.tagIcons[tag];
     var isUploading = galleryState.uploadingIcon === tag;
     var label = tag === 'crossfit' ? 'CrossFit' : tag === 'running' ? 'Running' : tag;
+    var slug = handleizeTag(tag);
+    var inputId = 'tag-title-input-' + slug;
+    var currentTitle = galleryState.tagTitles[slug] || '';
+    var isSaving = galleryState.savingTitle === tag;
 
     h += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;background:var(--surface);">';
     h += '<div style="width:64px;height:64px;margin:0 auto 8px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
@@ -2091,7 +2132,14 @@ function renderIconsPanel() {
     h += '<div style="display:flex;gap:4px;justify-content:center;">';
     h += '<button class="btn" style="font-size:11px;padding:4px 8px;" onclick="triggerIconUpload(\'' + tag + '\')">' + (iconUrl ? 'Changer' : 'Importer') + '</button>';
     if (iconUrl) h += '<button class="btn" style="font-size:11px;padding:4px 8px;color:var(--critical);" onclick="removeTagIcon(\'' + tag + '\')">Retirer</button>';
+    h += '</div>';
+    h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);text-align:left;">';
+    h += '<label style="display:block;font-size:10px;color:var(--text-sub);margin-bottom:4px;">Titre affiché</label>';
+    h += '<div style="display:flex;gap:4px;">';
+    h += '<input id="' + inputId + '" type="text" value="' + escapeHtml(currentTitle) + '" placeholder="' + escapeHtml(label) + '" style="flex:1;min-width:0;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);" />';
+    h += '<button class="btn" style="font-size:11px;padding:4px 8px;flex-shrink:0;" ' + (isSaving ? 'disabled' : '') + ' onclick="saveTagTitleValue(\'' + tag.replace(/'/g, "\\'") + '\', document.getElementById(\'' + inputId + '\').value)">' + (isSaving ? '...' : 'OK') + '</button>';
     h += '</div></div>';
+    h += '</div>';
   });
 
   h += '</div></div></div>';
@@ -2703,7 +2751,7 @@ function renderGalleryUI() {
   // Onglets principaux
   h += '<button onclick="galleryState.galleryTab=\'browse\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='browse'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#128247; Parcourir</button>';
   h += '<button onclick="galleryState.galleryTab=\'published\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='published'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#10003; Publi\u00e9s ('+total+')</button>';
-  h += '<button onclick="galleryState.galleryTab=\'icons\';loadTagIcons().then(renderGalleryUI);" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='icons'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#127912; Ic\u00f4nes</button>';
+  h += '<button onclick="galleryState.galleryTab=\'icons\';Promise.all([loadTagIcons(),loadTagTitles()]).then(renderGalleryUI);" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='icons'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#127912; Ic\u00f4nes</button>';
   h += '<button onclick="galleryState.galleryTab=\'params\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='params'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#9881;&#65039; Param\u00e8tres</button>';
   h += '</div>';
   h += '<div style="display:flex;gap:8px;">';
