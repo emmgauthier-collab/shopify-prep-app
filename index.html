@@ -2277,6 +2277,9 @@ async function syncDesignPagesUI() {
     if (rep.errors && rep.errors.length) {
       html += '<div style="color:var(--critical);margin-top:6px;">' + rep.errors.length + ' erreur(s) :<ul style="margin:4px 0 0 18px;padding:0;">' + rep.errors.map(function(e){return '<li>' + escapeHtml(e.title || '?') + ' — ' + escapeHtml(e.message) + '</li>';}).join('') + '</ul></div>';
     }
+    if (rep.definitionsWarning) {
+      html += '<div style="color:#8a6d00;margin-top:6px;">&#9888;&#65039; Définitions de metafields non créées (' + escapeHtml(rep.definitionsWarning) + '). Sans impact si les pages ci-dessus se sont bien créées/actualisées — juste moins pratique à éditer depuis l\'admin. Voir les instructions pour ajouter le scope manquant.</div>';
+    }
     html += '</div>';
     if (report) report.innerHTML = html;
     // Les items ont pu être mis à jour côté serveur (pageId/pageHandle) : on recharge.
