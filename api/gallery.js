@@ -284,6 +284,24 @@ async function searchProducts(term) {
   return (data?.data?.products?.edges || []).map(e => e.node);
 }
 
+// Mapping niche -> tag produit (même logique que detectNiche, en sens inverse)
+const NICHE_TAGS = { cf: 'custom', running: 'customrunning' };
+
+// Récupère tous les produits taggés pour une niche (pour le bouton "Synchroniser depuis Shopify")
+async function fetchProductsByNicheTag(niche) {
+  const tag = NICHE_TAGS[niche];
+  if (!tag) return [];
+  const data = await shopifyGql(`
+    query($q: String!) {
+      products(first: 250, query: $q) {
+        edges { node { id title handle featuredImage { url } } }
+      }
+    }
+  `, { q: `tag:${tag}` });
+  if (data?.errors?.length) throw new Error(data.errors.map(e => e.message).join(', '));
+  return (data?.data?.products?.edges || []).map(e => e.node);
+}
+
 const ICONS_KEY = 'tag_icons';
 
 // Récupérer les icônes de tags depuis le metafield shop
@@ -468,6 +486,12 @@ export default async function handler(req, res) {
       const { term } = body;
       if (!term || !term.trim()) { res.status(200).json({ products: [] }); return; }
       res.status(200).json({ products: await searchProducts(term.trim()) }); return;
+    }
+
+    if (action === 'getNicheTaggedProducts') {
+      const { niche } = body;
+      if (!niche) { res.status(400).json({ error: 'niche requis' }); return; }
+      res.status(200).json({ products: await fetchProductsByNicheTag(niche) }); return;
     }
 
     if (action === 'getTagIcons') {
