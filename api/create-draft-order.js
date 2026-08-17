@@ -238,6 +238,19 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Sépare le nom de contact en prénom/nom pour renseigner billingAddress —
+    // sans ça, Shopify affiche "Aucun nom fourni" sur la fiche du draft order
+    // (le nom du client vient de billingAddress/shippingAddress ou d'un
+    // Customer existant, jamais des customAttributes ni de la note).
+    function splitContactName(name) {
+      var trimmed = (name || '').toString().trim();
+      if (!trimmed) return { firstName: null, lastName: null };
+      var parts = trimmed.split(/\s+/);
+      if (parts.length === 1) return { firstName: parts[0], lastName: null };
+      return { firstName: parts.slice(0, -1).join(' '), lastName: parts[parts.length - 1] };
+    }
+    const contactNameParts = splitContactName(contactName);
+
     const customAttributes = [];
     if (boxName) customAttributes.push({ key: 'Nom de la box', value: String(boxName).slice(0, 255) });
     if (contactName) customAttributes.push({ key: 'Contact', value: String(contactName).slice(0, 255) });
@@ -267,11 +280,25 @@ export default async function handler(req, res) {
     const input = {
       lineItems: lineItems,
       email: email,
+      phone: phone || null,
       note: noteParts.join('\n'),
       customAttributes: customAttributes,
-      tags: ['devis-box', 'landing-collection-box'],
+      tags: ['devis-box', 'landing-collection-box', 'custompro'],
       acceptAutomaticDiscounts: true,
     };
+
+    // Renseigne le nom (et le téléphone) du client sur le draft order lui-même,
+    // pas seulement dans les customAttributes/la note — nécessaire pour que la
+    // carte "Client" de la fiche draft order affiche un nom au lieu de
+    // "Aucun nom fourni". Pas d'adresse postale collectée par le formulaire,
+    // donc on ne renseigne que firstName/lastName/phone (tous optionnels).
+    if (contactNameParts.firstName || phone) {
+      input.billingAddress = {
+        firstName: contactNameParts.firstName,
+        lastName: contactNameParts.lastName,
+        phone: phone || null,
+      };
+    }
 
     const data = await adminGql(DRAFT_ORDER_CREATE, { input: input });
     const payload = data.draftOrderCreate;
