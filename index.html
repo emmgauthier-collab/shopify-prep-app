@@ -2709,6 +2709,52 @@ function renderSavedPanel(){
   return h;
 }
 
+// ── Bloc "Marchés" du formulaire d'ajout/édition d'un design ──
+// FR est toujours disponible (pas de case, pas d'entrée dans item.markets — ce
+// sont les champs racine customizationId/imageUrl qui font foi). EN et ES ont
+// chacun une case "Disponible sur ce marché" ; si cochée, une sous-case
+// "Nécessite une adaptation du design pour ce marché" fait apparaître un
+// customizationId + une imageUrl spécifiques à ce marché (mêmes composants que
+// les champs FR, dupliqués). Si la sous-case n'est pas cochée, le design FR
+// est réutilisé tel quel pour ce marché (rien à saisir).
+var MARKET_DEFS=[{code:'en',label:'Anglais (EN)'},{code:'es',label:'Espagnol (ES)'}];
+function renderMarketFieldset(code,label){
+  var h='<div id="mf-mkt-'+code+'-block" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px;background:var(--bg);">';
+  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;"><input id="mf-mkt-'+code+'-avail" type="checkbox" onchange="onMarketAvailChange(\''+code+'\')" style="width:15px;height:15px;cursor:pointer;" /> Disponible sur ce marché &mdash; '+label+'</label>';
+  h+='<div id="mf-mkt-'+code+'-sub" style="display:none;margin-top:8px;padding-left:20px;border-left:2px solid var(--border);">';
+  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;"><input id="mf-mkt-'+code+'-adapt" type="checkbox" onchange="onMarketAdaptChange(\''+code+'\')" style="width:15px;height:15px;cursor:pointer;" /> Nécessite une adaptation du design pour ce marché</label>';
+  h+='<div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Décoché : le design FR (image + customization ID ci-dessus) est réutilisé tel quel sur ce marché.</div>';
+  h+='<div id="mf-mkt-'+code+'-fields" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">';
+  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Customization ID '+label+'</label><input id="mf-mkt-'+code+'-cid" type="text" placeholder="1a33ab74-..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /></div>';
+  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">URL du mockup '+label+'</label><input id="mf-mkt-'+code+'-img" type="text" placeholder="https://cdn.teeinblue.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /></div>';
+  h+='</div></div></div>';
+  return h;
+}
+function onMarketAvailChange(code){
+  var avail=document.getElementById('mf-mkt-'+code+'-avail').checked;
+  var sub=document.getElementById('mf-mkt-'+code+'-sub');
+  if(sub)sub.style.display=avail?'block':'none';
+  if(!avail){
+    var adapt=document.getElementById('mf-mkt-'+code+'-adapt');
+    if(adapt)adapt.checked=false;
+  }
+  onMarketAdaptChange(code);
+}
+function onMarketAdaptChange(code){
+  var adapt=document.getElementById('mf-mkt-'+code+'-adapt');
+  var fields=document.getElementById('mf-mkt-'+code+'-fields');
+  if(fields)fields.style.display=(adapt&&adapt.checked)?'grid':'none';
+}
+function collectMarketData(code){
+  var availEl=document.getElementById('mf-mkt-'+code+'-avail');
+  var adaptEl=document.getElementById('mf-mkt-'+code+'-adapt');
+  var available=!!(availEl&&availEl.checked);
+  var needsAdaptation=available&&!!(adaptEl&&adaptEl.checked);
+  var cid=needsAdaptation?document.getElementById('mf-mkt-'+code+'-cid').value.trim():'';
+  var img=needsAdaptation?document.getElementById('mf-mkt-'+code+'-img').value.trim():'';
+  return{available:available,needsAdaptation:needsAdaptation,customizationId:cid||null,imageUrl:img||null};
+}
+
 function renderManualForm(){
   var allTags=getAllTags();
   var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
@@ -2724,7 +2770,12 @@ function renderManualForm(){
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Image URL *</label><input id="mf-img" type="text" placeholder="https://cdn.teeinblue.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /><div style="display:flex;align-items:center;gap:6px;margin-top:4px;"><input id="mf-img-file" type="file" accept="image/*" style="font-size:11px;flex:1;min-width:0;" /><button class="btn" type="button" style="font-size:11px;padding:4px 8px;white-space:nowrap;" onclick="uploadManualImage()">Uploader</button></div><div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Colle une URL Teeinblue, ou uploade ton propre mockup (PNG/JPG)</div></div>';
   h+=fld('mf-cid','Customization ID *','1a33ab74-...','');h+=fld('mf-hdl','Handle produit *','t-shirt-running-personnalise','');h+=fld('mf-vid','Variant ID','47332888510766',"Depuis l'URL admin");h+=fld('mf-ttl','Titre','T-shirt Running Bleu','');
   h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Niche</label><select id="mf-niche" onchange="onManualNicheChange()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);"><option value="">-- Choisir --</option><option value="running">Running</option><option value="cf">CrossFit</option></select></div>';
-  h+='</div><div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" onchange="document.getElementById(\'mf-create-page\').checked=this.checked" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
+  h+='</div>';
+  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px;">Marchés</label>';
+  h+='<div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;margin-bottom:8px;opacity:.75;"><input type="checkbox" checked disabled style="width:15px;height:15px;" /> Disponible sur ce marché &mdash; Français (FR) <span style="font-weight:400;color:var(--text-sub);">(toujours actif)</span></div>';
+  h+=MARKET_DEFS.map(function(md){return renderMarketFieldset(md.code,md.label);}).join('');
+  h+='</div>';
+  h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" onchange="document.getElementById(\'mf-create-page\').checked=this.checked" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
   h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;"><input id="mf-also-inspiration" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Aussi visible dans la galerie Inspiration (en plus des pages Designs signature)</label></div>';
   h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#eafaf1;border:1px solid #b7e4c7;border-radius:var(--radius);padding:6px 8px;"><input id="mf-create-page" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Créer une page SEO pour ce design</label><div style="font-size:10px;color:var(--text-sub);margin-top:4px;">Coché par défaut uniquement pour les designs officiels (coche "Design officiel" ci-dessus). Coché : ce design aura sa propre page (/pages/design-...), générée/actualisée au prochain clic sur "Synchroniser les pages designs" (onglet Paramètres). Décoché : la page existante (s\'il y en a une) sera dépubliée, jamais supprimée. Réservé aux vrais designs curatés — évite d\'en cocher pour de simples rendus de commandes clients (titres génériques, risque de contenu dupliqué en SEO).</div></div>';
   h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Description de la page</label><textarea id="mf-page-desc" rows="3" placeholder="Texte affiché sur la page du design (et utilisé pour la meta description SEO)..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;resize:vertical;"></textarea></div>';
@@ -2864,6 +2915,26 @@ function renderGalleryUI() {
         document.getElementById('mf-also-inspiration').checked = editItem.showInInspiration === true;
         document.getElementById('mf-create-page').checked = editItem.createPage === true ? true : editItem.createPage === false ? false : editItem.source === 'official';
         document.getElementById('mf-page-desc').value = editItem.pageDescription || '';
+        MARKET_DEFS.forEach(function (md) {
+          var code = md.code;
+          // Design ancien jamais touché par la fonctionnalité "Marchés" (pas de clé
+          // `markets` du tout) -> il est aujourd'hui implicitement visible sur tous les
+          // marchés (comportement historique, avant cette fonctionnalité). On précoche donc
+          // "Disponible" par défaut pour ne pas le faire disparaître de EN/ES simplement parce
+          // qu'on corrige une coquille dans le titre et qu'on ressauvegarde. Un design qui a
+          // déjà une entrée `markets` (même partielle) est en revanche respecté tel quel.
+          var isLegacyItem = !editItem.markets;
+          var m = (editItem.markets && editItem.markets[code]) || {};
+          var availEl = document.getElementById('mf-mkt-' + code + '-avail');
+          var adaptEl = document.getElementById('mf-mkt-' + code + '-adapt');
+          var cidEl = document.getElementById('mf-mkt-' + code + '-cid');
+          var imgEl = document.getElementById('mf-mkt-' + code + '-img');
+          if (availEl) availEl.checked = isLegacyItem ? true : m.available === true;
+          if (adaptEl) adaptEl.checked = m.needsAdaptation === true;
+          if (cidEl) cidEl.value = m.customizationId || '';
+          if (imgEl) imgEl.value = m.imageUrl || '';
+          onMarketAvailChange(code);
+        });
         document.getElementById('mf-tags').value = (editItem.tags || []).join(', ');
         var cpContainer = document.getElementById('mf-campaign-products');
         if (cpContainer) cpContainer.innerHTML = buildCampaignProductsHtml(editItem.niche || '', editItem.campaignProducts || []);
@@ -2911,16 +2982,24 @@ async function submitManual(){
   var alsoInspiration=document.getElementById('mf-also-inspiration').checked;
   var createPage=document.getElementById('mf-create-page').checked;
   var pageDescription=document.getElementById('mf-page-desc').value.trim();
+  var markets={};
+  MARKET_DEFS.forEach(function(md){markets[md.code]=collectMarketData(md.code);});
   var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
   var err=document.getElementById('mf-err');
   if(!url||!cid||!hdl){err.textContent='URL, ID et Handle obligatoires';err.style.display='block';return;}
   if(!tags.length){err.textContent='Au moins un tag';err.style.display='block';return;}
   if(!isEditing&&isAlreadySaved(url)){err.textContent='D\u00e9j\u00e0 dans la galerie';err.style.display='block';return;}
+  var marketsErr=null;
+  MARKET_DEFS.forEach(function(md){
+    var m=markets[md.code];
+    if(m.available&&m.needsAdaptation&&(!m.customizationId||!m.imageUrl))marketsErr='March\u00e9 '+md.label+' : Customization ID et URL du mockup requis quand "N\u00e9cessite une adaptation" est coch\u00e9';
+  });
+  if(marketsErr){err.textContent=marketsErr;err.style.display='block';return;}
   err.style.display='none';
   try{
     var newItems=galleryState.savedItems.slice();
     var campaignProducts=niche?collectCampaignProducts(niche):[];
-    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',showInInspiration:alsoInspiration,campaignProducts:campaignProducts,createPage:createPage,pageDescription:pageDescription,addedAt:new Date().toISOString()};
+    var itemData={imageUrl:url,customizationId:cid,productHandle:hdl,variantId:vid||null,title:ttl,niche:niche||null,tags:tags,source:isOfficial?'official':'customer',showInInspiration:alsoInspiration,campaignProducts:campaignProducts,createPage:createPage,pageDescription:pageDescription,markets:markets,addedAt:new Date().toISOString()};
     if(isEditing){
       var existing=galleryState.savedItems[galleryState.editingItemIndex];
       itemData.addedAt=(existing&&existing.addedAt)||itemData.addedAt;
