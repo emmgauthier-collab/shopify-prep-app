@@ -1458,7 +1458,7 @@ async function regenPrintLotZip(lotId) {
             .filter(([k, v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
             .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {})
         );
-        gasOrders.push({ orderName: order.name, quantity: li.quantity, note: order.note || '', designUrls, customizationJson: annexeJson });
+        gasOrders.push({ orderName: order.name, quantity: li.quantity, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
       }
     }
     const result = await callGas(gasOrders);
@@ -1729,6 +1729,7 @@ async function generatePrintZip() {
         orderName: order.name,
         quantity: li.quantity,
         note: order.note || '',
+        productTitle: li.title || '',
         designUrls,
         customizationJson: annexeJson,
       });
