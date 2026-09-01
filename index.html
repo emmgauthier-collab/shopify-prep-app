@@ -3297,11 +3297,9 @@ function renderDelaisUI() {
     '<div class="form-group"><label>Code promo (laisser vide = pas de code affich\u00e9)</label><input type="text" id="df-fomo-code" value="' + escapeHtml(d.fomoCode) + '"><div class="settings-hint">Un seul code, identique pour tous les march\u00e9s/langues.</div></div>' +
     '<div class="form-group"><label>Fin de l\u2019offre</label><input type="datetime-local" id="df-fomo-fin" value="' + toDatetimeLocal(d.fomoFin) + '"><div class="settings-hint">Sert au compte \u00e0 rebours, masque automatiquement le bandeau une fois pass\u00e9e.</div></div>' +
     '<button class="btn btn-primary" onclick="saveFomo()">Enregistrer le FOMO</button>' +
-    '</div>' +
-
-    '<div class="card">' +
-    '<div class="card-title">\uD83C\uDF10 Texte du bandeau FOMO, par langue</div>' +
-    '<div class="settings-hint" style="margin-bottom:8px;">Le pourcentage et le code restent les m\u00EAmes partout \u2014 seul ce texte peut \u00EAtre diff\u00e9rent par langue. Une langue sans texte enregistr\u00e9 affiche automatiquement le texte FR.</div>' +
+    '<hr style="margin:18px 0;border:none;border-top:1px solid var(--border);">' +
+    '<div style="font-weight:600;margin-bottom:6px;">Texte de l\u2019offre, par langue</div>' +
+    '<div class="settings-hint" style="margin-bottom:8px;">Le pourcentage et le code ci-dessus restent les m\u00EAmes partout \u2014 seul ce texte peut \u00EAtre diff\u00e9rent par langue. Une langue sans texte enregistr\u00e9 affiche automatiquement le texte FR.</div>' +
     renderFomoLocaleTabs() +
     renderFomoLocaleEditor() +
     '</div>' +
@@ -3450,16 +3448,23 @@ async function saveFomoTexte() {
       await metafieldsSetOne('fomo_texte', value, 'single_line_text_field');
     } else {
       if (!d.fomoTexteId) throw new Error('Texte FR de r\u00e9f\u00e9rence introuvable \u2014 enregistre-le d\u2019abord.');
+      // On rafra\u00eechit le digest juste avant d\u2019\u00e9crire, pour \u00e9viter un digest perim\u00e9
+      // si le texte FR a \u00e9t\u00e9 modifi\u00e9 depuis le chargement de la page.
+      await loadFomoTranslations();
       if (value === '') {
-        await gql(
+        const data = await gql(
           'mutation($id:ID!,$locales:[String!]!){ translationsRemove(resourceId:$id, translationKeys:["value"], locales:$locales){ userErrors{ field message } } }',
           { id: d.fomoTexteId, locales: [loc] }
         );
+        const errs = data.translationsRemove.userErrors;
+        if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
       } else {
         const data = await gql(
           'mutation($id:ID!,$t:[TranslationInput!]!){ translationsRegister(resourceId:$id, translations:$t){ userErrors{ field message } } }',
           { id: d.fomoTexteId, t: [{ locale: loc, key: 'value', value: value, translatableContentDigest: d.fomoTexteDigest }] }
         );
+        const errs = data.translationsRegister.userErrors;
+        if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
       }
     }
     showToast('Texte FOMO (' + FOMO_LOCALE_LABELS[loc] + ') enregistr\u00e9');
