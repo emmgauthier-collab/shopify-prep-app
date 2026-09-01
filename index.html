@@ -404,7 +404,12 @@ const state = {
   delais: {
     delaiProduction: '', delaiRush: '', delaiPlancher: '',
     rushProductId: '', rushProductTitle: '', rushActif: false,
-    fomoActif: false, fomoTexte: '', fomoCode: '', fomoFin: '',
+    fomoActif: false, fomoTexte: '', fomoCode: '', fomoFin: '', fomoPourcentage: '',
+    fomoTexteId: '', fomoTexteDigest: '',
+    // Traductions du texte FOMO par marche (langue non-FR). fr = valeur de base ci-dessus.
+    fomoLocales: ['en', 'es', 'de', 'it'],
+    fomoTranslations: { en: { value: '', digest: '', outdated: false }, es: { value: '', digest: '', outdated: false }, de: { value: '', digest: '', outdated: false }, it: { value: '', digest: '', outdated: false } },
+    fomoLocaleTab: 'fr',
     periodes: [], // [{id, debut, fin, label}]
   },
   delaisRushSearchResults: [],
@@ -3117,9 +3122,10 @@ const DELAIS_QUERY = `query {
     rushActif: metafield(namespace: "custom", key: "rush_actif") { value }
     vacances: metafield(namespace: "custom", key: "vacances") { value }
     fomoActif: metafield(namespace: "custom", key: "fomo_actif") { value }
-    fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { value }
+    fomoTexte: metafield(namespace: "custom", key: "fomo_texte") { id value }
     fomoCode: metafield(namespace: "custom", key: "fomo_code") { value }
     fomoFin: metafield(namespace: "custom", key: "fomo_fin") { value }
+    fomoPourcentage: metafield(namespace: "custom", key: "fomo_pourcentage") { value }
     alerteImpression: metafield(namespace: "custom", key: "alerte_delai_impression") { value }
     alerteFournisseur: metafield(namespace: "custom", key: "alerte_delai_fournisseur") { value }
   }
@@ -3150,8 +3156,15 @@ async function loadDelaisData() {
   d.rushActif = s.rushActif ? s.rushActif.value === 'true' : false;
   d.fomoActif = s.fomoActif ? s.fomoActif.value === 'true' : false;
   d.fomoTexte = s.fomoTexte ? s.fomoTexte.value : '';
+  d.fomoTexteId = s.fomoTexte ? s.fomoTexte.id : '';
   d.fomoCode = s.fomoCode ? s.fomoCode.value : '';
   d.fomoFin = s.fomoFin ? s.fomoFin.value : '';
+  d.fomoPourcentage = s.fomoPourcentage ? s.fomoPourcentage.value : '';
+
+  // Traductions du texte FOMO (une par marche/langue publiee, hors FR)
+  if (d.fomoTexteId) {
+    try { await loadFomoTranslations(); } catch (e) { /* pas bloquant */ }
+  }
 
   // Produit rush
   d.rushProductId = ''; d.rushProductTitle = '';
@@ -3180,6 +3193,31 @@ async function loadDelaisData() {
     }
   }
   state.delaisLoaded = true;
+}
+
+// Le texte FOMO peut etre traduit par langue (le code promo et le pourcentage,
+// eux, restent volontairement identiques pour tous les marches).
+const FOMO_TRANSLATIONS_QUERY = `query($id: ID!) {
+  translatableResource(resourceId: $id) {
+    translatableContent { key value digest locale }
+    en: translations(locale: "en") { value outdated }
+    es: translations(locale: "es") { value outdated }
+    de: translations(locale: "de") { value outdated }
+    it: translations(locale: "it") { value outdated }
+  }
+}`;
+
+async function loadFomoTranslations() {
+  const d = state.delais;
+  const data = await gql(FOMO_TRANSLATIONS_QUERY, { id: d.fomoTexteId });
+  const r = data.translatableResource;
+  if (!r) return;
+  const base = (r.translatableContent || []).find(function (c) { return c.key === 'value'; });
+  d.fomoTexteDigest = base ? base.digest : '';
+  d.fomoLocales.forEach(function (loc) {
+    const t = (r[loc] || [])[0];
+    d.fomoTranslations[loc] = { value: t ? t.value : '', outdated: t ? t.outdated : false };
+  });
 }
 
 function escapeHtml(s) {
@@ -3255,10 +3293,17 @@ function renderDelaisUI() {
     '<div class="card">' +
     '<div class="card-title">\uD83D\uDD25 Bandeau FOMO (page produit personnalisation) ' + fomoStatusBadge + '</div>' +
     '<div class="form-group"><label><input type="checkbox" id="df-fomo-actif" ' + (d.fomoActif ? 'checked' : '') + ' style="width:16px;height:16px;vertical-align:middle;margin-right:6px;accent-color:var(--primary);"> Bandeau actif</label></div>' +
-    '<div class="form-group"><label>Texte de l\u2019offre</label><input type="text" id="df-fomo-texte" value="' + escapeHtml(d.fomoTexte) + '" placeholder="ex: -10% sur ta personnalisation"></div>' +
-    '<div class="form-group"><label>Code promo (laisser vide = pas de code affich\u00e9)</label><input type="text" id="df-fomo-code" value="' + escapeHtml(d.fomoCode) + '"></div>' +
+    '<div class="form-group"><label>Pourcentage de r\u00e9duction (%)</label><input type="number" step="0.5" min="0" max="100" id="df-fomo-pourcentage" value="' + escapeHtml(d.fomoPourcentage) + '"><div class="settings-hint">Utilis\u00e9 pour calculer le prix affich\u00e9 dans le bandeau. Identique pour tous les march\u00e9s/langues.</div></div>' +
+    '<div class="form-group"><label>Code promo (laisser vide = pas de code affich\u00e9)</label><input type="text" id="df-fomo-code" value="' + escapeHtml(d.fomoCode) + '"><div class="settings-hint">Un seul code, identique pour tous les march\u00e9s/langues.</div></div>' +
     '<div class="form-group"><label>Fin de l\u2019offre</label><input type="datetime-local" id="df-fomo-fin" value="' + toDatetimeLocal(d.fomoFin) + '"><div class="settings-hint">Sert au compte \u00e0 rebours, masque automatiquement le bandeau une fois pass\u00e9e.</div></div>' +
     '<button class="btn btn-primary" onclick="saveFomo()">Enregistrer le FOMO</button>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">\uD83C\uDF10 Texte du bandeau FOMO, par langue</div>' +
+    '<div class="settings-hint" style="margin-bottom:8px;">Le pourcentage et le code restent les m\u00EAmes partout \u2014 seul ce texte peut \u00EAtre diff\u00e9rent par langue. Une langue sans texte enregistr\u00e9 affiche automatiquement le texte FR.</div>' +
+    renderFomoLocaleTabs() +
+    renderFomoLocaleEditor() +
     '</div>' +
 
     '<div class="card">' +
@@ -3344,18 +3389,80 @@ async function selectRushProduct(id, title) {
 
 async function saveFomo() {
   const actif = document.getElementById('df-fomo-actif').checked;
-  const texte = document.getElementById('df-fomo-texte').value.trim();
+  const pourcentage = document.getElementById('df-fomo-pourcentage').value.trim();
   const code = document.getElementById('df-fomo-code').value.trim();
   const finLocal = document.getElementById('df-fomo-fin').value;
   try {
     await metafieldsSetOne('fomo_actif', actif, 'boolean');
-    await metafieldsSetOne('fomo_texte', texte, 'single_line_text_field');
+    if (pourcentage !== '') await metafieldsSetOne('fomo_pourcentage', pourcentage, 'number_decimal');
     await metafieldsSetOne('fomo_code', code, 'single_line_text_field');
     if (finLocal) {
       const iso = new Date(finLocal).toISOString();
       await metafieldsSetOne('fomo_fin', iso, 'date_time');
     }
     showToast('FOMO enregistr\u00e9');
+    await loadDelaisData(); renderDelaisUI();
+  } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+// \u2500\u2500 Texte FOMO par langue \u2500\u2500
+const FOMO_LOCALE_LABELS = { fr: 'FR (r\u00e9f\u00e9rence)', en: 'EN', es: 'ES', de: 'DE', it: 'IT' };
+
+function renderFomoLocaleTabs() {
+  const d = state.delais;
+  const tabs = ['fr'].concat(d.fomoLocales);
+  return '<div class="tabs" style="margin-bottom:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding:0;background:none;">' +
+    tabs.map(function (loc) {
+      const active = state.delais.fomoLocaleTab === loc;
+      const hasOverride = loc !== 'fr' && d.fomoTranslations[loc] && d.fomoTranslations[loc].value;
+      return '<button class="tab-btn' + (active ? ' active' : '') + '" onclick="switchFomoLocaleTab(\'' + loc + '\')">' +
+        FOMO_LOCALE_LABELS[loc] + (hasOverride ? ' \u2022' : '') + '</button>';
+    }).join('') +
+    '</div>';
+}
+
+function renderFomoLocaleEditor() {
+  const d = state.delais;
+  const loc = d.fomoLocaleTab;
+  const isFr = loc === 'fr';
+  const value = isFr ? d.fomoTexte : (d.fomoTranslations[loc] ? d.fomoTranslations[loc].value : '');
+  const hint = isFr
+    ? 'Texte de r\u00e9f\u00e9rence, utilis\u00e9 par toutes les langues qui n\u2019ont pas leur propre texte ci-dessous.'
+    : 'Laisser vide pour retomber automatiquement sur le texte FR ci-dessus.' +
+      (d.fomoTranslations[loc] && d.fomoTranslations[loc].outdated ? ' <strong style="color:var(--critical, #d82c0d)">Le texte FR a chang\u00e9 depuis cette traduction \u2014 pense \u00e0 la relire.</strong>' : '');
+  return '<div class="form-group"><label>Texte de l\u2019offre \u2014 ' + FOMO_LOCALE_LABELS[loc] + '</label>' +
+    '<input type="text" id="df-fomo-texte-locale" value="' + escapeHtml(value) + '" placeholder="ex: -5% sur ta personnalisation !"></div>' +
+    '<div class="settings-hint" style="margin-bottom:8px;">' + hint + '</div>' +
+    '<button class="btn btn-primary" onclick="saveFomoTexte()">Enregistrer ce texte</button>';
+}
+
+function switchFomoLocaleTab(loc) {
+  state.delais.fomoLocaleTab = loc;
+  renderDelaisUI();
+}
+
+async function saveFomoTexte() {
+  const d = state.delais;
+  const loc = d.fomoLocaleTab;
+  const value = document.getElementById('df-fomo-texte-locale').value.trim();
+  try {
+    if (loc === 'fr') {
+      await metafieldsSetOne('fomo_texte', value, 'single_line_text_field');
+    } else {
+      if (!d.fomoTexteId) throw new Error('Texte FR de r\u00e9f\u00e9rence introuvable \u2014 enregistre-le d\u2019abord.');
+      if (value === '') {
+        await gql(
+          'mutation($id:ID!,$locales:[String!]!){ translationsRemove(resourceId:$id, translationKeys:["value"], locales:$locales){ userErrors{ field message } } }',
+          { id: d.fomoTexteId, locales: [loc] }
+        );
+      } else {
+        const data = await gql(
+          'mutation($id:ID!,$t:[TranslationInput!]!){ translationsRegister(resourceId:$id, translations:$t){ userErrors{ field message } } }',
+          { id: d.fomoTexteId, t: [{ locale: loc, key: 'value', value: value, translatableContentDigest: d.fomoTexteDigest }] }
+        );
+      }
+    }
+    showToast('Texte FOMO (' + FOMO_LOCALE_LABELS[loc] + ') enregistr\u00e9');
     await loadDelaisData(); renderDelaisUI();
   } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
 }
