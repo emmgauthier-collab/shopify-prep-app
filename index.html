@@ -2655,16 +2655,18 @@ function renderBrowsePanel() {
   el.innerHTML = h;
 }
 
-// ── Badges discrets EN/ES : indiquent qu'un design est configuré comme
-// "Disponible sur ce marché" (bloc Marchés du formulaire). Rien ne s'affiche
-// pour les designs legacy sans champ `markets` (implicitement visibles
-// partout, mais pas explicitement adaptés/traduits pour EN ou ES).
+// ── Badges discrets EN/ES : indiquent qu'un design a été explicitement
+// adapté/traduit pour ce marché (case "Nécessite une adaptation du design
+// pour ce marché" cochée dans le bloc Marchés du formulaire). Simplement
+// cocher "Disponible sur ce marché" sans adaptation ne suffit pas : dans ce
+// cas le design FR est réutilisé tel quel, donc pas de badge. Rien ne
+// s'affiche non plus pour les designs legacy sans champ `markets`.
 var MARKET_BADGE_DEFS=[{code:'en',label:'EN',bg:'#1a73e8'},{code:'es',label:'ES',bg:'#c9622a'}];
 function renderMarketBadges(item){
   if(!item||!item.markets) return '';
-  var active=MARKET_BADGE_DEFS.filter(function(d){var m=item.markets[d.code];return m&&m.available;});
+  var active=MARKET_BADGE_DEFS.filter(function(d){var m=item.markets[d.code];return m&&m.needsAdaptation;});
   if(!active.length) return '';
-  return '<div class="market-badges">'+active.map(function(d){return '<span class="market-badge" style="background:'+d.bg+';" title="Disponible marché '+d.label+'">'+d.label+'</span>';}).join('')+'</div>';
+  return '<div class="market-badges">'+active.map(function(d){return '<span class="market-badge" style="background:'+d.bg+';" title="Adapté / traduit pour le marché '+d.label+'">'+d.label+'</span>';}).join('')+'</div>';
 }
 
 // ── Rendu onglet Galerie publiée ──
