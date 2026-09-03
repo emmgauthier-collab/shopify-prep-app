@@ -366,7 +366,7 @@
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
-    <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-badge" class="tab-badge-urgent badge" style="display:none"></span><span id="tab-custom-badge-total" class="tab-badge-total badge" style="display:none"></span></button>
+    <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-custom-badge" class="tab-badge-urgent badge" style="display:none"></span><span id="tab-custom-badge-total" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur <span id="tab-supplier-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-supplier-badge" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">🖼️ Galerie</button>
@@ -734,7 +734,7 @@ async function fetchDelayAlerts() {
         }}
         pageInfo{hasNextPage endCursor}
       }
-    }`, { first: 100, after: cursor, q: 'tag:custom AND (tag:TOORDER OR tag:TODOPRINT) AND status:open' });
+    }`, { first: 100, after: cursor, q: 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)' });
     orders.push(...data.orders.edges.map(e => e.node));
     hasNext = data.orders.pageInfo.hasNextPage; cursor = data.orders.pageInfo.endCursor;
   }
@@ -747,9 +747,16 @@ async function fetchDelayAlerts() {
     const deadline = new Date(raw.slice(0, 10) + 'T00:00:00');
     const daysRemaining = (deadline - today) / 86400000;
     const isRush = o.estRush && o.estRush.value === 'true';
+    const isToOrder = o.tags.includes('TOORDER');
+    const isToPrint = o.tags.includes('TODOPRINT');
     const stages = [];
-    if (o.tags.includes('TODOPRINT') && daysRemaining <= seuilImpression) stages.push('impression');
-    if (o.tags.includes('TOORDER') && daysRemaining <= seuilFournisseur) stages.push('fournisseur');
+    if (isToPrint && daysRemaining <= seuilImpression) stages.push('impression');
+    if (isToOrder && daysRemaining <= seuilFournisseur) stages.push('fournisseur');
+    // Commande qui a déjà quitté les étapes fournisseur/impression (plus de tag
+    // TOORDER ni TODOPRINT) mais toujours pas expédiée après son échéance :
+    // retard générique, probablement bloquée en préparation/expédition —
+    // avant cet ajout, ces commandes ne déclenchaient plus aucune alerte.
+    if (!isToOrder && !isToPrint && daysRemaining <= 0) stages.push('traitement');
     if (stages.length) alerts.push({ id: o.id, name: o.name, daysRemaining, isRush, stages });
   });
   alerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
@@ -764,7 +771,9 @@ function renderDelayAlertBanner(alerts) {
       : (a.daysRemaining < 1 ? "aujourd'hui" : `dans ${Math.ceil(a.daysRemaining)}j`);
     const stageBadges = a.stages.map(s => s === 'impression'
       ? `<span class="badge" style="background:var(--critical);color:#fff;">🖨️ Impression</span>`
-      : `<span class="badge" style="background:var(--critical);color:#fff;">📦 Fournisseur</span>`
+      : s === 'fournisseur'
+      ? `<span class="badge" style="background:var(--critical);color:#fff;">📦 Fournisseur</span>`
+      : `<span class="badge" style="background:var(--critical);color:#fff;">📮 Expédition</span>`
     ).join(' ');
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;">
       <div><strong>${escapeHtml(a.name)}</strong> ${a.isRush ? '<span class="badge badge-critical">🔥 RUSH</span>' : ''} ${stageBadges}</div>
@@ -772,7 +781,7 @@ function renderDelayAlertBanner(alerts) {
     </div>`;
   }).join('');
   return `<div class="card" style="border:2px solid var(--critical);margin-bottom:16px;">
-    <div class="card-title" style="color:var(--critical);">🚨 ${alerts.length} commande${alerts.length>1?'s':''} à risque de retard</div>
+    <div class="card-title" style="color:var(--critical);">🚨 ${alerts.length} commande${alerts.length>1?'s':''} en retard ou à risque de retard</div>
     ${rows}
   </div>`;
 }
@@ -889,10 +898,13 @@ async function renderDashboard() {
     // Points d'alerte retard (🚨) sur les onglets concernés
     const alertDotSupplier = document.getElementById('tab-supplier-alert-dot');
     const alertDotPrint = document.getElementById('tab-print-alert-dot');
+    const alertDotCustom = document.getElementById('tab-custom-alert-dot');
     const hasSupplierAlert = delayAlerts.some(a => a.stages.includes('fournisseur'));
     const hasPrintAlert = delayAlerts.some(a => a.stages.includes('impression'));
+    const hasCustomAlert = delayAlerts.some(a => a.stages.includes('traitement'));
     if (alertDotSupplier) alertDotSupplier.style.display = hasSupplierAlert ? '' : 'none';
     if (alertDotPrint) alertDotPrint.style.display = hasPrintAlert ? '' : 'none';
+    if (alertDotCustom) alertDotCustom.style.display = hasCustomAlert ? '' : 'none';
 
     const ordersWithNotes = notesData.orders.edges.map(e => e.node).filter(o => o.note?.trim());
     const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
