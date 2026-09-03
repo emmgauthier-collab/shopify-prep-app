@@ -833,9 +833,21 @@ function countBusinessDaysBetween(fromDate, toDate, periodes) {
 // Récupère les commandes custom expédiées (hors rush) des ~60 derniers jours,
 // calcule pour chacune le temps réel (création → expédition) en jours ouvrés,
 // et fait la moyenne sur les 7 et les 30 plus récemment expédiées.
-async function fetchProcessingTimeStats() {
+// Lundi (fuseau boutique) de la semaine calendaire contenant `date`, en YYYY-MM-DD.
+function shopWeekStartStr(date) {
+  const dateStr = shopDateStrDash(date);
+  const dow = shopDowDash(date); // 1=lundi..7=dimanche
+  const d = new Date(dateStr + 'T12:00:00Z'); // midi UTC : pas d'ambiguïté DST sur un simple calcul de calendrier
+  d.setUTCDate(d.getUTCDate() - (dow - 1));
+  return d.toISOString().slice(0, 10);
+}
+
+// Commandes custom expédiées (hors rush) groupées par semaine calendaire (lundi->dimanche,
+// fuseau boutique) sur les WEEKS dernières semaines — la plus récente étant en cours.
+async function fetchProcessingTimeWeekly() {
+  const WEEKS = 9; // ~2 mois pleins + la semaine en cours
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 60);
+  cutoff.setDate(cutoff.getDate() - (WEEKS * 7 + 7));
   const cutoffIso = cutoff.toISOString().slice(0, 10);
 
   let orders = [], hasNext = true, cursor = null;
@@ -855,46 +867,150 @@ async function fetchProcessingTimeStats() {
   }
 
   const periodes = (state.delais && state.delais.periodes) || [];
-  const rows = orders
+  const perOrder = orders
     .filter(o => !(o.estRush && o.estRush.value === 'true'))
     .map(o => {
       const shipTimes = (o.fulfillments || []).map(f => new Date(f.createdAt).getTime()).filter(t => !isNaN(t));
       if (!shipTimes.length) return null;
       const shipDate = new Date(Math.max(...shipTimes));
       const createdDate = new Date(o.createdAt);
-      return { name: o.name, shipDate, joursOuvres: countBusinessDaysBetween(createdDate, shipDate, periodes) };
+      return { weekStart: shopWeekStartStr(shipDate), joursOuvres: countBusinessDaysBetween(createdDate, shipDate, periodes) };
     })
-    .filter(Boolean)
-    .sort((a, b) => b.shipDate - a.shipDate);
+    .filter(Boolean);
 
-  const avg = arr => arr.length ? arr.reduce((s, r) => s + r.joursOuvres, 0) / arr.length : null;
-  return {
-    avg7: avg(rows.slice(0, 7)),
-    avg30: avg(rows.slice(0, 30)),
-    count7: Math.min(rows.length, 7),
-    count30: Math.min(rows.length, 30),
-  };
+  const weekKeys = [];
+  let wCursor = new Date(shopWeekStartStr(new Date()) + 'T12:00:00Z');
+  for (let i = 0; i < WEEKS; i++) {
+    weekKeys.unshift(wCursor.toISOString().slice(0, 10));
+    wCursor.setUTCDate(wCursor.getUTCDate() - 7);
+  }
+
+  return weekKeys.map(weekStart => {
+    const rows = perOrder.filter(r => r.weekStart === weekStart);
+    const avg = rows.length ? rows.reduce((s, r) => s + r.joursOuvres, 0) / rows.length : null;
+    return { weekStart, avg, count: rows.length };
+  });
 }
 
-function renderProcessingTimeCard(stats) {
-  if (!stats) return '';
+function fmtJours(v) { return (v === null || v === undefined) ? '—' : (Math.round(v * 10) / 10).toString().replace('.', ',') + 'j'; }
+function fmtWeekLabel(weekStart) {
+  return new Date(weekStart + 'T12:00:00Z').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+// Graphique en ligne (SVG, sans dépendance) : temps de traitement moyen par
+// semaine, hors rush, sur les ~2 derniers mois. Un point par semaine ; les
+// semaines sans commande expédiée cassent la ligne plutôt que d'afficher un
+// faux 0. Voir aussi le bouton "Voir en tableau" pour l'équivalent accessible.
+function renderProcessingTimeChart(buckets) {
+  if (!buckets || !buckets.length) {
+    return `<div class="card"><div class="card-title">⏱️ Temps de traitement moyen (hors rush)</div><div style="font-size:13px;color:var(--text-sub);">Pas assez de données pour le moment.</div></div>`;
+  }
   const target = state.delais && state.delais.delaiProduction ? parseFloat(state.delais.delaiProduction) : null;
-  const fmt = v => (v === null || v === undefined) ? '—' : (Math.round(v * 10) / 10).toString().replace('.', ',') + 'j';
-  const tone = v => {
-    if (v === null || v === undefined || !target) return 'var(--text)';
-    return v <= target ? 'var(--success)' : (v <= target * 1.2 ? 'var(--warning)' : 'var(--critical)');
-  };
+  const values = buckets.map(b => b.avg).filter(v => v !== null && v !== undefined);
+  const maxVal = Math.max(target || 0, values.length ? Math.max(...values) : 0);
+  const yMax = maxVal > 0 ? Math.ceil(maxVal * 1.2) : 1;
+
+  const W = 640, H = 210, padL = 32, padR = 16, padT = 16, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const stepX = buckets.length > 1 ? plotW / (buckets.length - 1) : 0;
+  const xAt = i => padL + i * stepX;
+  const yAt = v => padT + plotH - (v / yMax) * plotH;
+
+  // Segments continus : une rupture de ligne à chaque semaine sans donnée.
+  let segments = [], current = [];
+  buckets.forEach((b, i) => {
+    if (b.avg === null || b.avg === undefined) { if (current.length) { segments.push(current); current = []; } return; }
+    current.push({ x: xAt(i), y: yAt(b.avg) });
+  });
+  if (current.length) segments.push(current);
+  const pathD = segments.map(seg => 'M ' + seg.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ')).join(' ');
+
+  const gridVals = Array.from(new Set(target ? [0, target, yMax] : [0, yMax]));
+  const gridLines = gridVals.map(v => `<line x1="${padL}" y1="${yAt(v).toFixed(1)}" x2="${W - padR}" y2="${yAt(v).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>` +
+    `<text x="${padL - 6}" y="${(yAt(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text-sub)">${v}j</text>`).join('');
+
+  const targetLine = target ? `
+    <line x1="${padL}" y1="${yAt(target).toFixed(1)}" x2="${W - padR}" y2="${yAt(target).toFixed(1)}" stroke="var(--text-sub)" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <text x="${W - padR}" y="${(yAt(target) - 5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text-sub)">cible ${target}j</text>` : '';
+
+  const xLabels = buckets.map((b, i) => `<text x="${xAt(i).toFixed(1)}" y="${H - padB + 16}" text-anchor="middle" font-size="10" fill="var(--text-sub)">${fmtWeekLabel(b.weekStart)}</text>`).join('');
+
+  const points = buckets.map((b, i) => {
+    const x = xAt(i);
+    const hasData = b.avg !== null && b.avg !== undefined;
+    const isLast = i === buckets.length - 1;
+    const y = hasData ? yAt(b.avg) : (padT + plotH);
+    const label = hasData
+      ? `Semaine du ${fmtWeekLabel(b.weekStart)}${isLast ? ' (en cours)' : ''} — ${fmtJours(b.avg)} ouvrés (${b.count} commande${b.count > 1 ? 's' : ''})`
+      : `Semaine du ${fmtWeekLabel(b.weekStart)} — aucune commande expédiée`;
+    // Semaine sans donnée : un petit repère creux sur l'axe plutôt que rien,
+    // pour que le trou dans la ligne se lise comme "vérifié, zéro commande"
+    // et non comme un problème d'affichage.
+    const dot = hasData
+      ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--primary)" stroke="var(--surface)" stroke-width="2"/>`
+      : `<circle cx="${x.toFixed(1)}" cy="${(padT + plotH).toFixed(1)}" r="3" fill="var(--surface)" stroke="var(--text-sub)" stroke-width="1.5"/>`;
+    const endLabel = (hasData && isLast) ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--primary)">${fmtJours(b.avg)}</text>` : '';
+    return `${dot}${endLabel}<circle class="pt-hit" data-label="${escapeHtml(label)}" cx="${x.toFixed(1)}" cy="${(hasData ? y : padT + plotH / 2).toFixed(1)}" r="14" fill="transparent" tabindex="0" aria-label="${escapeHtml(label)}"/>`;
+  }).join('');
+
   return `<div class="card">
     <div class="card-title">⏱️ Temps de traitement moyen (hors rush)</div>
     <div style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">
-      De la création à l'expédition, en jours ouvrés${target ? ` — cible actuelle : ${target}j` : ''}. Commandes rush exclues.
+      De la création à l'expédition, en jours ouvrés — moyenne par semaine sur les 2 derniers mois${target ? ` (cible actuelle : ${target}j)` : ''}. Commandes rush exclues, dernière semaine possiblement partielle.
     </div>
-    <div style="display:flex;gap:28px;flex-wrap:wrap;">
-      <div><div style="font-size:26px;font-weight:800;color:${tone(stats.avg7)};">${fmt(stats.avg7)}</div><div style="font-size:12px;color:var(--text-sub);">7 dernières expédiées (${stats.count7})</div></div>
-      <div><div style="font-size:26px;font-weight:800;color:${tone(stats.avg30)};">${fmt(stats.avg30)}</div><div style="font-size:12px;color:var(--text-sub);">30 dernières expédiées (${stats.count30})</div></div>
+    <div style="position:relative;overflow-x:auto;">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;min-width:480px;display:block;" role="img" aria-label="Temps de traitement moyen par semaine, hors rush, sur les deux derniers mois">
+        ${gridLines}${targetLine}
+        <path d="${pathD}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${points}${xLabels}
+      </svg>
+      <div id="proc-chart-tooltip" style="position:fixed;display:none;pointer-events:none;background:var(--text);color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;z-index:10000;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.25);"></div>
+    </div>
+    <button class="btn" style="margin-top:8px;font-size:12px;padding:4px 10px;" onclick="toggleProcTable()">📋 Voir en tableau</button>
+    <div id="proc-chart-table" style="display:none;margin-top:10px;overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="text-align:left;color:var(--text-sub);border-bottom:1px solid var(--border);">
+          <th style="padding:4px 8px;">Semaine du</th><th style="padding:4px 8px;">Moyenne (j ouvrés)</th><th style="padding:4px 8px;">Commandes expédiées</th>
+        </tr></thead>
+        <tbody>${buckets.map(b => `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:4px 8px;">${fmtWeekLabel(b.weekStart)}</td>
+            <td style="padding:4px 8px;">${fmtJours(b.avg)}</td>
+            <td style="padding:4px 8px;">${b.count}</td>
+          </tr>`).join('')}</tbody>
+      </table>
     </div>
   </div>`;
 }
+
+function toggleProcTable() {
+  const el = document.getElementById('proc-chart-table');
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function showProcTooltip(hitEl) {
+  const tip = document.getElementById('proc-chart-tooltip');
+  if (!tip) return;
+  tip.textContent = hitEl.getAttribute('data-label') || '';
+  const rect = hitEl.getBoundingClientRect();
+  tip.style.left = (rect.left + rect.width / 2) + 'px';
+  tip.style.top = (rect.top - 10) + 'px';
+  tip.style.transform = 'translate(-50%, -100%)';
+  tip.style.display = 'block';
+}
+function hideProcTooltip() {
+  const tip = document.getElementById('proc-chart-tooltip');
+  if (tip) tip.style.display = 'none';
+}
+// Délégué au document (une seule fois) : le graphique est réinjecté à chaque
+// renderDashboard(), pas la peine de raccrocher des écouteurs à chaque fois.
+['pointerover', 'focusin'].forEach(evt => document.addEventListener(evt, e => {
+  const hit = e.target.closest && e.target.closest('.pt-hit');
+  if (hit) showProcTooltip(hit);
+}));
+['pointerout', 'focusout'].forEach(evt => document.addEventListener(evt, e => {
+  const hit = e.target.closest && e.target.closest('.pt-hit');
+  if (hit) hideProcTooltip();
+}));
 
 function renderDelayAlertBanner(alerts) {
   if (!alerts || !alerts.length) return '';
@@ -990,12 +1106,12 @@ async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    // loadDelaisData en premier, \u00e0 part : fetchProcessingTimeStats lit ensuite
+    // loadDelaisData en premier, \u00e0 part : fetchProcessingTimeWeekly lit ensuite
     // state.delais.periodes/delaiProduction, il lui faut ces valeurs d\u00e9j\u00e0 en place
     // (les lancer tous dans le m\u00eame Promise.all cr\u00e9erait une course).
     await loadDelaisData().catch(function () { return loadDelaisData(); }).catch(e => { console.log('Erreur param\u00e8tres rapides:', e.message); });
 
-    const [countsData, notesData, calendarData, delayAlerts, processingStats] = await Promise.all([
+    const [countsData, notesData, calendarData, delayAlerts, processingBuckets] = await Promise.all([
       gql(`query {
         custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
         toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
@@ -1009,7 +1125,7 @@ async function renderDashboard() {
       }`),
       fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; }),
       fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; }),
-      fetchProcessingTimeStats().catch(e => { console.log('Erreur temps de traitement:', e.message); return null; })
+      fetchProcessingTimeWeekly().catch(e => { console.log('Erreur temps de traitement:', e.message); return null; })
     ]);
     state.dashboardCalendarData = calendarData;
     state.dashboardDelayAlerts = delayAlerts;
@@ -1072,7 +1188,7 @@ async function renderDashboard() {
         <div class="stat-card" onclick="switchTab('print')"><div class="stat-label">Préparation impression</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
         <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
       </div>
-      ${renderProcessingTimeCard(processingStats)}
+      ${renderProcessingTimeChart(processingBuckets)}
       ${renderDashboardCalendar()}
       <div class="card">
         <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
