@@ -798,6 +798,104 @@ async function fetchDelayAlerts() {
   return alerts;
 }
 
+
+// ════════════════════════════════════════════
+// TEMPS DE TRAITEMENT MOYEN (hors rush)
+// ════════════════════════════════════════════
+// Mêmes règles de jours ouvrés que lib/delaiCalc.js côté serveur (fuseau
+// boutique, week-ends + périodes de fermeture), mais ici on compte les jours
+// ouvrés écoulés ENTRE deux dates au lieu d'en ajouter à partir d'une seule.
+const SHOP_TZ_DASH = 'Europe/Paris';
+function shopDateStrDash(date) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: SHOP_TZ_DASH, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
+function shopDowDash(date) {
+  const map = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+  return map[new Intl.DateTimeFormat('en-US', { timeZone: SHOP_TZ_DASH, weekday: 'short' }).format(date)];
+}
+function countBusinessDaysBetween(fromDate, toDate, periodes) {
+  const toStr = shopDateStrDash(toDate);
+  if (toStr <= shopDateStrDash(fromDate)) return 0;
+  let compte = 0;
+  let cursor = new Date(fromDate.getTime());
+  for (let i = 0; i < 400; i++) {
+    cursor = new Date(cursor.getTime() + 86400000);
+    const dateStr = shopDateStrDash(cursor);
+    if (dateStr > toStr) break;
+    const dow = shopDowDash(cursor);
+    const isWeekend = dow === 6 || dow === 7;
+    const closed = !isWeekend && (periodes || []).some(p => dateStr >= p.debut && dateStr <= p.fin);
+    if (!isWeekend && !closed) compte++;
+  }
+  return compte;
+}
+
+// Récupère les commandes custom expédiées (hors rush) des ~60 derniers jours,
+// calcule pour chacune le temps réel (création → expédition) en jours ouvrés,
+// et fait la moyenne sur les 7 et les 30 plus récemment expédiées.
+async function fetchProcessingTimeStats() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 60);
+  const cutoffIso = cutoff.toISOString().slice(0, 10);
+
+  let orders = [], hasNext = true, cursor = null;
+  while (hasNext) {
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){
+      orders(first:$first, after:$after, query:$q){
+        edges{node{
+          id name createdAt
+          estRush: metafield(namespace:"custom", key:"est_rush"){value}
+          fulfillments(first:5){createdAt}
+        }}
+        pageInfo{hasNextPage endCursor}
+      }
+    }`, { first: 250, after: cursor, q: `tag:custom AND fulfillment_status:fulfilled AND created_at:>'${cutoffIso}'` });
+    orders.push(...data.orders.edges.map(e => e.node));
+    hasNext = data.orders.pageInfo.hasNextPage; cursor = data.orders.pageInfo.endCursor;
+  }
+
+  const periodes = (state.delais && state.delais.periodes) || [];
+  const rows = orders
+    .filter(o => !(o.estRush && o.estRush.value === 'true'))
+    .map(o => {
+      const shipTimes = (o.fulfillments || []).map(f => new Date(f.createdAt).getTime()).filter(t => !isNaN(t));
+      if (!shipTimes.length) return null;
+      const shipDate = new Date(Math.max(...shipTimes));
+      const createdDate = new Date(o.createdAt);
+      return { name: o.name, shipDate, joursOuvres: countBusinessDaysBetween(createdDate, shipDate, periodes) };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.shipDate - a.shipDate);
+
+  const avg = arr => arr.length ? arr.reduce((s, r) => s + r.joursOuvres, 0) / arr.length : null;
+  return {
+    avg7: avg(rows.slice(0, 7)),
+    avg30: avg(rows.slice(0, 30)),
+    count7: Math.min(rows.length, 7),
+    count30: Math.min(rows.length, 30),
+  };
+}
+
+function renderProcessingTimeCard(stats) {
+  if (!stats) return '';
+  const target = state.delais && state.delais.delaiProduction ? parseFloat(state.delais.delaiProduction) : null;
+  const fmt = v => (v === null || v === undefined) ? '—' : (Math.round(v * 10) / 10).toString().replace('.', ',') + 'j';
+  const tone = v => {
+    if (v === null || v === undefined || !target) return 'var(--text)';
+    return v <= target ? 'var(--success)' : (v <= target * 1.2 ? 'var(--warning)' : 'var(--critical)');
+  };
+  return `<div class="card">
+    <div class="card-title">⏱️ Temps de traitement moyen (hors rush)</div>
+    <div style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">
+      De la création à l'expédition, en jours ouvrés${target ? ` — cible actuelle : ${target}j` : ''}. Commandes rush exclues.
+    </div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;">
+      <div><div style="font-size:26px;font-weight:800;color:${tone(stats.avg7)};">${fmt(stats.avg7)}</div><div style="font-size:12px;color:var(--text-sub);">7 dernières expédiées (${stats.count7})</div></div>
+      <div><div style="font-size:26px;font-weight:800;color:${tone(stats.avg30)};">${fmt(stats.avg30)}</div><div style="font-size:12px;color:var(--text-sub);">30 dernières expédiées (${stats.count30})</div></div>
+    </div>
+  </div>`;
+}
+
 function renderDelayAlertBanner(alerts) {
   if (!alerts || !alerts.length) return '';
   const rows = alerts.map(a => {
@@ -892,7 +990,12 @@ async function renderDashboard() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try {
-    const [countsData, notesData, calendarData, delayAlerts, /* quickSettings */] = await Promise.all([
+    // loadDelaisData en premier, \u00e0 part : fetchProcessingTimeStats lit ensuite
+    // state.delais.periodes/delaiProduction, il lui faut ces valeurs d\u00e9j\u00e0 en place
+    // (les lancer tous dans le m\u00eame Promise.all cr\u00e9erait une course).
+    await loadDelaisData().catch(function () { return loadDelaisData(); }).catch(e => { console.log('Erreur param\u00e8tres rapides:', e.message); });
+
+    const [countsData, notesData, calendarData, delayAlerts, processingStats] = await Promise.all([
       gql(`query {
         custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
         toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
@@ -906,7 +1009,7 @@ async function renderDashboard() {
       }`),
       fetchDashboardCalendarData().catch(e => { console.log('Erreur calendrier:', e.message); return {}; }),
       fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; }),
-      loadDelaisData().catch(function () { return loadDelaisData(); }).catch(e => { console.log('Erreur param\u00e8tres rapides:', e.message); })
+      fetchProcessingTimeStats().catch(e => { console.log('Erreur temps de traitement:', e.message); return null; })
     ]);
     state.dashboardCalendarData = calendarData;
     state.dashboardDelayAlerts = delayAlerts;
@@ -969,6 +1072,7 @@ async function renderDashboard() {
         <div class="stat-card" onclick="switchTab('print')"><div class="stat-label">Préparation impression</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
         <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
       </div>
+      ${renderProcessingTimeCard(processingStats)}
       ${renderDashboardCalendar()}
       <div class="card">
         <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
