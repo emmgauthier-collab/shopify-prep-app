@@ -223,6 +223,11 @@
     #img-modal.open { display: flex; }
     #img-modal img { max-width: 92vw; max-height: 92vh; border-radius: 10px; object-fit: contain; cursor: default; }
     #img-modal-close { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 28px; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+    #img-modal-prev, #img-modal-next { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 32px; line-height: 1; cursor: pointer; border-radius: 50%; width: 48px; height: 48px; display: none; align-items: center; justify-content: center; }
+    #img-modal-prev:hover, #img-modal-next:hover, #img-modal-close:hover { background: rgba(255,255,255,.35); }
+    #img-modal-prev { left: 16px; }
+    #img-modal-next { right: 16px; }
+    #img-modal-caption { position: absolute; bottom: 20px; left: 16px; right: 16px; text-align: center; color: #fff; font-size: 14px; cursor: default; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
 
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
@@ -323,7 +328,10 @@
 
   <div id="img-modal" onclick="closeImgModal()">
     <button id="img-modal-close" onclick="closeImgModal()">✕</button>
+    <button id="img-modal-prev" onclick="imgModalPrev(event)">‹</button>
     <img id="img-modal-src" src="" alt="" onclick="event.stopPropagation()" />
+    <button id="img-modal-next" onclick="imgModalNext(event)">›</button>
+    <div id="img-modal-caption" onclick="event.stopPropagation()"></div>
   </div>
 
   <div id="note-modal">
@@ -540,7 +548,30 @@ function showToast(msg, type = 'success') {
   t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800);
 }
 window.addEventListener('scroll', () => document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200));
-function openImgModal(url) { document.getElementById('img-modal-src').src = url; document.getElementById('img-modal').classList.add('open'); document.body.style.overflow = 'hidden'; }
+// ── Modale image plein écran — navigation entre les visuels d'une même commande ──
+// items: [{url, title}], index: position de depart dans items.
+// Retro-compatible : openImgModal('https://...') (une seule image, appel historique) marche toujours.
+let imgModalItems = [];
+let imgModalIndex = 0;
+function openImgModal(items, index) {
+  if (typeof items === 'string') { imgModalItems = [{ url: items, title: '' }]; imgModalIndex = 0; }
+  else { imgModalItems = items && items.length ? items : []; imgModalIndex = index || 0; }
+  renderImgModal();
+  document.getElementById('img-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function renderImgModal() {
+  const item = imgModalItems[imgModalIndex];
+  if (!item) return;
+  document.getElementById('img-modal-src').src = item.url;
+  const multi = imgModalItems.length > 1;
+  const caption = document.getElementById('img-modal-caption');
+  caption.textContent = multi ? `${item.title || ''} — ${imgModalIndex + 1}/${imgModalItems.length}` : (item.title || '');
+  document.getElementById('img-modal-prev').style.display = multi ? 'flex' : 'none';
+  document.getElementById('img-modal-next').style.display = multi ? 'flex' : 'none';
+}
+function imgModalPrev(e) { if (e) e.stopPropagation(); if (imgModalItems.length < 2) return; imgModalIndex = (imgModalIndex - 1 + imgModalItems.length) % imgModalItems.length; renderImgModal(); }
+function imgModalNext(e) { if (e) e.stopPropagation(); if (imgModalItems.length < 2) return; imgModalIndex = (imgModalIndex + 1) % imgModalItems.length; renderImgModal(); }
 function closeImgModal() { document.getElementById('img-modal').classList.remove('open'); document.body.style.overflow = ''; }
 
 // ── Popup d'alerte sur note de commande ──
@@ -569,9 +600,13 @@ function dismissNoteModal() {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeImgModal(); return; }
+  if (document.getElementById('img-modal').classList.contains('open')) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); imgModalNext(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); imgModalPrev(); }
+    return;
+  }
   if (state.activeTab !== 'custom') return;
   if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
-  if (document.getElementById('img-modal').classList.contains('open')) return;
   if (e.key === 'j') { e.preventDefault(); prevOrder(); }
   if (e.key === 'k') { e.preventDefault(); nextOrder(); }
 });
@@ -1112,6 +1147,22 @@ function renderOrderView() {
   </div>
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
+  // Tous les visuels de la commande, dans l'ordre d'affichage — sert à la navigation
+  // ‹ › dans la modale plein écran (on peut ainsi passer d'un produit à l'autre
+  // sans repasser par la liste).
+  state.currentOrderImgItems = order.lineItems.edges
+    .map(({node:li}) => {
+      const imgAttr = li.customAttributes.find(a => a.key === '_customization_image');
+      const teeinblue = li.variant?.customizationImage?.value || null;
+      const url = imgAttr?.value || teeinblue || null;
+      if (!url) return null;
+      const variant = li.variant?.title;
+      const showVariant = variant && variant !== 'Default Title';
+      return { url, title: li.title + (showVariant ? ` — ${variant}` : '') };
+    })
+    .filter(Boolean);
+
+  let imgItemIndex = -1;
   for (const {node:li} of order.lineItems.edges) {
     const variant = li.variant?.title || '';
     const showVariant = variant && variant !== 'Default Title';
@@ -1120,6 +1171,7 @@ function renderOrderView() {
     const imageUrl = imgAttr?.value || teeinblue || null;
     const sku = li.variant?.imbretexSku?.value || null;
     const visibleAttrs = li.customAttributes.filter(a => !HIDDEN_KEYS.includes(a.key));
+    if (imageUrl) imgItemIndex++;
     html += `<div class="card"><div class="lineitem-grid">
       <div class="qty-cell"><div class="qty-num">${li.quantity}</div><div class="qty-label">Qté</div></div>
       <div>
@@ -1129,7 +1181,7 @@ function renderOrderView() {
         ${visibleAttrs.map(a => `<div class="attr-item">${a.key}: ${a.value}</div>`).join('')}
         ${imageUrl ? `<a href="${imageUrl}" class="dl-link" target="_blank" download>⬇ Télécharger l'image</a>` : ''}
       </div>
-      <div class="img-cell">${imageUrl ? `<img src="${imageUrl}" alt="${li.title}" onclick="openImgModal('${imageUrl}')" loading="lazy"/>` : ''}</div>
+      <div class="img-cell">${imageUrl ? `<img src="${imageUrl}" alt="${li.title}" onclick="openImgModal(state.currentOrderImgItems, ${imgItemIndex})" loading="lazy"/>` : ''}</div>
     </div></div>`;
   }
   html += `</div>`;
