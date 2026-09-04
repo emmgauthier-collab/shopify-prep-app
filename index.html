@@ -89,9 +89,34 @@
     .login-box input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .login-error { color: var(--critical); font-size: 13px; margin-top: 8px; display: none; }
 
-    #topbar { position: sticky; top: 0; z-index: 200; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; height: var(--header-height); display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
-    #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; }
+    /* ── Navigation : sidebar repliable, remplace l'ancienne barre d'onglets du haut ── */
+    #shell { display: flex; align-items: flex-start; flex: 1; min-height: 0; }
+    #sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width .18s ease; z-index: 200; }
+    #sidebar.collapsed { width: 60px; }
+    .sb-brand { display: flex; align-items: center; gap: 8px; padding: 0 16px 16px; font-weight: 700; font-size: 15px; border-bottom: 1px solid var(--border); margin-bottom: 10px; white-space: nowrap; }
+    .sb-brand-icon { font-size: 18px; flex-shrink: 0; }
+    .sb-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; flex: 1; }
+    .sb-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--radius); color: var(--text-sub); font-size: 13.5px; cursor: pointer; white-space: nowrap; border: none; background: none; text-align: left; width: 100%; font-family: inherit; }
+    .sb-item:hover { background: var(--bg); }
+    .sb-item.active { background: var(--success-bg); color: var(--primary); font-weight: 600; }
+    .sb-icon { width: 18px; text-align: center; flex-shrink: 0; font-size: 15px; }
+    .sb-item .sb-label { flex: 1; }
+    .sb-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
+    .sb-badge.urgent { background: var(--critical); color: #fff; border-color: var(--critical); }
+    .sb-alert-dot { color: var(--critical); font-weight: 800; font-size: 12px; }
+    #sidebar.collapsed .sb-item .sb-label, #sidebar.collapsed .sb-item .sb-badge, #sidebar.collapsed .sb-item .sb-alert-dot, #sidebar.collapsed .sb-brand .sb-label { display: none; }
+    #sidebar.collapsed .sb-item { justify-content: center; }
+    #sidebar.collapsed .sb-brand { justify-content: center; padding: 0 0 16px; }
+    .sb-footer { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 8px 0; border-top: 1px solid var(--border); margin-top: 8px; }
+    .sb-fbtn, .sb-toggle { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); width: 32px; height: 32px; cursor: pointer; font-size: 14px; color: var(--text-sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sb-fbtn:hover, .sb-toggle:hover { background: var(--bg); color: var(--text); }
+    #sidebar.collapsed .sb-footer { flex-direction: column; padding: 12px 4px 0; }
 
+    #main { flex: 1; min-width: 0; }
+    #content { padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+    /* ── Sous-onglets réutilisables (ex : langues du texte FOMO) — indépendants
+       de la navigation principale, qui est maintenant portée par la sidebar ── */
     .tabs { display: flex; gap: 4px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 16px; overflow-x: auto; }
     .tab-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 14px; color: var(--text-sub); border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
     .tab-btn:hover { color: var(--text); }
@@ -100,7 +125,18 @@
     .tab-badge-urgent { background: var(--critical); color: #fff; }
     .tab-badge-total { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
 
-    #content { flex: 1; padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    /* ── Puces compactes (remplacent les 4 encarts chiffrés du tableau de bord) ── */
+    .chip-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .chip { display: flex; align-items: baseline; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 12.5px; color: var(--text-sub); cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+    .chip:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+    .chip b { font-size: 15px; color: var(--text); font-weight: 800; }
+    .chip.zero b { color: var(--text-sub); }
+    .chip.urgent { border-color: var(--critical); background: var(--critical-bg); }
+    .chip.urgent b { color: var(--critical); }
+
+    /* ── Ligne secondaire du tableau de bord : graphique (informatif) + notes ── */
+    .dash-secondary-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; margin-top: 16px; }
+    @media (max-width: 900px) { .dash-secondary-grid { grid-template-columns: 1fr; } }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
     .card + .card { margin-top: 12px; }
     .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -132,22 +168,13 @@
     .switch input:checked + .slider::before { transform: translateX(18px); }
     .switch input:disabled + .slider { opacity: .5; cursor: not-allowed; }
 
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: box-shadow .15s, transform .1s; box-shadow: var(--shadow); }
-    .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.15); transform: translateY(-1px); }
-    .stat-card .stat-label { font-size: 13px; color: var(--text-sub); margin-bottom: 4px; }
-    .stat-card .stat-value { font-size: 28px; font-weight: 700; }
-    .stat-card .stat-sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-    .stat-card.urgent { border-color: var(--critical); background: var(--critical-bg); }
-    .stat-card.urgent .stat-value { color: var(--critical); }
-
     .notes-list { display: flex; flex-direction: column; gap: 8px; }
     .note-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: var(--radius); }
     .note-order { font-weight: 700; font-size: 13px; color: var(--critical); white-space: nowrap; }
     .note-text { flex: 1; font-size: 13px; color: var(--text); }
     .note-age { font-size: 11px; white-space: nowrap; }
 
-    #order-sticky { position: sticky; top: var(--header-height); z-index: 100; background: var(--surface); border-bottom: 2px solid var(--border); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    #order-sticky { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 2px solid var(--border); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .order-sticky-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
     .order-sticky-top h2 { font-size: 18px; font-weight: 700; }
     .prep-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -229,6 +256,38 @@
     #img-modal-next { right: 16px; }
     #img-modal-caption { position: absolute; bottom: 20px; left: 16px; right: 16px; text-align: center; color: #fff; font-size: 14px; cursor: default; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
 
+    /* ── Écran de veille — se déclenche après inactivité, palette sombre volontairement
+       distincte du thème clair de l'appli (c'est un mode "vitrine", pas un écran de travail) ── */
+    #screensaver { display: none; position: fixed; inset: 0; z-index: 10000; overflow: hidden;
+      background:
+        radial-gradient(1200px 700px at 15% 15%, #103b2c 0%, transparent 60%),
+        radial-gradient(1000px 800px at 85% 85%, #0d2e22 0%, transparent 55%),
+        linear-gradient(160deg, #071711, #050e0b 60%, #071812);
+      color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      align-items: center; justify-content: center; }
+    #screensaver.open { display: flex; }
+    #screensaver .ss-brand { position: absolute; top: 28px; left: 32px; opacity: .5; font-weight: 700; font-size: 14px; letter-spacing: .04em; }
+    #screensaver .ss-clock { position: absolute; top: 26px; right: 32px; text-align: right; opacity: .55; font-variant-numeric: tabular-nums; }
+    #screensaver .ss-clock .t { font-size: 20px; font-weight: 700; }
+    #screensaver .ss-clock .d { font-size: 11px; text-transform: capitalize; }
+    #screensaver .ss-panel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; opacity: 0; transition: opacity .9s ease; pointer-events: none; }
+    #screensaver .ss-panel.active { opacity: 1; pointer-events: auto; }
+    #screensaver .ss-eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #4fd8a4; margin-bottom: 16px; }
+    #screensaver .ss-hero { font-size: clamp(64px,11vw,140px); font-weight: 800; line-height: .95; letter-spacing: -.02em; background: linear-gradient(135deg,#eafff5,#7fe9bd); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    #screensaver .ss-sub { margin-top: 14px; font-size: 18px; color: rgba(255,255,255,.75); }
+    #screensaver .ss-tag { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.8); padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: 600; }
+    #screensaver .ss-tag.good { background: rgba(79,216,164,.12); border-color: rgba(79,216,164,.35); color: #7fe9bd; }
+    #screensaver .ss-gallery { display: grid; grid-template-columns: repeat(4,140px); gap: 12px; margin-top: 6px; }
+    #screensaver .ss-gcell { width: 140px; height: 140px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); }
+    #screensaver .ss-gcell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #screensaver .ss-quote { font-size: clamp(24px,3.4vw,38px); font-weight: 700; max-width: 880px; line-height: 1.3; }
+    #screensaver .ss-quote-by { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,.45); }
+    #screensaver .ss-dots { position: absolute; bottom: 52px; left: 0; right: 0; display: flex; justify-content: center; gap: 7px; }
+    #screensaver .ss-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.2); transition: background .3s; }
+    #screensaver .ss-dot.active { background: #4fd8a4; }
+    #screensaver .ss-hint { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.35); }
+    @media (max-width: 900px) { #screensaver .ss-gallery { grid-template-columns: repeat(3,110px); } #screensaver .ss-gcell { width: 110px; height: 110px; } }
+
     #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8888; align-items: center; justify-content: center; }
     #settings-modal.open { display: flex; }
 
@@ -272,7 +331,6 @@
       .lineitem-grid { grid-template-columns: 48px 1fr 80px; gap: 10px; }
       .qty-num { font-size: 22px; }
       #content { padding: 10px; }
-      .dashboard-grid { grid-template-columns: 1fr 1fr; }
     }
   /* ── Confetti animation ── */
   @keyframes confettiFall {
@@ -334,6 +392,8 @@
     <div id="img-modal-caption" onclick="event.stopPropagation()"></div>
   </div>
 
+  <div id="screensaver"></div>
+
   <div id="note-modal">
     <div class="note-modal-box">
       <button class="note-modal-close" onclick="dismissNoteModal()" aria-label="Fermer">✕</button>
@@ -366,22 +426,28 @@
     </div>
   </div>
 
-  <div id="topbar">
-    <h1>🎨 Assistant personnalisation</h1>
-    <button class="btn" onclick="openSettings()">⚙️</button>
-    <button class="btn" onclick="logout()" title="Déconnexion">🔒</button>
+  <div id="shell">
+    <aside id="sidebar">
+      <div class="sb-brand"><span class="sb-brand-icon">🎨</span><span class="sb-label">Assistant perso</span></div>
+      <nav class="sb-nav">
+        <button class="sb-item active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="sb-icon">🏠</span><span class="sb-label">Tableau de bord</span></button>
+        <button class="sb-item" data-tab="custom" onclick="switchTab('custom')"><span class="sb-icon">🎨</span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="supplier" onclick="switchTab('supplier')"><span class="sb-icon">📦</span><span class="sb-label">Commande fournisseur</span><span id="tab-supplier-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-supplier-badge" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="print" onclick="switchTab('print')"><span class="sb-icon">🖨️</span><span class="sb-label">Impression</span><span id="tab-print-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-print-badge" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="gallery" onclick="switchTab('gallery')"><span class="sb-icon">🖼️</span><span class="sb-label">Galerie</span></button>
+        <button class="sb-item" data-tab="delaisfomo" onclick="switchTab('delaisfomo')"><span class="sb-icon">⏱️</span><span class="sb-label">Délais &amp; FOMO</span></button>
+      </nav>
+      <div class="sb-footer">
+        <button class="sb-fbtn" onclick="triggerScreensaver()" title="Lancer l'écran de veille">🌙</button>
+        <button class="sb-fbtn" onclick="openSettings()" title="Réglages">⚙️</button>
+        <button class="sb-fbtn" onclick="logout()" title="Déconnexion">🔒</button>
+        <button class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Réduire">◀</button>
+      </div>
+    </aside>
+    <main id="main">
+      <div id="content"></div>
+    </main>
   </div>
-
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Tableau de bord</button>
-    <button class="tab-btn" data-tab="custom" onclick="switchTab('custom')">Commandes custom <span id="tab-custom-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-custom-badge" class="tab-badge-urgent badge" style="display:none"></span><span id="tab-custom-badge-total" class="tab-badge-total badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="supplier" onclick="switchTab('supplier')">Commande fournisseur <span id="tab-supplier-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-supplier-badge" class="tab-badge-total badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="print" onclick="switchTab('print')">🖨️ Impression <span id="tab-print-alert-dot" style="display:none;color:var(--critical);font-weight:800;">🚨</span> <span id="tab-print-badge" class="tab-badge-total badge" style="display:none"></span></button>
-    <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">🖼️ Galerie</button>
-    <button class="tab-btn" data-tab="delaisfomo" onclick="switchTab('delaisfomo')">⏱️ Délais &amp; FOMO</button>
-  </div>
-
-  <div id="content"></div>
 </div>
 
 <button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -406,7 +472,10 @@ const state = {
   printLotsLoaded: false,
   printWizardStep: 1,    // étape affichée du cadre unique (1/2/3)
   dashboardCalendarData: {},
+  dashboardProcessingBuckets: null,
   calendarSelectedDay: null,
+  screensaverGalleryCache: null,
+  screensaverGalleryCacheAt: 0,
   // Délais & FOMO
   delaisLoaded: false,
   delais: {
@@ -462,6 +531,7 @@ async function tryLogin() {
     document.getElementById('login-screen').classList.remove('show');
     document.getElementById('login-error').style.display = 'none';
     renderDashboard();
+    resetScreensaverTimer();
   } catch(e) {
     document.getElementById('login-error').style.display = 'block';
     document.getElementById('login-error').textContent = 'Erreur de connexion — vérifie l\'URL proxy';
@@ -525,7 +595,7 @@ async function callGas(orders) {
 function switchTab(tab) {
   if (!checkAuth()) return;
   state.activeTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (!state.proxyUrl) {
     document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
     return;
@@ -537,6 +607,26 @@ function switchTab(tab) {
     return;
   }
 else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab })[tab]?.();
+}
+
+// ── Sidebar repliable — préférence mémorisée, et repliée par défaut sur petit écran
+// (première visite seulement : une fois que l'utilisateur a choisi, on respecte son choix) ──
+function toggleSidebar() {
+  const el = document.getElementById('sidebar');
+  const collapsed = el.classList.toggle('collapsed');
+  const btn = document.getElementById('sb-toggle-btn');
+  if (btn) { btn.textContent = collapsed ? '▶' : '◀'; btn.title = collapsed ? 'Déplier' : 'Réduire'; }
+  try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+}
+function initSidebarState() {
+  const el = document.getElementById('sidebar');
+  if (!el) return;
+  let stored = null;
+  try { stored = localStorage.getItem('sidebarCollapsed'); } catch (e) {}
+  const collapsed = stored !== null ? stored === '1' : window.innerWidth < 900;
+  el.classList.toggle('collapsed', collapsed);
+  const btn = document.getElementById('sb-toggle-btn');
+  if (btn) { btn.textContent = collapsed ? '▶' : '◀'; btn.title = collapsed ? 'Déplier' : 'Réduire'; }
 }
 
 // ════════════════════════════════════════════
@@ -599,6 +689,9 @@ function dismissNoteModal() {
   document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => {
+  // Le premier appui pendant la veille sert uniquement à la fermer (resetScreensaverTimer
+  // s'en charge) — on ne laisse pas ce même appui déclencher un raccourci de l'appli en dessous.
+  if (document.getElementById('screensaver')?.classList.contains('open')) return;
   if (e.key === 'Escape') { closeImgModal(); return; }
   if (document.getElementById('img-modal').classList.contains('open')) {
     if (e.key === 'ArrowRight') { e.preventDefault(); imgModalNext(); }
@@ -613,6 +706,151 @@ document.addEventListener('keydown', e => {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 });
+
+// ════════════════════════════════════════════
+// ÉCRAN DE VEILLE — se déclenche après 5 min d'inactivité, revient au tableau
+// de bord dès la moindre interaction. Contenu "vitrine" (chiffres + ambiance),
+// pas de logique métier ici : les données sont réutilisées telles quelles
+// depuis le dernier chargement du tableau de bord (state.dashboard*).
+// ════════════════════════════════════════════
+const SCREENSAVER_IDLE_MS = 5 * 60 * 1000;
+const SCREENSAVER_QUOTES = [
+  "Chaque commande préparée, c'est un athlète qui reçoit ce qu'il a imaginé.",
+  "Le détail qui fait la différence, c'est celui que personne ne voit — sauf le client.",
+  "Une pièce personnalisée bien préparée, c'est une promesse tenue.",
+  "Derrière chaque colis, une histoire de sport et de dépassement.",
+];
+let screensaverTimer = null, screensaverRotateTimer = null, screensaverClockTimer = null, screensaverPanelIdx = 0;
+
+function resetScreensaverTimer() {
+  const el = document.getElementById('screensaver');
+  if (el && el.classList.contains('open')) closeScreensaver();
+  clearTimeout(screensaverTimer);
+  screensaverTimer = setTimeout(triggerScreensaver, SCREENSAVER_IDLE_MS);
+}
+['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel'].forEach(evt => document.addEventListener(evt, resetScreensaverTimer, { passive: true }));
+
+async function triggerScreensaver() {
+  if (!state.isLoggedIn) return;
+  // Ne pas s'afficher par-dessus une modale déjà ouverte (image plein écran, note, réglages)
+  if (['img-modal', 'note-modal', 'settings-modal'].some(id => document.getElementById(id)?.classList.contains('open'))) {
+    screensaverTimer = setTimeout(triggerScreensaver, SCREENSAVER_IDLE_MS);
+    return;
+  }
+  await openScreensaver();
+}
+
+async function fetchScreensaverGallery() {
+  const now = Date.now();
+  if (state.screensaverGalleryCache && (now - state.screensaverGalleryCacheAt) < 10 * 60 * 1000) return state.screensaverGalleryCache;
+  try {
+    const data = await gql(`query {
+      orders(first: 12, reverse: true, sortKey: CREATED_AT, query: "tag:custom") {
+        edges { node {
+          lineItems(first: 5) { edges { node {
+            variant { customizationImage: metafield(namespace:"teeinblue", key:"customization_image") { value } }
+            customAttributes { key value }
+          }}}
+        }}
+      }
+    }`);
+    const urls = [];
+    for (const { node: o } of data.orders.edges) {
+      for (const { node: li } of o.lineItems.edges) {
+        const imgAttr = li.customAttributes.find(a => a.key === '_customization_image');
+        const url = imgAttr?.value || li.variant?.customizationImage?.value || null;
+        if (url) { urls.push(url); break; } // une image par commande suffit pour la mosaïque
+      }
+      if (urls.length >= 8) break;
+    }
+    state.screensaverGalleryCache = urls;
+    state.screensaverGalleryCacheAt = now;
+    return urls;
+  } catch (e) { console.log('Erreur galerie veille:', e.message); return state.screensaverGalleryCache || []; }
+}
+
+async function buildScreensaverPanels() {
+  const panels = [];
+
+  const buckets = (state.dashboardProcessingBuckets || []).filter(b => b.count > 0);
+  const lastWeek = buckets[buckets.length - 1];
+  if (lastWeek) {
+    const target = Number(state.delais?.delaiProduction) || null;
+    const underTarget = target && lastWeek.avg !== null && lastWeek.avg <= target;
+    panels.push(`
+      <div class="ss-eyebrow">Cette semaine</div>
+      <div class="ss-hero">${lastWeek.count}</div>
+      <div class="ss-sub">commande${lastWeek.count > 1 ? 's' : ''} custom traitée${lastWeek.count > 1 ? 's' : ''} (hors rush)</div>
+      ${lastWeek.avg !== null ? `<div class="ss-tag ${underTarget ? 'good' : ''}">${underTarget ? '✅' : '⏱️'} Temps moyen ${fmtJours(lastWeek.avg)}${target ? ` — cible ${target}j` : ''}</div>` : ''}
+    `);
+  }
+
+  const gallery = await fetchScreensaverGallery();
+  if (gallery.length) {
+    panels.push(`
+      <div class="ss-eyebrow">Vos créations récentes</div>
+      <div class="ss-gallery">${gallery.slice(0, 8).map(u => `<div class="ss-gcell"><img src="${u}" alt="" loading="lazy"></div>`).join('')}</div>
+    `);
+  }
+
+  if (Array.isArray(state.dashboardDelayAlerts) && state.dashboardDelayAlerts.length === 0) {
+    panels.push(`
+      <div class="ss-eyebrow">État actuel</div>
+      <div class="ss-quote">✅ Aucune commande en retard actuellement</div>
+    `);
+  }
+
+  const quote = SCREENSAVER_QUOTES[Math.floor(Math.random() * SCREENSAVER_QUOTES.length)];
+  panels.push(`<div class="ss-quote">"${quote}"</div><div class="ss-quote-by">— L'équipe RXWEAR</div>`);
+
+  return panels;
+}
+
+function updateScreensaverPanel() {
+  document.querySelectorAll('#screensaver .ss-panel').forEach((p, i) => p.classList.toggle('active', i === screensaverPanelIdx));
+  document.querySelectorAll('#screensaver .ss-dot').forEach((d, i) => d.classList.toggle('active', i === screensaverPanelIdx));
+}
+
+function startScreensaverClock() {
+  const tick = () => {
+    const el = document.getElementById('ss-clock');
+    if (!el) return;
+    const now = new Date();
+    el.innerHTML = `<div class="t">${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div><div class="d">${now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</div>`;
+  };
+  tick();
+  clearInterval(screensaverClockTimer);
+  screensaverClockTimer = setInterval(tick, 30000);
+}
+
+async function openScreensaver() {
+  const panels = await buildScreensaverPanels();
+  if (!panels.length) { screensaverTimer = setTimeout(triggerScreensaver, SCREENSAVER_IDLE_MS); return; }
+  const el = document.getElementById('screensaver');
+  screensaverPanelIdx = 0;
+  el.innerHTML = `
+    <div class="ss-brand">🎨 RXWEAR</div>
+    <div class="ss-clock" id="ss-clock"></div>
+    ${panels.map((html, i) => `<div class="ss-panel ${i === 0 ? 'active' : ''}">${html}</div>`).join('')}
+    ${panels.length > 1 ? `<div class="ss-dots">${panels.map((_, i) => `<span class="ss-dot ${i === 0 ? 'active' : ''}"></span>`).join('')}</div>` : ''}
+    <div class="ss-hint">bouge la souris ou appuie sur une touche pour revenir</div>
+  `;
+  el.classList.add('open');
+  startScreensaverClock();
+  clearInterval(screensaverRotateTimer);
+  if (panels.length > 1) {
+    screensaverRotateTimer = setInterval(() => {
+      screensaverPanelIdx = (screensaverPanelIdx + 1) % panels.length;
+      updateScreensaverPanel();
+    }, 7000);
+  }
+}
+
+function closeScreensaver() {
+  document.getElementById('screensaver').classList.remove('open');
+  clearInterval(screensaverRotateTimer);
+  clearInterval(screensaverClockTimer);
+}
 
 // ════════════════════════════════════════════
 // DASHBOARD
@@ -1129,6 +1367,7 @@ async function renderDashboard() {
     ]);
     state.dashboardCalendarData = calendarData;
     state.dashboardDelayAlerts = delayAlerts;
+    state.dashboardProcessingBuckets = processingBuckets;
 
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
     // ── Badges tous les onglets ──
@@ -1182,17 +1421,19 @@ async function renderDashboard() {
         <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
       </div>
       ${renderDelayAlertBanner(delayAlerts)}
-      <div class="dashboard-grid">
-        <div class="stat-card" onclick="goToCustom(false)"><div class="stat-label">Commandes custom</div><div class="stat-value">${counts.custom}</div><div class="stat-sub">À traiter</div></div>
-        <div class="stat-card" onclick="switchTab('supplier')"><div class="stat-label">Import fournisseur</div><div class="stat-value">${counts.toorder}</div><div class="stat-sub">Balise TOORDER</div></div>
-        <div class="stat-card" onclick="switchTab('print')"><div class="stat-label">Préparation impression</div><div class="stat-value">${counts.todoprint}</div><div class="stat-sub">Balise TODOPRINT</div></div>
-        <div class="stat-card ${counts.urgent > 0 ? 'urgent' : ''}" onclick="goToCustom(true)"><div class="stat-label">Commandes urgentes</div><div class="stat-value">${counts.urgent}</div><div class="stat-sub">Balise urgent / URGENT</div></div>
+      <div class="chip-row">
+        <div class="chip" onclick="goToCustom(false)">Commandes custom <b>${counts.custom}</b></div>
+        <div class="chip" onclick="switchTab('supplier')">Fournisseur <b>${counts.toorder}</b></div>
+        <div class="chip" onclick="switchTab('print')">Impression <b>${counts.todoprint}</b></div>
+        <div class="chip ${counts.urgent > 0 ? 'urgent' : 'zero'}" onclick="goToCustom(true)">Urgentes <b>${counts.urgent}</b></div>
       </div>
-      ${renderProcessingTimeChart(processingBuckets)}
       ${renderDashboardCalendar()}
-      <div class="card">
-        <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
-        ${notesHtml}
+      <div class="dash-secondary-grid">
+        <div>${renderProcessingTimeChart(processingBuckets)}</div>
+        <div class="card">
+          <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
+          ${notesHtml}
+        </div>
       </div>`;
   } catch(err) {
     c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`;
@@ -2172,6 +2413,8 @@ loadSettings();
 if (!state.proxyUrl) setTimeout(openSettings, 300);
 else if (!state.isLoggedIn) document.getElementById('login-screen').classList.add('show');
 else renderDashboard();
+resetScreensaverTimer();
+initSidebarState();
 
 
 // ════════════════════════════════════════════
@@ -3164,7 +3407,7 @@ function renderGalleryUI() {
   var total = galleryState.savedItems.length;
 
   // Barre sticky
-  var h = '<div style="position:sticky;top:var(--header-height);z-index:150;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;margin:-16px -16px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);">';
+  var h = '<div style="position:sticky;top:0;z-index:150;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;margin:-16px -16px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);">';
   h += '<div style="display:flex;gap:0;">';
   // Onglets principaux
   h += '<button onclick="galleryState.galleryTab=\'browse\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='browse'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#128247; Parcourir</button>';
@@ -3186,7 +3429,7 @@ function renderGalleryUI() {
   if (galleryState.galleryTab === 'browse') {
     h += '<div class="gallery-layout">';
     h += '<div class="gallery-panel"><div class="gallery-panel-header"><h3>&#128247; Rendus des commandes</h3></div><div class="gallery-panel-body" id="gallery-browse-panel"></div></div>';
-    h += '<div class="gallery-panel" style="position:sticky;top:calc(var(--header-height) + 56px);">'+renderSelPanel()+'</div>';
+    h += '<div class="gallery-panel" style="position:sticky;top:56px;">'+renderSelPanel()+'</div>';
     h += '</div>';
   } else if (galleryState.galleryTab === 'published') {
     h += '<div class="gallery-panel"><div class="gallery-panel-body">'+renderSavedPanel()+'</div></div>';
