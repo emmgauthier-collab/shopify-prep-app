@@ -430,12 +430,12 @@
     <aside id="sidebar">
       <div class="sb-brand"><span class="sb-brand-icon">🎨</span><span class="sb-label">Assistant perso</span></div>
       <nav class="sb-nav">
-        <button class="sb-item active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="sb-icon">🏠</span><span class="sb-label">Tableau de bord</span></button>
-        <button class="sb-item" data-tab="custom" onclick="switchTab('custom')"><span class="sb-icon">🎨</span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></button>
-        <button class="sb-item" data-tab="supplier" onclick="switchTab('supplier')"><span class="sb-icon">📦</span><span class="sb-label">Commande fournisseur</span><span id="tab-supplier-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-supplier-badge" class="sb-badge" style="display:none"></span></button>
-        <button class="sb-item" data-tab="print" onclick="switchTab('print')"><span class="sb-icon">🖨️</span><span class="sb-label">Impression</span><span id="tab-print-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-print-badge" class="sb-badge" style="display:none"></span></button>
-        <button class="sb-item" data-tab="gallery" onclick="switchTab('gallery')"><span class="sb-icon">🖼️</span><span class="sb-label">Galerie</span></button>
-        <button class="sb-item" data-tab="delaisfomo" onclick="switchTab('delaisfomo')"><span class="sb-icon">⏱️</span><span class="sb-label">Délais &amp; FOMO</span></button>
+        <button class="sb-item active" data-tab="dashboard" onclick="switchTab('dashboard')" title="Tableau de bord"><span class="sb-icon">🏠</span><span class="sb-label">Tableau de bord</span></button>
+        <button class="sb-item" data-tab="custom" onclick="switchTab('custom')" title="Commandes custom"><span class="sb-icon">🎨</span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="supplier" onclick="switchTab('supplier')" title="Commande fournisseur"><span class="sb-icon">📦</span><span class="sb-label">Commande fournisseur</span><span id="tab-supplier-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-supplier-badge" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="print" onclick="switchTab('print')" title="Impression"><span class="sb-icon">🖨️</span><span class="sb-label">Impression</span><span id="tab-print-alert-dot" class="sb-alert-dot" style="display:none;">🚨</span><span id="tab-print-badge" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="gallery" onclick="switchTab('gallery')" title="Galerie"><span class="sb-icon">🖼️</span><span class="sb-label">Galerie</span></button>
+        <button class="sb-item" data-tab="delaisfomo" onclick="switchTab('delaisfomo')" title="Délais &amp; FOMO"><span class="sb-icon">⏱️</span><span class="sb-label">Délais &amp; FOMO</span></button>
       </nav>
       <div class="sb-footer">
         <button class="sb-fbtn" onclick="triggerScreensaver()" title="Lancer l'écran de veille">🌙</button>
@@ -609,7 +609,7 @@ function switchTab(tab) {
 else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab })[tab]?.();
 }
 
-// ── Sidebar repliable — préférence mémorisée, et repliée par défaut sur petit écran
+// ── Sidebar repliable — préférence mémorisée, et repliée (icônes seules) par défaut
 // (première visite seulement : une fois que l'utilisateur a choisi, on respecte son choix) ──
 function toggleSidebar() {
   const el = document.getElementById('sidebar');
@@ -623,7 +623,7 @@ function initSidebarState() {
   if (!el) return;
   let stored = null;
   try { stored = localStorage.getItem('sidebarCollapsed'); } catch (e) {}
-  const collapsed = stored !== null ? stored === '1' : window.innerWidth < 900;
+  const collapsed = stored !== null ? stored === '1' : true;
   el.classList.toggle('collapsed', collapsed);
   const btn = document.getElementById('sb-toggle-btn');
   if (btn) { btn.textContent = collapsed ? '▶' : '◀'; btn.title = collapsed ? 'Déplier' : 'Réduire'; }
