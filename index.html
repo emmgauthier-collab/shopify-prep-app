@@ -89,32 +89,31 @@
     .login-box input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
     .login-error { color: var(--critical); font-size: 13px; margin-top: 8px; display: none; }
 
-    /* ── Navigation : sidebar repliable, remplace l'ancienne barre d'onglets du haut ── */
+    /* ── Navigation : rail latéral fixe (icônes + alertes toujours visibles),
+       remplace l'ancienne barre d'onglets du haut. Pas de mode replié/déplié :
+       une seule largeur, volontairement compacte mais assez large pour les badges. ── */
     #shell { display: flex; align-items: flex-start; flex: 1; min-height: 0; }
-    #sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width .18s ease; z-index: 200; }
-    #sidebar.collapsed { width: 68px; }
-    .sb-brand { display: flex; align-items: center; gap: 8px; padding: 0 16px 16px; font-weight: 700; font-size: 15px; border-bottom: 1px solid var(--border); margin-bottom: 10px; white-space: nowrap; }
+    #sidebar { width: 96px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 200; }
+    .sb-brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 8px 16px; font-weight: 700; font-size: 15px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
     .sb-brand-icon { font-size: 18px; flex-shrink: 0; display: flex; }
     .sb-brand-icon svg { width: 20px; height: 20px; stroke-width: 2; }
+    .sb-brand .sb-label { display: none; }
     .sb-nav { display: flex; flex-direction: column; gap: 4px; padding: 0 8px; flex: 1; }
-    .sb-item { display: flex; align-items: center; gap: 12px; padding: 11px 12px; min-height: 44px; border-radius: var(--radius); color: var(--text-sub); font-size: 14px; cursor: pointer; white-space: nowrap; border: none; background: none; text-align: left; width: 100%; font-family: inherit; }
+    .sb-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 4px; min-height: 52px; border-radius: var(--radius); color: var(--text-sub); font-size: 14px; cursor: pointer; border: none; background: none; width: 100%; font-family: inherit; }
     .sb-item:hover { background: var(--bg); }
     .sb-item.active { background: var(--success-bg); color: var(--primary); font-weight: 600; }
     .sb-icon { width: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .sb-icon svg { width: 22px; height: 22px; stroke-width: 2; }
-    .sb-item .sb-label { flex: 1; }
-    .sb-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
+    .sb-item .sb-label { display: none; }
+    .sb-badges { display: flex; align-items: center; justify-content: center; gap: 3px; flex-wrap: wrap; }
+    .sb-badge { display: inline-block; font-size: 10px; line-height: 14px; font-weight: 700; padding: 0 6px; border-radius: 10px; background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
     .sb-badge.urgent { background: var(--critical); color: #fff; border-color: var(--critical); }
-    .sb-alert-dot { color: var(--critical); display: flex; flex-shrink: 0; }
+    .sb-alert-dot { position: absolute; top: 6px; right: 16px; color: var(--critical); display: flex; flex-shrink: 0; background: var(--surface); border-radius: 50%; }
     .sb-alert-dot svg { width: 14px; height: 14px; }
-    #sidebar.collapsed .sb-item .sb-label, #sidebar.collapsed .sb-item .sb-badge, #sidebar.collapsed .sb-item .sb-alert-dot, #sidebar.collapsed .sb-brand .sb-label { display: none; }
-    #sidebar.collapsed .sb-item { justify-content: center; padding: 11px 8px; }
-    #sidebar.collapsed .sb-brand { justify-content: center; padding: 0 0 16px; }
-    .sb-footer { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 8px 0; border-top: 1px solid var(--border); margin-top: 8px; }
-    .sb-fbtn, .sb-toggle { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); width: 44px; height: 44px; cursor: pointer; font-size: 14px; color: var(--text-sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .sb-fbtn svg, .sb-toggle svg { width: 19px; height: 19px; stroke-width: 2; }
-    .sb-fbtn:hover, .sb-toggle:hover { background: var(--bg); color: var(--text); }
-    #sidebar.collapsed .sb-footer { flex-direction: column; padding: 12px 4px 0; }
+    .sb-footer { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px 0; border-top: 1px solid var(--border); margin-top: 8px; }
+    .sb-fbtn { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); width: 44px; height: 44px; cursor: pointer; font-size: 14px; color: var(--text-sub); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sb-fbtn svg { width: 19px; height: 19px; stroke-width: 2; }
+    .sb-fbtn:hover { background: var(--bg); color: var(--text); }
 
     #main { flex: 1; min-width: 0; }
     #content { padding: 16px; max-width: 1100px; margin: 0 auto; width: 100%; }
@@ -435,7 +434,7 @@
       <div class="sb-brand"><span class="sb-brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></span><span class="sb-label">Assistant perso</span></div>
       <nav class="sb-nav">
         <button class="sb-item active" data-tab="dashboard" onclick="switchTab('dashboard')" title="Tableau de bord"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="sb-label">Tableau de bord</span></button>
-        <button class="sb-item" data-tab="custom" onclick="switchTab('custom')" title="Commandes custom"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 .55.45 1 1 1h10c.55 0 1-.45 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="custom" onclick="switchTab('custom')" title="Commandes custom"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 .55.45 1 1 1h10c.55 0 1-.45 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span class="sb-badges"><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></span></button>
         <button class="sb-item" data-tab="supplier" onclick="switchTab('supplier')" title="Commande fournisseur"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="sb-label">Commande fournisseur</span><span id="tab-supplier-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-supplier-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="print" onclick="switchTab('print')" title="Impression"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="sb-label">Impression</span><span id="tab-print-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-print-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="gallery" onclick="switchTab('gallery')" title="Galerie"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="sb-label">Galerie</span></button>
@@ -445,7 +444,6 @@
         <button class="sb-fbtn" onclick="triggerScreensaver()" title="Lancer l'écran de veille"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
         <button class="sb-fbtn" onclick="openSettings()" title="Réglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
         <button class="sb-fbtn" onclick="logout()" title="Déconnexion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
-        <button class="sb-toggle" id="sb-toggle-btn" onclick="toggleSidebar()" title="Réduire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
       </div>
     </aside>
     <main id="main">
@@ -458,9 +456,6 @@
 <div id="toast"></div>
 
 <script>
-
-const SVG_CHEVRON_LEFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
-const SVG_CHEVRON_RIGHT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
 
 const state = {
   activeTab: 'dashboard',
@@ -615,25 +610,7 @@ function switchTab(tab) {
 else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab })[tab]?.();
 }
 
-// ── Sidebar repliable — préférence mémorisée, et repliée (icônes seules) par défaut
-// (première visite seulement : une fois que l'utilisateur a choisi, on respecte son choix) ──
-function toggleSidebar() {
-  const el = document.getElementById('sidebar');
-  const collapsed = el.classList.toggle('collapsed');
-  const btn = document.getElementById('sb-toggle-btn');
-  if (btn) { btn.innerHTML = collapsed ? SVG_CHEVRON_RIGHT : SVG_CHEVRON_LEFT; btn.title = collapsed ? 'Déplier' : 'Réduire'; }
-  try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
-}
-function initSidebarState() {
-  const el = document.getElementById('sidebar');
-  if (!el) return;
-  let stored = null;
-  try { stored = localStorage.getItem('sidebarCollapsed'); } catch (e) {}
-  const collapsed = stored !== null ? stored === '1' : true;
-  el.classList.toggle('collapsed', collapsed);
-  const btn = document.getElementById('sb-toggle-btn');
-  if (btn) { btn.innerHTML = collapsed ? SVG_CHEVRON_RIGHT : SVG_CHEVRON_LEFT; btn.title = collapsed ? 'Déplier' : 'Réduire'; }
-}
+// ── Sidebar : rail fixe, plus de mode replié/déplié (voir #sidebar en CSS) ──
 
 // ════════════════════════════════════════════
 // UTILS
@@ -1453,13 +1430,21 @@ function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); 
 const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName }
   dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
   estRush: metafield(namespace: "custom", key: "est_rush") { value }
-  lineItems(first: 250) { edges { node { id title quantity
+  lineItems(first: 250) { edges { node { id title quantity currentQuantity
     variant { title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
       imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value }
     }
     customAttributes { key value }
   }}}`;
+
+// Ne garde que les lignes de commande encore actives : `quantity` inclut les unités
+// remboursées/retirées, alors que `currentQuantity` les exclut. Un produit annulé
+// (édition de commande, remboursement) a currentQuantity = 0 et ne doit apparaître
+// nulle part dans l'app (préparation, export fournisseur, impression).
+function activeLineItemEdges(order) {
+  return (order.lineItems?.edges || []).filter(({ node: li }) => li.currentQuantity > 0);
+}
 
 // Trie par "à traiter avant" (date_limite_traitement) croissant : l'échéance la plus proche en premier.
 // Les commandes sans échéance connue (webhook pas encore passé dessus) sont reléguées en fin de liste,
@@ -1575,13 +1560,14 @@ function renderOrderView() {
   const hasNote = !!(order.note?.trim());
   const customerName = order.customer ? `${order.customer.firstName||''} ${order.customer.lastName||''}`.trim() : '';
   const orderDate = new Date(order.createdAt).toLocaleDateString('fr-FR');
-  const totalQty = order.lineItems.edges.reduce((s,{node:li}) => s+li.quantity, 0);
+  const activeItems = activeLineItemEdges(order);
+  const totalQty = activeItems.reduce((s,{node:li}) => s+li.currentQuantity, 0);
   const ageInDays = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 86400000);
   const ageTone = ageInDays < 5 ? 'success' : ageInDays <= 10 ? 'warning' : 'critical';
   const ageLabel = ageInDays < 5 ? 'Récente' : ageInDays <= 10 ? 'En retard' : 'Critique';
-  const prepItems = order.lineItems.edges.map(({node:li}) => {
+  const prepItems = activeItems.map(({node:li}) => {
     const v = li.variant?.title; const sv = v && v!=='Default Title';
-    return `<span class="prep-item"><strong>${li.quantity}×</strong> ${li.title}${sv?` — ${v}`:''}</span>`;
+    return `<span class="prep-item"><strong>${li.currentQuantity}×</strong> ${li.title}${sv?` — ${v}`:''}</span>`;
   }).join('');
 
   // ── Délai de traitement (rempli par le webhook order-delai-webhook) ──
@@ -1617,7 +1603,7 @@ function renderOrderView() {
   // Tous les visuels de la commande, dans l'ordre d'affichage — sert à la navigation
   // ‹ › dans la modale plein écran (on peut ainsi passer d'un produit à l'autre
   // sans repasser par la liste).
-  state.currentOrderImgItems = order.lineItems.edges
+  state.currentOrderImgItems = activeItems
     .map(({node:li}) => {
       const imgAttr = li.customAttributes.find(a => a.key === '_customization_image');
       const teeinblue = li.variant?.customizationImage?.value || null;
@@ -1630,7 +1616,7 @@ function renderOrderView() {
     .filter(Boolean);
 
   let imgItemIndex = -1;
-  for (const {node:li} of order.lineItems.edges) {
+  for (const {node:li} of activeItems) {
     const variant = li.variant?.title || '';
     const showVariant = variant && variant !== 'Default Title';
     const imgAttr = li.customAttributes.find(a => a.key === '_customization_image');
@@ -1640,7 +1626,7 @@ function renderOrderView() {
     const visibleAttrs = li.customAttributes.filter(a => !HIDDEN_KEYS.includes(a.key));
     if (imageUrl) imgItemIndex++;
     html += `<div class="card"><div class="lineitem-grid">
-      <div class="qty-cell"><div class="qty-num">${li.quantity}</div><div class="qty-label">Qté</div></div>
+      <div class="qty-cell"><div class="qty-num">${li.currentQuantity}</div><div class="qty-label">Qté</div></div>
       <div>
         <div class="product-title">${li.title}</div>
         ${showVariant ? `<div class="product-variant">${variant}</div>` : ''}
@@ -1716,7 +1702,7 @@ async function clearOrderSearch() {
 async function fetchToOrderOrders() {
   let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
-    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
     orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
   return orders;
@@ -1871,8 +1857,8 @@ async function validateSupplierOrders(orderIds) {
 
 function generateImbretex(orders, dateOverride = null) {
   const skuMap = new Map();
-  orders.forEach(o => o.lineItems.edges.forEach(({node:li}) => {
-    const sku = li.variant?.imbretexSku?.value; if (sku) skuMap.set(sku, (skuMap.get(sku)||0) + li.quantity);
+  orders.forEach(o => activeLineItemEdges(o).forEach(({node:li}) => {
+    const sku = li.variant?.imbretexSku?.value; if (sku) skuMap.set(sku, (skuMap.get(sku)||0) + li.currentQuantity);
   }));
   const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
@@ -1887,7 +1873,7 @@ function generateComplete(orders, dateOverride = null) {
     const date = new Date(o.createdAt).toLocaleDateString('fr-FR');
     const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
     const notes = (o.note||'').replace(/;/g,',').replace(/\n/g,' ');
-    o.lineItems.edges.forEach(({node:li}) => { csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.quantity};${li.variant?.imbretexSku?.value||''};${notes}\n`; });
+    activeLineItemEdges(o).forEach(({node:li}) => { csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.currentQuantity};${li.variant?.imbretexSku?.value||''};${notes}\n`; });
   });
   const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
@@ -1910,7 +1896,7 @@ async function loadHistory() {
 async function regenAndDownload(tag, type) {
   try {
     let orders=[], hasNext=true, cursor=null;
-    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
     const dateStr = tag.replace('order_','');
     const {url,filename} = type==='imbretex'?generateImbretex(orders,dateStr):generateComplete(orders,dateStr);
     const a=document.createElement('a');a.href=url;a.download=filename;a.click();
@@ -1978,14 +1964,14 @@ async function regenPrintLotZip(lotId) {
     const data = await gql(`query($ids:[ID!]!){ nodes(ids:$ids){ ... on Order {
       id name note
       lineItems(first:250){edges{node{
-        id title quantity
+        id title quantity currentQuantity
         customAttributes{key value}
       }}}
     } } }`, { ids: lot.orderIds });
     const orders = (data.nodes || []).filter(Boolean);
     const gasOrders = [];
     for (const order of orders) {
-      for (const { node: li } of order.lineItems.edges) {
+      for (const { node: li } of activeLineItemEdges(order)) {
         const liAttrs = Object.fromEntries((li.customAttributes || []).map(a => [a.key, a.value]));
         const designUrls = Object.entries(liAttrs)
           .filter(([k]) => k.startsWith('_tib_design_link_'))
@@ -1996,7 +1982,7 @@ async function regenPrintLotZip(lotId) {
             .filter(([k, v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
             .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {})
         );
-        gasOrders.push({ orderName: order.name, quantity: li.quantity, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
+        gasOrders.push({ orderName: order.name, quantity: li.currentQuantity, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
       }
     }
     const result = await callGas(gasOrders);
@@ -2057,7 +2043,7 @@ async function renderPrintTab() {
             id name createdAt note tags
             customer{firstName lastName}
             lineItems(first:250){edges{node{
-              id title quantity
+              id title quantity currentQuantity
               variant{title}
               customAttributes{key value}
             }}}
@@ -2134,8 +2120,9 @@ function renderPrintView() {
           const isSelected = state.printSelected.has(o.id);
           const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
           const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
-          const totalQty = o.lineItems.edges.reduce((s,{node:li})=>s+li.quantity,0);
-          const fileCount = o.lineItems.edges.reduce((s,{node:li}) => {
+          const activeItems = activeLineItemEdges(o);
+          const totalQty = activeItems.reduce((s,{node:li})=>s+li.currentQuantity,0);
+          const fileCount = activeItems.reduce((s,{node:li}) => {
             const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
             const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
             return s + designs.length + jsonUrls.length;
@@ -2144,7 +2131,7 @@ function renderPrintView() {
             <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
             <div class="print-order-info">
               <div class="print-order-name">${o.name} <span class="badge badge-info">${totalQty} art.</span> <span class="badge badge-info">${ageInDays}j</span></div>
-              <div class="print-order-detail">${customer||'—'} · ${o.lineItems.edges.length} ligne${o.lineItems.edges.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
+              <div class="print-order-detail">${customer||'—'} · ${activeItems.length} ligne${activeItems.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
               ${o.note?.trim() ? `<div class="print-order-note">📝 ${o.note}</div>` : ''}
             </div>
           </div>`;
@@ -2250,7 +2237,7 @@ async function generatePrintZip() {
   // Prépare les données pour le GAS
   const gasOrders = [];
   for (const order of selectedOrders) {
-    for (const {node:li} of order.lineItems.edges) {
+    for (const {node:li} of activeLineItemEdges(order)) {
       const liAttrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value]));
       // Les URLs de design sont dans _tib_design_link_1, _tib_design_link_2, etc.
       const designUrls = Object.entries(liAttrs)
@@ -2265,7 +2252,7 @@ async function generatePrintZip() {
       );
       gasOrders.push({
         orderName: order.name,
-        quantity: li.quantity,
+        quantity: li.currentQuantity,
         note: order.note || '',
         productTitle: li.title || '',
         designUrls,
@@ -2420,7 +2407,6 @@ if (!state.proxyUrl) setTimeout(openSettings, 300);
 else if (!state.isLoggedIn) document.getElementById('login-screen').classList.add('show');
 else renderDashboard();
 resetScreensaverTimer();
-initSidebarState();
 
 
 // ════════════════════════════════════════════
