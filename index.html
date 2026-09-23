@@ -2030,30 +2030,35 @@ function renderPrintLotsSection() {
 
 // PRINT TAB — Préparation impression
 // ════════════════════════════════════════════
+async function fetchTodoPrintOrders() {
+  // Récupère les commandes TODOPRINT avec métafields teeinblue
+  let orders=[], hasNext=true, cursor=null;
+  while(hasNext) {
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){
+      orders(first:$first,after:$after,query:$q){
+        edges{node{
+          id name createdAt note tags
+          customer{firstName lastName}
+          lineItems(first:250){edges{node{
+            id title quantity currentQuantity
+            variant{title}
+            customAttributes{key value}
+          }}}
+        }}
+        pageInfo{hasNextPage endCursor}
+      }
+    }`, {first:50,after:cursor,q:'tag:TODOPRINT AND status:open'});
+    orders.push(...data.orders.edges.map(e=>e.node));
+    hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
+  }
+  return orders;
+}
+
 async function renderPrintTab() {
   const c = document.getElementById('content');
   c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement des commandes TODOPRINT...</div>`;
   try {
-    // Récupère les commandes TODOPRINT avec métafields teeinblue
-    let orders=[], hasNext=true, cursor=null;
-    while(hasNext) {
-      const data = await gql(`query($first:Int!,$after:String,$q:String!){
-        orders(first:$first,after:$after,query:$q){
-          edges{node{
-            id name createdAt note tags
-            customer{firstName lastName}
-            lineItems(first:250){edges{node{
-              id title quantity currentQuantity
-              variant{title}
-              customAttributes{key value}
-            }}}
-          }}
-          pageInfo{hasNextPage endCursor}
-        }
-      }`, {first:50,after:cursor,q:'tag:TODOPRINT AND status:open'});
-      orders.push(...data.orders.edges.map(e=>e.node));
-      hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
-    }
+    const orders = await fetchTodoPrintOrders();
     state.printOrders = orders;
     state.printSelected = new Set(orders.map(o => o.id));
     state.printZipDone = false;
@@ -2327,14 +2332,18 @@ async function validatePrintOrders() {
   // Petit délai pour laisser Shopify indexer les tags
   await new Promise(r => setTimeout(r, 2000));
   state.printZipOrderIds = [];
-  state.printOrders = await fetchTodoPrintOrders();
-  // Mise à jour badge
-  const badgePrint = document.getElementById('tab-print-badge');
-  if (badgePrint) {
-    if (state.printOrders.length > 0) { badgePrint.textContent = state.printOrders.length; badgePrint.style.display = ''; }
-    else { badgePrint.style.display = 'none'; }
+  try {
+    state.printOrders = await fetchTodoPrintOrders();
+    // Mise à jour badge
+    const badgePrint = document.getElementById('tab-print-badge');
+    if (badgePrint) {
+      if (state.printOrders.length > 0) { badgePrint.textContent = state.printOrders.length; badgePrint.style.display = ''; }
+      else { badgePrint.style.display = 'none'; }
+    }
+    await renderPrintTab();
+  } catch (e) {
+    document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Tags mis à jour, mais erreur au rafraîchissement :</strong> ${e.message}<br/><button class="btn" style="margin-top:8px;" onclick="renderPrintTab()">🔄 Réessayer</button></div>`;
   }
-  await renderPrintTab();
 }
 
 // ════════════════════════════════════════════
