@@ -210,7 +210,7 @@
     .alert-warning strong { color: var(--warning); }
     .alert .alert-text { color: var(--text); }
 
-    .lineitem-grid { display: grid; grid-template-columns: 56px 1fr 120px; gap: 16px; align-items: start; }
+    .lineitem-grid { display: grid; grid-template-columns: 64px 1fr clamp(220px, 30%, 320px); gap: 18px; align-items: start; }
     .qty-cell { text-align: center; }
     .qty-num { font-size: 28px; font-weight: 700; line-height: 1; }
     .qty-label { font-size: 11px; color: var(--text-sub); }
@@ -218,6 +218,66 @@
     .product-variant, .product-sku { color: var(--text-sub); font-size: 13px; margin-bottom: 2px; }
     .attr-item { font-size: 12px; color: var(--text-sub); }
     .dl-link { font-size: 13px; color: var(--primary); text-decoration: none; margin-top: 6px; display: inline-block; }
+    /* ── Vue commandes custom : poste tactile + pavé numérique ── */
+    :root { --rail-w: 168px; }
+    #content.has-rail { padding-right: calc(var(--rail-w) + 32px); max-width: calc(1100px + var(--rail-w) + 16px); }
+    body.rail-mode #scroll-top { display: none !important; }
+    .qty-num { font-size: 40px; }
+    .product-title { font-size: 17px; font-weight: 700; text-transform: uppercase; }
+    .variant-big { font-size: 21px; font-weight: 600; margin: 2px 0 2px; }
+    .variant-big .size-chip { display: inline-block; min-width: 46px; text-align: center; padding: 1px 10px; border-radius: 8px; background: var(--text); color: var(--surface); margin-right: 8px; }
+    .perso-list { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin-top: 12px; align-items: baseline; }
+    .perso-list dt { color: var(--text-sub); font-size: 13px; }
+    .perso-list dd { margin: 0; font-weight: 700; font-size: 17px; word-break: break-word; }
+    .raw-links { margin-top: 10px; font-size: 12px; color: var(--text-sub); }
+    .raw-links summary { cursor: pointer; min-height: 36px; display: inline-flex; align-items: center; }
+    .raw-links div { word-break: break-all; padding: 2px 0; }
+    .dl-discreet { display: inline-block; margin-top: 4px; font-size: 12px; color: var(--text-sub); text-decoration: underline; text-underline-offset: 2px; }
+    .co-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .co-filter { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    .co-filter button { border: 0; background: none; min-height: 48px; padding: 0 18px; border-radius: 9px; font: inherit; font-size: 16px; font-weight: 600; color: var(--text-sub); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .co-filter .n { font-size: 13px; padding: 2px 8px; border-radius: 10px; background: var(--info-bg); font-variant-numeric: tabular-nums; }
+    .co-filter button.on { background: var(--text); color: var(--surface); }
+    .co-filter button.on .n { background: rgba(255,255,255,.2); color: inherit; }
+    .co-filter button.urg .n { background: var(--critical-bg); color: var(--critical); }
+    .co-filter button.urg.on { background: var(--critical); color: #fff; }
+    .co-filter button.urg.on .n { background: rgba(255,255,255,.25); color: #fff; }
+    .co-search { margin-left: auto; display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 8px 0 16px; background: var(--surface); border: 2px solid var(--border); border-radius: 12px; min-width: 260px; }
+    .co-search.typing { border-color: var(--primary); box-shadow: 0 0 0 4px var(--success-bg); }
+    .co-search .hash { font-size: 22px; font-weight: 600; color: var(--text-sub); }
+    .co-search .val { flex: 1; min-width: 80px; font-size: 24px; font-weight: 700; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+    .co-search .val:empty::before { content: "Taper un n\00b0  au pav\00e9"; font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--text-sub); }
+    .co-search button { min-height: 44px; padding: 0 14px; border-radius: 9px; border: 0; font: inherit; font-weight: 600; cursor: pointer; }
+    .co-search .go { background: var(--primary); color: #fff; }
+    .co-search .clr { background: var(--info-bg); color: var(--text); }
+    .co-search button:disabled { opacity: .35; cursor: default; }
+    .co-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 12px; border-radius: 12px; background: var(--success-bg); border: 1px solid var(--primary); }
+    .co-banner button { margin-left: auto; min-height: 48px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--primary); background: var(--surface); color: var(--primary); font: inherit; font-weight: 600; cursor: pointer; }
+    #co-rail { position: fixed; right: 16px; top: 16px; bottom: 16px; width: var(--rail-w); display: flex; flex-direction: column; gap: 10px; z-index: 200; }
+    #co-rail > * { border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+    #co-rail button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 17px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    #co-rail button:disabled { opacity: .35; cursor: default; box-shadow: none; }
+    #co-rail kbd { font: 600 12px/1 ui-monospace, Consolas, monospace; padding: 4px 7px; border-radius: 5px; border: 1px solid currentColor; opacity: .7; background: transparent; }
+    .co-counter { padding: 10px; text-align: center; display: flex; flex-direction: column; }
+    .co-counter b { font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .co-counter small { color: var(--text-sub); font-size: 12px; }
+    #co-rail .co-next { flex: 1; background: var(--primary); border-color: var(--primary); color: #fff; font-size: 22px; box-shadow: 0 4px 14px rgba(0,128,96,.3); }
+    #co-rail .co-next:active:not(:disabled) { background: var(--primary-hover); transform: scale(.98); }
+    #co-rail .co-next .arrow { font-size: 40px; line-height: 1; }
+    #co-rail .co-next small { font-weight: 500; font-size: 15px; opacity: .9; }
+    #co-rail .co-prev { height: 110px; }
+    #co-rail .co-list { height: 72px; font-size: 15px; }
+    .co-keys { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-sub); }
+    .co-keys kbd { font: 600 11px/1 ui-monospace, Consolas, monospace; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin-right: 4px; }
+    #co-sheet { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,.45); display: flex; justify-content: flex-end; }
+    #co-sheet .sheet { width: min(460px, 100%); height: 100%; overflow: auto; background: var(--surface); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    #co-sheet h3 { display: flex; align-items: center; font-size: 18px; margin: 0 0 4px; }
+    #co-sheet h3 button { margin-left: auto; min-width: 48px; min-height: 48px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: 20px; cursor: pointer; }
+    #co-sheet .row { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 0 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+    #co-sheet .row.cur { border: 2px solid var(--primary); background: var(--success-bg); }
+    #co-sheet .row b { font-size: 18px; min-width: 70px; font-variant-numeric: tabular-nums; }
+    #co-sheet .row .who { flex: 1; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media (max-width: 900px) { :root { --rail-w: 120px; } .co-search { min-width: 0; flex: 1 1 100%; margin-left: 0; } }
     .img-cell img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); object-fit: contain; aspect-ratio: 1/1; display: block; cursor: zoom-in; }
 
     /* Supplier workflow */
@@ -331,7 +391,8 @@
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 600px) {
-      .lineitem-grid { grid-template-columns: 48px 1fr 80px; gap: 10px; }
+      .lineitem-grid { grid-template-columns: 48px 1fr; gap: 10px; }
+      .lineitem-grid .img-cell { grid-column: 1 / -1; }
       .qty-num { font-size: 22px; }
       #content { padding: 10px; }
     }
@@ -462,7 +523,7 @@ const state = {
   proxyUrl: '', appPassword: '', shop: '',
   isLoggedIn: false,
   orders: [], currentIndex: 0, filterUrgent: false,
-  orderSearchActive: false, orderSearchQuery: '',
+  orderSearchActive: false, orderSearchQuery: '', typedOrderNum: '', customCounts: { all: null, urgent: null },
   supplierOrders: [], supplierSnapshot: [],
   // Print tab
   printOrders: [],       // commandes TODOPRINT avec métafields teeinblue
@@ -596,6 +657,9 @@ async function callGas(orders) {
 function switchTab(tab) {
   if (!checkAuth()) return;
   state.activeTab = tab;
+  document.getElementById('content').classList.toggle('has-rail', tab === 'custom');
+  document.body.classList.toggle('rail-mode', tab === 'custom');
+  closeOrderSheet();
   document.querySelectorAll('.sb-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (!state.proxyUrl) {
     document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
@@ -675,17 +739,72 @@ document.addEventListener('keydown', e => {
   // Le premier appui pendant la veille sert uniquement à la fermer (resetScreensaverTimer
   // s'en charge) — on ne laisse pas ce même appui déclencher un raccourci de l'appli en dessous.
   if (document.getElementById('screensaver')?.classList.contains('open')) return;
-  if (e.key === 'Escape') { closeImgModal(); return; }
   if (document.getElementById('img-modal').classList.contains('open')) {
-    if (e.key === 'ArrowRight') { e.preventDefault(); imgModalNext(); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); imgModalPrev(); }
+    if (e.key === 'Escape') { closeImgModal(); return; }
+    if (e.key === 'ArrowRight' || e.key === '+') { e.preventDefault(); imgModalNext(); }
+    if (e.key === 'ArrowLeft' || e.key === '-') { e.preventDefault(); imgModalPrev(); }
     return;
   }
   if (state.activeTab !== 'custom') return;
   if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
-  if (e.key === 'j') { e.preventDefault(); prevOrder(); }
-  if (e.key === 'k') { e.preventDefault(); nextOrder(); }
+  if (document.getElementById('note-modal')?.classList.contains('open')) return;
+  const k = e.key;
+  // Liste des commandes ouverte : seules Échap et / la referment
+  if (document.getElementById('co-sheet')) {
+    if (k === 'Escape' || k === '/') { e.preventDefault(); closeOrderSheet(); }
+    return;
+  }
+  // Pavé numérique : chiffres = n° de commande, Entrée = ouvrir (ou commande suivante si rien tapé)
+  if (/^[0-9]$/.test(k)) { e.preventDefault(); if (state.typedOrderNum.length < 6) { state.typedOrderNum += k; updateTypedUI(); } return; }
+  if (k === 'Backspace' && state.typedOrderNum) { e.preventDefault(); state.typedOrderNum = state.typedOrderNum.slice(0, -1); updateTypedUI(); return; }
+  if (k === 'Enter') { e.preventDefault(); if (state.typedOrderNum) searchOrderByNumber(); else nextOrderAndScroll(); return; }
+  if (k === '+' || k === 'k' || k === 'ArrowRight') { e.preventDefault(); nextOrderAndScroll(); return; }
+  if (k === '-' || k === 'j' || k === 'ArrowLeft') { e.preventDefault(); prevOrder(); return; }
+  if (k === '*') { e.preventDefault(); setCustomFilter(!state.filterUrgent); return; }
+  if (k === '/') { e.preventDefault(); openOrderSheet(); return; }
+  if (k === 'Escape') {
+    if (state.typedOrderNum) { state.typedOrderNum = ''; updateTypedUI(); }
+    else if (state.orderSearchActive) clearOrderSearch();
+  }
 });
+
+// Balayage gauche/droite sur la commande (écran tactile)
+(function () {
+  let x0 = null, y0 = null;
+  document.addEventListener('touchstart', e => {
+    if (state.activeTab !== 'custom' || e.touches.length !== 1) { x0 = null; return; }
+    if (!e.target.closest('#content') || e.target.closest('#co-rail')) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (document.getElementById('img-modal').classList.contains('open') || document.getElementById('co-sheet')) return;
+    if (Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy) * 1.5) { dx < 0 ? nextOrderAndScroll() : prevOrder(); }
+  }, { passive: true });
+})();
+
+// Son « commande traitée » : l'AudioContext est débloqué au premier toucher/appui
+let _audioCtx = null;
+function unlockAudio() {
+  try { if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (_audioCtx.state === 'suspended') _audioCtx.resume(); } catch (e) {}
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(evt => document.addEventListener(evt, unlockAudio, { passive: true }));
+function playDoneSound() {
+  try {
+    unlockAudio(); if (!_audioCtx) return;
+    const t0 = _audioCtx.currentTime;
+    [[880, 0], [1320, 0.12]].forEach(([f, dt]) => {
+      const o = _audioCtx.createOscillator(), g = _audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.35);
+      o.connect(g).connect(_audioCtx.destination); o.start(t0 + dt); o.stop(t0 + dt + 0.4);
+    });
+  } catch (e) {}
+}
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 });
@@ -1353,6 +1472,7 @@ async function renderDashboard() {
     state.dashboardProcessingBuckets = processingBuckets;
 
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
+    state.customCounts = { all: counts.custom, urgent: counts.urgent };
     // ── Badges tous les onglets ──
     const badgeUrgent = document.getElementById('tab-custom-badge');
     const badgeTotal = document.getElementById('tab-custom-badge-total');
@@ -1477,6 +1597,16 @@ async function fetchCustomOrders(urgent = false) {
   }
   state.orders = sortOrdersByDeadline(orders);
   state.currentIndex = 0;
+  // Liste rechargée = plus de recherche en cours (sinon le n° cherché et le ✕ restaient affichés)
+  state.orderSearchActive = false; state.orderSearchQuery = '';
+  refreshCustomCounts();
+}
+
+function isUrgentOrder(o) { return (o.tags || []).some(t => t.toLowerCase() === 'urgent'); }
+function refreshCustomCounts() {
+  if (state.orderSearchActive) return;
+  if (state.filterUrgent) state.customCounts.urgent = state.orders.length;
+  else state.customCounts = { all: state.orders.length, urgent: state.orders.filter(isUrgentOrder).length };
 }
 
 async function renderCustomTab(restorePage = false) {
@@ -1528,31 +1658,40 @@ function renderStatusBadges(tags) {
 
 function renderOrderView() {
   const c = document.getElementById('content');
+  c.classList.add('has-rail'); document.body.classList.add('rail-mode');
   const order = state.orders[state.currentIndex] || null;
   const hasPrev = state.currentIndex > 0;
   const hasNext = state.currentIndex < state.orders.length - 1;
-  const counter = state.orders.length === 0 ? 'Aucune commande' : `${state.currentIndex + 1} / ${state.orders.length}`;
+  const cnt = state.customCounts || {};
+  const allCount = cnt.all ?? (state.filterUrgent || state.orderSearchActive ? '…' : state.orders.length);
+  const urgCount = cnt.urgent ?? '…';
+  const listLabel = state.filterUrgent ? 'urgentes' : 'commandes';
 
-  let html = `<div class="nav-bar">
-    <button class="btn" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédent <kbd>J</kbd></button>
-    ${state.orders.length > 0 ? `<select onchange="jumpToOrder(this.value)">${state.orders.map((o, i) => {
-      const urg = o.tags.some(t => t.toLowerCase() === 'urgent'); const note = !!(o.note?.trim());
-      return `<option value="${i}" ${i===state.currentIndex?'selected':''}>${o.name}${urg?' 🚨':''}${note?' 📝':''}</option>`;
-    }).join('')}</select>` : ''}
-    <span class="counter">${counter}</span>
-    <button class="btn" onclick="nextOrder()" ${!hasNext ? 'disabled' : ''}>Suivant <kbd>K</kbd> →</button>
-    <button class="btn ${state.filterUrgent ? 'btn-critical' : 'btn-warning'}" onclick="toggleUrgentFilter()">🚨 Urgent${state.filterUrgent?' ✕':''}</button>
-    ${state.filterUrgent ? '<span class="badge badge-critical">Filtre actif</span>' : ''}
-    <span style="display:flex;align-items:center;gap:4px;margin-left:auto;">
-      <input id="order-search-input" type="text" placeholder="N° commande (ex: 1234)" value="${state.orderSearchActive ? (state.orderSearchQuery||'') : ''}"
-        onkeydown="if(event.key==='Enter'){searchOrderByNumber();}" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:160px;">
-      <button class="btn" onclick="searchOrderByNumber()">🔍</button>
-      ${state.orderSearchActive ? '<button class="btn" onclick="clearOrderSearch()">✕</button>' : ''}
-    </span>
+  let html = `<div class="co-top">
+    <div class="co-filter" role="group" aria-label="Filtre">
+      <button class="${!state.orderSearchActive && !state.filterUrgent ? 'on' : ''}" onclick="setCustomFilter(false)">Toutes <span class="n">${allCount}</span></button>
+      <button class="urg ${!state.orderSearchActive && state.filterUrgent ? 'on' : ''}" onclick="setCustomFilter(true)">🚨 Urgentes <span class="n">${urgCount}</span></button>
+    </div>
+    <div class="co-search" id="co-search">
+      <span class="hash">#</span><span class="val" id="co-typed"></span>
+      <button class="clr" id="co-typed-clear" onclick="state.typedOrderNum='';updateTypedUI()">Effacer</button>
+      <button class="go" id="co-typed-go" onclick="searchOrderByNumber()">Ouvrir ↵</button>
+    </div>
+  </div>`;
+  if (state.orderSearchActive) {
+    html += `<div class="co-banner"><span>Recherche <strong>#${escapeHtml(state.orderSearchQuery)}</strong> — ${state.orders.length} commande${state.orders.length > 1 ? 's' : ''} trouvée${state.orders.length > 1 ? 's' : ''}</span>
+      <button onclick="clearOrderSearch()">← Retour aux ${listLabel} <kbd style="margin-left:6px">Échap</kbd></button></div>`;
+  }
+  const nextName = hasNext ? state.orders[state.currentIndex + 1].name : '';
+  html += `<div id="co-rail">
+    <div class="co-counter"><b>${state.orders.length ? state.currentIndex + 1 : 0}</b><small>sur ${state.orders.length}</small></div>
+    <button class="co-next" onclick="nextOrderAndScroll()" ${!hasNext ? 'disabled' : ''}><span class="arrow">→</span><span>Suivante</span>${nextName ? `<small>${escapeHtml(nextName)}</small>` : ''}<kbd>+</kbd></button>
+    <button class="co-prev" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédente <kbd>−</kbd></button>
+    <button class="co-list" onclick="openOrderSheet()" ${!state.orders.length ? 'disabled' : ''}>☰ Liste <kbd>/</kbd></button>
   </div>`;
 
-  if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; return; }
-  if (!order) { c.innerHTML = html; return; }
+  if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; updateTypedUI(); return; }
+  if (!order) { c.innerHTML = html; updateTypedUI(); return; }
 
   showNoteModalIfNeeded(order);
 
@@ -1624,23 +1763,65 @@ function renderOrderView() {
     const imageUrl = imgAttr?.value || teeinblue || null;
     const sku = li.variant?.imbretexSku?.value || null;
     const visibleAttrs = li.customAttributes.filter(a => !HIDDEN_KEYS.includes(a.key));
+    const linkAttrs = visibleAttrs.filter(a => /^https?:\/\//i.test(String(a.value).trim()));
+    const textAttrs = visibleAttrs.filter(a => !linkAttrs.includes(a));
     if (imageUrl) imgItemIndex++;
     html += `<div class="card"><div class="lineitem-grid">
       <div class="qty-cell"><div class="qty-num">${li.currentQuantity}</div><div class="qty-label">Qté</div></div>
       <div>
         <div class="product-title">${li.title}</div>
-        ${showVariant ? `<div class="product-variant">${variant}</div>` : ''}
+        ${showVariant ? renderVariantBig(variant) : ''}
         ${sku ? `<div class="product-sku">SKU: ${sku}</div>` : ''}
-        ${visibleAttrs.map(a => `<div class="attr-item">${a.key}: ${a.value}</div>`).join('')}
-        ${imageUrl ? `<a href="${imageUrl}" class="dl-link" target="_blank" download>⬇ Télécharger l'image</a>` : ''}
+        ${textAttrs.length ? `<dl class="perso-list">${textAttrs.map(a => `<dt>${escapeHtml(a.key.replace(/\s*:\s*$/, ''))}</dt><dd>${escapeHtml(a.value)}</dd>`).join('')}</dl>` : ''}
+        ${(linkAttrs.length || imageUrl) ? `<details class="raw-links"><summary>Liens photo &amp; téléchargement</summary>
+          ${linkAttrs.map(a => `<div>${escapeHtml(a.key)} : ${escapeHtml(a.value)}</div>`).join('')}
+          ${imageUrl ? `<a href="${imageUrl}" class="dl-discreet" target="_blank" download>⬇ Télécharger l'image</a>` : ''}
+        </details>` : ''}
       </div>
       <div class="img-cell">${imageUrl ? `<img src="${imageUrl}" alt="${li.title}" onclick="openImgModal(state.currentOrderImgItems, ${imgItemIndex})" loading="lazy"/>` : ''}</div>
     </div></div>`;
   }
   html += `</div>`;
-  if (hasNext) html += `<div style="margin-top:20px;"><button class="btn btn-primary btn-lg" onclick="nextOrderAndScroll()">Commande suivante → <kbd style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff;">K</kbd></button></div>`;
+  html += `<div class="co-keys"><span><kbd>0-9</kbd>n° de commande</span><span><kbd>Entrée</kbd>ouvrir / suivante</span><span><kbd>+</kbd>suivante</span><span><kbd>−</kbd>précédente</span><span><kbd>*</kbd>urgentes / toutes</span><span><kbd>/</kbd>liste</span><span><kbd>Échap</kbd>annuler</span></div>`;
   c.innerHTML = html;
+  updateTypedUI();
 }
+
+function renderVariantBig(variant) {
+  const parts = String(variant).split(' / ');
+  if (parts.length < 2) return `<div class="variant-big">${escapeHtml(variant)}</div>`;
+  return `<div class="variant-big"><span class="size-chip">${escapeHtml(parts[0])}</span>${escapeHtml(parts.slice(1).join(' / '))}</div>`;
+}
+
+function updateTypedUI() {
+  const v = state.typedOrderNum || '';
+  const el = document.getElementById('co-typed'); if (!el) return;
+  el.textContent = v;
+  document.getElementById('co-search')?.classList.toggle('typing', !!v);
+  const go = document.getElementById('co-typed-go'); if (go) go.disabled = !v;
+  const clr = document.getElementById('co-typed-clear'); if (clr) clr.hidden = !v;
+}
+
+function openOrderSheet() {
+  if (!state.orders.length) return;
+  closeOrderSheet();
+  const d = document.createElement('div'); d.id = 'co-sheet';
+  d.addEventListener('click', ev => { if (ev.target === d) closeOrderSheet(); });
+  const rows = state.orders.map((o, i) => {
+    const note = !!(o.note?.trim());
+    let dl = '';
+    if (o.dateLimiteTraitement?.value) {
+      const j = Math.ceil((new Date(o.dateLimiteTraitement.value + 'T00:00:00').getTime() - Date.now()) / 86400000);
+      dl = `<span class="badge ${j < 0 ? 'badge-critical' : j <= 2 ? 'badge-warning' : 'badge-info'}">${j < 0 ? 'retard ' + Math.abs(j) + 'j' : j === 0 ? "aujourd'hui" : 'J-' + j}</span>`;
+    }
+    const who = o.customer ? `${o.customer.firstName || ''} ${o.customer.lastName || ''}`.trim() : '';
+    return `<button class="row ${i === state.currentIndex ? 'cur' : ''}" onclick="closeOrderSheet();jumpToOrder(${i})"><b>${escapeHtml(o.name)}</b><span class="who">${escapeHtml(who)}</span>${isUrgentOrder(o) ? '🚨' : ''}${note ? '📝' : ''}${dl}</button>`;
+  }).join('');
+  d.innerHTML = `<div class="sheet"><h3>${state.orders.length} ${state.filterUrgent ? 'commandes urgentes' : 'commandes'}<button onclick="closeOrderSheet()" aria-label="Fermer">✕</button></h3>${rows}</div>`;
+  document.body.appendChild(d);
+  d.querySelector('.row.cur')?.scrollIntoView({ block: 'center' });
+}
+function closeOrderSheet() { document.getElementById('co-sheet')?.remove(); }
 
 async function prevOrder() {
   if (state.currentIndex > 0) { state.currentIndex--; renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
@@ -1650,16 +1831,18 @@ async function nextOrder() {
 }
 async function nextOrderAndScroll() { await nextOrder(); window.scrollTo({top:0,behavior:'smooth'}); }
 function jumpToOrder(idx) { state.currentIndex = parseInt(idx); renderOrderView(); window.scrollTo({top:0,behavior:'smooth'}); }
-async function toggleUrgentFilter() {
-  state.filterUrgent = !state.filterUrgent;
+async function toggleUrgentFilter() { return setCustomFilter(!state.filterUrgent); }
+async function setCustomFilter(urgent) {
+  if (state.filterUrgent === urgent && !state.orderSearchActive) return;
+  state.filterUrgent = urgent; state.typedOrderNum = '';
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
   try { await fetchCustomOrders(state.filterUrgent); renderOrderView(); }
   catch(e) { document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
 }
 
 async function searchOrderByNumber() {
-  const input = document.getElementById('order-search-input');
-  const raw = (input?.value || '').trim();
+  const raw = (state.typedOrderNum || '').trim();
+  state.typedOrderNum = '';
   if (!raw) { showToast('Saisis un numéro de commande', 'warning'); return; }
   const num = raw.replace(/^#/, '');
   document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Recherche de la commande ${raw}...</div>`;
@@ -1670,7 +1853,7 @@ async function searchOrderByNumber() {
     const found = data.orders.edges.map(e => e.node);
     if (!found.length) {
       showToast(`Aucune commande trouvée pour "${raw}"`, 'error');
-      state.orderSearchActive = false; state.orderSearchQuery = '';
+      // On reste sur la liste courante (on ne la remplace que si la recherche trouve quelque chose)
       renderOrderView();
       return;
     }
@@ -2386,8 +2569,10 @@ async function checkCurrentOrderDone() {
 
     if (!stillCustom || fulfilled) {
       launchConfetti();
+      playDoneSound();
       showToast('🎉 Commande traitée — suivante !');
       state.orders = state.orders.filter(o => o.id !== order.id);
+      refreshCustomCounts();
       setTimeout(() => {
         if (!state.orders.length) { renderCustomTab(); return; }
         if (state.currentIndex >= state.orders.length) state.currentIndex = state.orders.length - 1;
