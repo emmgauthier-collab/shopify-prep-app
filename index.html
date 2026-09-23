@@ -267,6 +267,7 @@
     #co-rail .co-next small { font-weight: 500; font-size: 15px; opacity: .9; }
     #co-rail .co-prev { height: 110px; }
     #co-rail .co-list { height: 72px; font-size: 15px; }
+    #co-rail .co-ship { height: 80px; flex-direction: row; font-size: 17px; }
     .co-keys { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-sub); }
     .co-keys kbd { font: 600 11px/1 ui-monospace, Consolas, monospace; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin-right: 4px; }
     #co-sheet { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,.45); display: flex; justify-content: flex-end; }
@@ -762,6 +763,7 @@ document.addEventListener('keydown', e => {
   if (k === '-' || k === 'j' || k === 'ArrowLeft') { e.preventDefault(); prevOrder(); return; }
   if (k === '*') { e.preventDefault(); setCustomFilter(!state.filterUrgent); return; }
   if (k === '/') { e.preventDefault(); openOrderSheet(); return; }
+  if (k === '.' || k === ',' || e.code === 'NumpadDecimal') { e.preventDefault(); openInSendcloud(); return; }
   if (k === 'Escape') {
     if (state.typedOrderNum) { state.typedOrderNum = ''; updateTypedUI(); }
     else if (state.orderSearchActive) clearOrderSearch();
@@ -1686,6 +1688,7 @@ function renderOrderView() {
   html += `<div id="co-rail">
     <div class="co-counter"><b>${state.orders.length ? state.currentIndex + 1 : 0}</b><small>sur ${state.orders.length}</small></div>
     <button class="co-next" onclick="nextOrderAndScroll()" ${!hasNext ? 'disabled' : ''}><span class="arrow">→</span><span>Suivante</span>${nextName ? `<small>${escapeHtml(nextName)}</small>` : ''}<kbd>+</kbd></button>
+    <button class="co-ship" onclick="openInSendcloud()" ${!order ? 'disabled' : ''}>📦 Expédier <kbd>.</kbd></button>
     <button class="co-prev" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédente <kbd>−</kbd></button>
     <button class="co-list" onclick="openOrderSheet()" ${!state.orders.length ? 'disabled' : ''}>☰ Liste <kbd>/</kbd></button>
   </div>`;
@@ -1782,7 +1785,7 @@ function renderOrderView() {
     </div></div>`;
   }
   html += `</div>`;
-  html += `<div class="co-keys"><span><kbd>0-9</kbd>n° de commande</span><span><kbd>Entrée</kbd>ouvrir / suivante</span><span><kbd>+</kbd>suivante</span><span><kbd>−</kbd>précédente</span><span><kbd>*</kbd>urgentes / toutes</span><span><kbd>/</kbd>liste</span><span><kbd>Échap</kbd>annuler</span></div>`;
+  html += `<div class="co-keys"><span><kbd>0-9</kbd>n° de commande</span><span><kbd>Entrée</kbd>ouvrir / suivante</span><span><kbd>+</kbd>suivante</span><span><kbd>−</kbd>précédente</span><span><kbd>*</kbd>urgentes / toutes</span><span><kbd>/</kbd>liste</span><span><kbd>.</kbd>Sendcloud</span><span><kbd>Échap</kbd>annuler</span></div>`;
   c.innerHTML = html;
   updateTypedUI();
 }
@@ -1821,6 +1824,26 @@ function openOrderSheet() {
   document.body.appendChild(d);
   d.querySelector('.row.cur')?.scrollIntoView({ block: 'center' });
 }
+// ── Sendcloud : ouvre la commande en cours dans l'onglet Sendcloud du 2e écran ──
+// Avec l'extension « RXWEAR → Sendcloud » : elle retrouve l'onglet Sendcloud déjà ouvert et le recharge sur place.
+// Sans extension : repli sur une fenêtre nommée ouverte par le back-office.
+function openInSendcloud() {
+  const order = state.orders[state.currentIndex];
+  if (!order) return;
+  const num = String(order.name).replace(/\D/g, '');
+  if (document.documentElement.dataset.rxSendcloudExt === '1') {
+    window.postMessage({ type: 'RXWEAR_SENDCLOUD', order: num }, '*');
+  } else {
+    window.open('https://app.sendcloud.com/v2/shipping/list/orders?search=' + encodeURIComponent(num), 'sendcloud');
+    showToast('📦 Sendcloud : ' + order.name + ' (extension non détectée)', 'warning');
+  }
+}
+window.addEventListener('message', e => {
+  if (e.source !== window || !e.data || e.data.type !== 'RXWEAR_SENDCLOUD_RESULT') return;
+  if (e.data.ok) showToast('📦 Sendcloud : #' + e.data.order + (e.data.action === 'created' ? ' (nouvelle fenêtre)' : ' ouverte sur l\u2019autre écran'));
+  else showToast('Sendcloud : ' + (e.data.error || 'erreur'), 'error');
+});
+
 function closeOrderSheet() { document.getElementById('co-sheet')?.remove(); }
 
 async function prevOrder() {
