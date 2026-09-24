@@ -72,7 +72,7 @@
       --bg: #f6f6f7; --surface: #fff; --border: #e1e3e5; --text: #202223; --text-sub: #6d7175;
       --primary: #008060; --primary-hover: #006e52; --critical: #d82c0d;
       --critical-bg: #fff4f4; --critical-border: #fead9a;
-      --warning: #b98900; --warning-bg: #fff5ea;
+      --warning: #8a5a00; --warning-bg: #fff5ea;
       --success: #008060; --success-bg: #f1f8f5; --info-bg: #f4f6f8;
       --radius: 8px; --shadow: 0 1px 3px rgba(0,0,0,.1); --header-height: 56px;
     }
@@ -266,7 +266,7 @@
     #co-rail .co-next .arrow { font-size: 40px; line-height: 1; }
     #co-rail .co-next small { font-weight: 500; font-size: 15px; opacity: .9; }
     #co-rail .co-prev { height: 110px; }
-    #co-rail .co-list { height: 72px; font-size: 15px; }
+    #co-rail .co-list { height: 72px; font-size: 15px; flex-direction: row; }
     #co-rail .co-ship { height: 80px; flex-direction: row; font-size: 17px; }
     .co-keys { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-sub); }
     .co-keys kbd { font: 600 11px/1 ui-monospace, Consolas, monospace; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin-right: 4px; }
@@ -278,6 +278,70 @@
     #co-sheet .row.cur { border: 2px solid var(--primary); background: var(--success-bg); }
     #co-sheet .row b { font-size: 18px; min-width: 70px; font-variant-numeric: tabular-nums; }
     #co-sheet .row .who { flex: 1; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* ── Vue commande tactile (proto Impeccable, sept. 2026) ── */
+    .ico { width: 1em; height: 1em; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    #order-sticky { padding: 18px 20px; border-radius: 0 0 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+    .order-sticky-top { gap: 12px; margin-bottom: 0; }
+    .order-sticky-top h2 { font-size: 40px; line-height: 1; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+    .order-sticky-top .badge { min-height: 32px; padding: 0 12px; font-size: 14px; }
+    .pill { height: 36px; padding: 0 14px; border-radius: 18px; font-size: 15px; font-weight: 700; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 6px; color: #fff; }
+    .pill .ico { font-size: 16px; stroke-width: 2.5; }
+    .pill-urgent { background: var(--critical); }
+    .pill-rush { background: var(--text); }
+    .co-shopify { margin-left: auto; min-height: 48px; padding: 0 18px; border: 1px solid #c9cccf; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 16px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .co-shopify .ico { font-size: 18px; }
+    .co-info-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; }
+    .co-deadline { flex: 1 1 320px; display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-radius: 12px; border: 1px solid; }
+    .co-deadline .ico { font-size: 28px; }
+    .co-deadline b { display: block; font-size: 22px; line-height: 1.2; }
+    .co-deadline span { font-size: 16px; font-weight: 600; }
+    .co-deadline.tone-critical { background: var(--critical-bg); border-color: var(--critical-border); color: #b8260b; }
+    .co-deadline.tone-warning { background: var(--warning-bg); border-color: #f1c84b; color: #6b4700; }
+    .co-deadline.tone-info { background: var(--info-bg); border-color: var(--border); color: var(--text); }
+    .co-meta { margin: 0; flex: 1 1 480px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 12px; }
+    .co-meta > div { padding: 10px 16px; border-right: 1px solid var(--border); min-width: 0; }
+    .co-meta > div:last-child { border-right: 0; }
+    .co-meta dt { font-size: 14px; color: var(--text-sub); }
+    .co-meta dd { margin: 0; font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+    .co-meta dd small { font-size: 14px; font-weight: 600; margin-left: 4px; }
+    .co-meta .tone-critical { color: #b8260b; }
+    .co-meta .tone-warning { color: #6b4700; }
+    .co-meta .tone-success { color: var(--success); }
+    .co-note { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; border-radius: 12px; background: var(--critical-bg); border: 1px solid var(--critical-border); font-size: 18px; }
+    .co-note .ico { font-size: 26px; color: #b8260b; margin-top: 1px; }
+    .co-note strong { color: #b8260b; }
+    .co-note .alert-text { white-space: pre-wrap; }
+    #order-sticky .prep-list { gap: 10px; }
+    #order-sticky .prep-label { font-size: 15px; font-weight: 700; }
+    #order-sticky .prep-item { min-height: 40px; padding: 0 16px; font-size: 16px; display: inline-flex; align-items: center; gap: 6px; }
+    .co-item { border-radius: 16px; padding: 22px 24px; }
+    .co-item .lineitem-grid { grid-template-columns: 88px minmax(0, 1fr) clamp(240px, 30%, 300px); gap: 24px; }
+    .co-item .qty-num { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .co-item .qty-label { font-size: 14px; font-weight: 600; }
+    .co-item .product-title { font-size: 19px; font-weight: 800; letter-spacing: .02em; margin-bottom: 6px; }
+    .co-item .variant-big { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .co-item .variant-big .size-chip { min-width: 52px; height: 40px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; margin-right: 0; display: inline-flex; align-items: center; justify-content: center; }
+    .co-item .product-sku { font-size: 14px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    .co-item .perso-list { grid-template-columns: max-content minmax(0, 1fr); gap: 8px 18px; margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--bg); }
+    .co-item .perso-list dt { font-size: 15px; }
+    .co-item .perso-list dd { font-size: 20px; }
+    .co-item .raw-links { margin-top: 14px; font-size: 14px; }
+    .co-item .raw-links summary { list-style: none; min-height: 48px; padding: 0 16px; border: 1px solid #c9cccf; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600; gap: 8px; touch-action: manipulation; }
+    .co-item .raw-links summary::-webkit-details-marker { display: none; }
+    .co-item .raw-links summary .ico { font-size: 18px; }
+    .co-item .raw-links[open] summary { margin-bottom: 8px; }
+    .co-item .raw-links .dl-discreet { min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; }
+    .co-item .img-cell img { border-radius: 12px; }
+    #co-rail .ico { font-size: 24px; }
+    #co-rail .co-next .arrow { font-size: 52px; display: flex; }
+    #co-rail .co-next .arrow .ico { font-size: 52px; stroke-width: 2.2; }
+    #co-rail .co-lbl { display: flex; align-items: center; gap: 8px; }
+    @media (max-width: 600px) {
+      .co-item .lineitem-grid { grid-template-columns: 48px 1fr; gap: 10px; }
+      .co-item .qty-num { font-size: 30px; }
+      .co-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .order-sticky-top h2 { font-size: 30px; }
+    }
     @media (max-width: 900px) { :root { --rail-w: 120px; } .co-search { min-width: 0; flex: 1 1 100%; margin-left: 0; } }
     .img-cell img { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); object-fit: contain; aspect-ratio: 1/1; display: block; cursor: zoom-in; }
 
@@ -357,14 +421,20 @@
 
     #note-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9500; align-items: center; justify-content: center; }
     #note-modal.open { display: flex; }
-    .note-modal-box { background: var(--surface); border-radius: 12px; padding: 26px; width: min(480px, 92vw); box-shadow: 0 8px 40px rgba(0,0,0,.25); border-top: 5px solid var(--critical); position: relative; }
-    .note-modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: none; background: transparent; color: var(--text-sub); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .note-modal-close:hover { background: var(--critical-bg); color: var(--critical); }
-    .note-modal-icon { font-size: 30px; margin-bottom: 6px; }
-    .note-modal-box h2 { font-size: 17px; margin-bottom: 4px; color: var(--critical); }
-    .note-modal-order { font-size: 13px; color: var(--text-sub); margin-bottom: 14px; }
-    .note-modal-text { background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: var(--radius); padding: 12px 14px; font-size: 14px; color: var(--text); line-height: 1.5; margin-bottom: 18px; white-space: pre-wrap; }
-    .note-modal-ack { width: 100%; justify-content: center; padding: 11px; font-size: 14px; }
+    .note-modal-box { background: var(--surface); border-radius: 20px; padding: 32px; width: min(680px, 94vw); box-sizing: border-box; box-shadow: 0 24px 60px rgba(0,0,0,.35); position: relative; display: flex; flex-direction: column; gap: 22px; }
+    .note-modal-close { position: absolute; top: 20px; right: 20px; width: 56px; height: 56px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text-sub); cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+    .note-modal-close .ico { font-size: 24px; stroke-width: 2.4; }
+    .note-modal-close:hover, .note-modal-close:active { background: var(--critical-bg); color: var(--critical); }
+    .note-modal-head { display: flex; align-items: center; gap: 16px; padding-right: 64px; }
+    .note-modal-icon { width: 56px; height: 56px; flex-shrink: 0; border-radius: 28px; background: var(--critical-bg); color: #b8260b; display: flex; align-items: center; justify-content: center; }
+    .note-modal-icon .ico { font-size: 28px; stroke-width: 2.2; }
+    .note-modal-box h2 { font-size: 28px; line-height: 1.15; font-weight: 800; color: #b8260b; margin: 0; }
+    .note-modal-order { font-size: 18px; font-weight: 600; color: var(--text-sub); font-variant-numeric: tabular-nums; }
+    .note-modal-text { background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: 14px; padding: 22px 24px; font-size: 24px; font-weight: 600; color: var(--text); line-height: 1.45; white-space: pre-wrap; max-height: 45vh; overflow: auto; }
+    .note-modal-ack { min-height: 76px; border: 0; border-radius: 16px; background: var(--primary); color: #fff; font: inherit; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 6px 16px rgba(0,128,96,.28); touch-action: manipulation; }
+    .note-modal-ack:hover, .note-modal-ack:active { background: var(--primary-hover); }
+    .note-modal-ack .ico { font-size: 28px; stroke-width: 2.6; }
+    .note-modal-hint { text-align: center; font-size: 15px; color: var(--text-sub); }
     .settings-box { background: var(--surface); border-radius: 12px; padding: 28px; width: min(500px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
     .settings-box h2 { font-size: 18px; margin-bottom: 16px; }
     .form-group { margin-bottom: 14px; }
@@ -460,13 +530,15 @@
   <div id="screensaver"></div>
 
   <div id="note-modal">
-    <div class="note-modal-box">
-      <button class="note-modal-close" onclick="dismissNoteModal()" aria-label="Fermer">✕</button>
-      <div class="note-modal-icon">⚠️</div>
-      <h2>Cette commande a une note</h2>
-      <div class="note-modal-order" id="note-modal-order"></div>
+    <div class="note-modal-box" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+      <button class="note-modal-close" onclick="dismissNoteModal()" aria-label="Fermer sans valider"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+      <div class="note-modal-head">
+        <span class="note-modal-icon"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+        <div><h2 id="note-modal-title">Note client</h2><div class="note-modal-order" id="note-modal-order"></div></div>
+      </div>
       <div class="note-modal-text" id="note-modal-text"></div>
-      <button class="btn btn-primary note-modal-ack" onclick="acknowledgeCurrentNote()">✓ J'ai pris en compte</button>
+      <button class="note-modal-ack" onclick="acknowledgeCurrentNote()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>J&#39;ai pris en compte</button>
+      <div class="note-modal-hint">La croix ferme sans valider : la note s&#39;affichera de nouveau à chaque ouverture de la commande.</div>
     </div>
   </div>
 
@@ -718,7 +790,8 @@ function isNoteAcked(order) { const acked = getAckedNotes(); return acked[order.
 function ackNote(order) { const acked = getAckedNotes(); acked[order.id] = order.note || ''; try { localStorage.setItem('acked_notes', JSON.stringify(acked)); } catch(e) {} }
 function showNoteModalIfNeeded(order) {
   if (!order || !order.note?.trim() || isNoteAcked(order)) { document.getElementById('note-modal').classList.remove('open'); return; }
-  document.getElementById('note-modal-order').textContent = order.name;
+  const noteWho = order.customer ? `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() : '';
+  document.getElementById('note-modal-order').textContent = 'Commande ' + order.name + (noteWho ? ' \u00b7 ' + noteWho : '');
   document.getElementById('note-modal-text').textContent = order.note;
   document.getElementById('note-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1658,6 +1731,20 @@ function renderStatusBadges(tags) {
   ).join('');
 }
 
+// Icônes SVG (trait) de la vue commande — remplacent les emojis
+const ICO = {
+  alert: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+  bolt: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  clock: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  ext: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>',
+  note: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  link: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.8 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+  next: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>',
+  prev: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>',
+  box: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>',
+  list: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>'
+};
+
 function renderOrderView() {
   const c = document.getElementById('content');
   c.classList.add('has-rail'); document.body.classList.add('rail-mode');
@@ -1672,7 +1759,7 @@ function renderOrderView() {
   let html = `<div class="co-top">
     <div class="co-filter" role="group" aria-label="Filtre">
       <button class="${!state.orderSearchActive && !state.filterUrgent ? 'on' : ''}" onclick="setCustomFilter(false)">Toutes <span class="n">${allCount}</span></button>
-      <button class="urg ${!state.orderSearchActive && state.filterUrgent ? 'on' : ''}" onclick="setCustomFilter(true)">🚨 Urgentes <span class="n">${urgCount}</span></button>
+      <button class="urg ${!state.orderSearchActive && state.filterUrgent ? 'on' : ''}" onclick="setCustomFilter(true)">Urgentes <span class="n">${urgCount}</span></button>
     </div>
     <div class="co-search" id="co-search">
       <span class="hash">#</span><span class="val" id="co-typed"></span>
@@ -1687,10 +1774,10 @@ function renderOrderView() {
   const nextName = hasNext ? state.orders[state.currentIndex + 1].name : '';
   html += `<div id="co-rail">
     <div class="co-counter"><b>${state.orders.length ? state.currentIndex + 1 : 0}</b><small>sur ${state.orders.length}</small></div>
-    <button class="co-next" onclick="nextOrderAndScroll()" ${!hasNext ? 'disabled' : ''}><span class="arrow">→</span><span>Suivante</span>${nextName ? `<small>${escapeHtml(nextName)}</small>` : ''}<kbd>+</kbd></button>
-    <button class="co-ship" onclick="openInSendcloud()" ${!order ? 'disabled' : ''}>📦 Expédier <kbd>.</kbd></button>
-    <button class="co-prev" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}>← Précédente <kbd>−</kbd></button>
-    <button class="co-list" onclick="openOrderSheet()" ${!state.orders.length ? 'disabled' : ''}>☰ Liste <kbd>/</kbd></button>
+    <button class="co-next" onclick="nextOrderAndScroll()" ${!hasNext ? 'disabled' : ''}><span class="arrow">${ICO.next}</span><span>Suivante</span>${nextName ? `<small>${escapeHtml(nextName)}</small>` : ''}<kbd>+</kbd></button>
+    <button class="co-ship" onclick="openInSendcloud()" ${!order ? 'disabled' : ''}>${ICO.box} Expédier <kbd>.</kbd></button>
+    <button class="co-prev" onclick="prevOrder()" ${!hasPrev ? 'disabled' : ''}><span class="co-lbl">${ICO.prev} Précédente</span><kbd>−</kbd></button>
+    <button class="co-list" onclick="openOrderSheet()" ${!state.orders.length ? 'disabled' : ''}>${ICO.list} Liste <kbd>/</kbd></button>
   </div>`;
 
   if (!state.orders.length) { html += `<div class="empty">${state.filterUrgent ? 'Aucune commande urgente.' : 'Aucune commande custom à traiter.'}</div>`; c.innerHTML = html; updateTypedUI(); return; }
@@ -1713,32 +1800,36 @@ function renderOrderView() {
   }).join('');
 
   // ── Délai de traitement (rempli par le webhook order-delai-webhook) ──
-  let delaiBadge = '';
+  let delaiBlock = '';
   if (order.dateLimiteTraitement?.value) {
     const dateLimite = new Date(order.dateLimiteTraitement.value + 'T00:00:00');
     const joursRestants = Math.ceil((dateLimite.getTime() - Date.now()) / 86400000);
     const delaiTone = joursRestants < 0 ? 'critical' : joursRestants <= 2 ? 'warning' : 'info';
     const dateLabel = dateLimite.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
-    const joursLabel = joursRestants < 0 ? `en retard de ${Math.abs(joursRestants)}j` : joursRestants === 0 ? "aujourd'hui" : `dans ${joursRestants}j`;
-    delaiBadge = `<span class="badge badge-${delaiTone}">⏱️ À traiter avant le ${dateLabel} (${joursLabel})</span>`;
+    const joursLabel = joursRestants < 0 ? `en retard de ${Math.abs(joursRestants)} j` : joursRestants === 0 ? "aujourd\u2019hui" : `dans ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`;
+    delaiBlock = `<div class="co-deadline tone-${delaiTone}">${ICO.clock}<div><b>À traiter avant le ${dateLabel}</b><span>${joursLabel}</span></div></div>`;
   }
-  const estRushBadge = order.estRush?.value === 'true' ? '<span class="badge badge-critical">⚡ RUSH</span>' : '';
+  const estRushBadge = order.estRush?.value === 'true' ? `<span class="pill pill-rush">${ICO.bolt}RUSH</span>` : '';
 
   html += `<div id="order-sticky">
     <div class="order-sticky-top">
       <h2>${order.name}</h2>
-      ${isUrgent ? '<span class="badge badge-critical">🚨 URGENT</span>' : ''}
-      <span class="badge badge-info">${customerName||'-'}</span>
-      <span class="badge badge-info">${orderDate}</span>
-      <span class="badge badge-${ageTone}">${ageInDays}j — ${ageLabel}</span>
-      <span class="badge badge-info">${totalQty} article${totalQty>1?'s':''}</span>
-      ${delaiBadge}
+      ${isUrgent ? `<span class="pill pill-urgent">${ICO.alert}URGENT</span>` : ''}
       ${estRushBadge}
       ${renderStatusBadges(order.tags)}
-      <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="btn" style="margin-left:auto;font-size:12px;padding:4px 10px;">🔗 Voir dans Shopify</a>
+      <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="co-shopify">${ICO.ext}Voir dans Shopify</a>
     </div>
-    ${hasNote ? `<div class="alert alert-critical" style="margin-bottom:8px;">⚠️ <strong>Note : </strong><span class="alert-text">${order.note}</span></div>` : ''}
-    <div class="prep-list"><span class="prep-label">À préparer :</span>${prepItems}</div>
+    <div class="co-info-row">
+      ${delaiBlock}
+      <dl class="co-meta">
+        <div><dt>Client</dt><dd>${escapeHtml(customerName || '-')}</dd></div>
+        <div><dt>Commandée</dt><dd>${orderDate}</dd></div>
+        <div><dt>Âge</dt><dd class="tone-${ageTone}">${ageInDays} j<small>${ageLabel}</small></dd></div>
+        <div><dt>Articles</dt><dd>${totalQty}</dd></div>
+      </dl>
+    </div>
+    ${hasNote ? `<div class="co-note">${ICO.note}<div><strong>Note client : </strong><span class="alert-text">${order.note}</span></div></div>` : ''}
+    <div class="prep-list"><span class="prep-label">À préparer</span>${prepItems}</div>
   </div>
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
@@ -1769,14 +1860,14 @@ function renderOrderView() {
     const linkAttrs = visibleAttrs.filter(a => /^https?:\/\//i.test(String(a.value).trim()));
     const textAttrs = visibleAttrs.filter(a => !linkAttrs.includes(a));
     if (imageUrl) imgItemIndex++;
-    html += `<div class="card"><div class="lineitem-grid">
+    html += `<div class="card co-item"><div class="lineitem-grid">
       <div class="qty-cell"><div class="qty-num">${li.currentQuantity}</div><div class="qty-label">Qté</div></div>
       <div>
         <div class="product-title">${li.title}</div>
         ${showVariant ? renderVariantBig(variant) : ''}
         ${sku ? `<div class="product-sku">SKU: ${sku}</div>` : ''}
         ${textAttrs.length ? `<dl class="perso-list">${textAttrs.map(a => `<dt>${escapeHtml(a.key.replace(/\s*:\s*$/, ''))}</dt><dd>${escapeHtml(a.value)}</dd>`).join('')}</dl>` : ''}
-        ${(linkAttrs.length || imageUrl) ? `<details class="raw-links"><summary>Liens photo &amp; téléchargement</summary>
+        ${(linkAttrs.length || imageUrl) ? `<details class="raw-links"><summary>${ICO.link}Liens photo &amp; téléchargement</summary>
           ${linkAttrs.map(a => `<div>${escapeHtml(a.key)} : ${escapeHtml(a.value)}</div>`).join('')}
           ${imageUrl ? `<a href="${imageUrl}" class="dl-discreet" target="_blank" download>⬇ Télécharger l'image</a>` : ''}
         </details>` : ''}
