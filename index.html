@@ -804,7 +804,78 @@
   .settings-box .form-group label { color: var(--text-sub); font-weight: 500; }
   #toast { display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
   #toast .ico { font-size: 16px; flex-shrink: 0; }
-  </style>
+    /* ── Commandes pro ── */
+  .pro-search { width: 220px; }
+  .pro-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+  @media (max-width: 900px) { .pro-board { grid-template-columns: 1fr; } }
+  .pro-col { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; min-height: 120px; }
+  .pro-col-head { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; padding: 4px 6px 10px; }
+  .pro-col-head b { margin-left: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 8px; font-size: 12px; }
+  .pro-col-demande .pro-col-head .ico { color: #5c6ac4; }
+  .pro-col-commande .pro-col-head .ico { color: var(--warning); }
+  .pro-col-terminee .pro-col-head .ico { color: var(--success); }
+  .pro-col-body { display: flex; flex-direction: column; gap: 8px; }
+  .pro-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; }
+  .pro-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .pro-card.orphan { border-style: dashed; }
+  .pro-card.abandon { opacity: .6; }
+  .pro-card-top { display: flex; gap: 6px; align-items: flex-start; }
+  .pro-card-title { font-weight: 600; font-size: 13.5px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .pro-card-client { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-sub); margin-top: 2px; }
+  .pro-card-links { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .pro-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-decoration: none; }
+  .pro-link:hover { border-color: var(--primary); }
+  .pro-link.real { background: var(--success-bg); border-color: #95c9b4; color: var(--success); }
+  .pro-link.muted { color: var(--text-sub); }
+  .pro-card-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .pro-money { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .pro-brief-hint { color: var(--text-sub); display: inline-flex; }
+  .pro-badge-warn { background: var(--warning-bg); color: var(--warning); border: 1px solid #f1c84b; }
+  .pro-badge-ok { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
+  .pro-more { width: 100%; }
+  #pro-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8800; align-items: center; justify-content: center; padding: 16px; }
+  #pro-modal.open { display: flex; }
+  .pro-box { background: var(--surface); border-radius: 12px; width: min(920px, 100%); max-height: 92vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.2); }
+  .pro-box-head { display: flex; align-items: center; gap: 8px; padding: 18px 22px 6px; }
+  .pro-box-head h2 { font-size: 18px; flex: 1; }
+  .pro-box-foot { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 22px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--surface); }
+  .pro-steps { display: flex; align-items: center; gap: 6px; padding: 6px 22px 14px; flex-wrap: wrap; }
+  .pro-step { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-sub); padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border); }
+  .pro-step.done { color: var(--success); border-color: #95c9b4; background: var(--success-bg); }
+  .pro-step.current { color: #fff; background: var(--primary); border-color: var(--primary); font-weight: 600; }
+  .pro-step-sep { width: 16px; height: 1px; background: var(--border); }
+  .pro-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; padding: 0 22px 12px; }
+  @media (max-width: 760px) { .pro-grid { grid-template-columns: 1fr; } }
+  .pro-grid textarea { width: 100%; resize: vertical; font-family: inherit; }
+  .pro-opt { font-weight: 400; color: var(--text-sub); }
+  .pro-inline { display: flex; gap: 6px; margin-bottom: 6px; }
+  .pro-inline input { flex: 1; min-width: 0; }
+  .pro-panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; background: var(--bg); }
+  .pro-panel .form-group:last-child { margin-bottom: 0; }
+  .pro-panel-title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; margin-bottom: 10px; }
+  .pro-linked { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; margin-bottom: 8px; }
+  .pro-linked a { font-weight: 600; color: var(--primary); }
+  .pro-linked-actions { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .pro-link-select { width: 100%; }
+  .pro-client-sel { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+  .pro-client-sel > div { flex: 1; min-width: 0; }
+  .pro-client-search { position: relative; }
+  .pro-cust-results { display: flex; flex-direction: column; margin-top: 4px; }
+  .pro-cust-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 7px 10px; border: 1px solid var(--border); border-top: 0; background: var(--surface); cursor: pointer; font-size: 13px; }
+  .pro-cust-item:first-child { border-top: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
+  .pro-cust-item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+  .pro-cust-item:hover { background: var(--success-bg); }
+  .pro-cust-item span { color: var(--text-sub); font-size: 12px; }
+  .pro-newcust { margin-top: 8px; font-size: 13px; }
+  .pro-newcust summary { cursor: pointer; color: var(--primary); font-weight: 600; margin-bottom: 6px; }
+  .pro-file { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+  .pro-file img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); }
+  .pro-file a, .pro-file span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .pro-upload-btn { cursor: pointer; margin-top: 4px; }
+  .pro-histo { list-style: none; font-size: 12.5px; }
+  .pro-histo li { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px dashed var(--border); }
+  .pro-histo li span { color: var(--text-sub); font-variant-numeric: tabular-nums; min-width: 42px; }
+</style>
 </head>
 <body>
 <div id="app">
@@ -869,6 +940,7 @@
       <nav class="sb-nav">
         <button class="sb-item active" data-tab="dashboard" onclick="switchTab('dashboard')" title="Tableau de bord"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="sb-label">Tableau de bord</span></button>
         <button class="sb-item" data-tab="custom" onclick="switchTab('custom')" title="Commandes custom"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 .55.45 1 1 1h10c.55 0 1-.45 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span class="sb-badges"><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></span></button>
+        <button class="sb-item" data-tab="pro" onclick="switchTab('pro')" title="Commandes pro"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span><span class="sb-label">Commandes pro</span><span id="tab-pro-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-pro-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="supplier" onclick="switchTab('supplier')" title="Commande fournisseur"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="sb-label">Commande fournisseur</span><span id="tab-supplier-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-supplier-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="print" onclick="switchTab('print')" title="Impression"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="sb-label">Impression</span><span id="tab-print-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-print-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="gallery" onclick="switchTab('gallery')" title="Galerie"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="sb-label">Galerie</span></button>
@@ -1044,7 +1116,7 @@ function switchTab(tab) {
     else renderCustomTab(false);
     return;
   }
-else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab })[tab]?.();
+else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab, pro: renderProTab })[tab]?.();
 }
 
 // ── Sidebar : rail fixe, plus de mode replié/déplié (voir #sidebar en CSS) ──
@@ -1919,6 +1991,7 @@ async function renderDashboard() {
       fetchDelayAlerts().catch(e => { console.log('Erreur alertes retard:', e.message); return []; }),
       fetchProcessingTimeWeekly().catch(e => { console.log('Erreur temps de traitement:', e.message); return null; })
     ]);
+    proRefreshBadgeSilently();
     state.dashboardCalendarData = calendarData;
     state.dashboardDelayAlerts = delayAlerts;
     state.dashboardProcessingBuckets = processingBuckets;
@@ -4816,6 +4889,611 @@ async function setupOrderWebhook() {
   } catch (e) {
     box.innerHTML = '<div class="status-line text-critical">' + icon('xCircle') + 'Erreur : ' + escapeHtml(e.message) + '</div>';
   }
+}
+
+
+// ════════════════════════════════════════════
+// COMMANDES PRO (tag custompro) — suivi Demande → Commande → Terminée
+// Stockage : metafield boutique rxwear_pro.demandes (JSON), une entrée par demande.
+// Les brouillons / commandes Shopify tagués custompro sans fiche remontent
+// automatiquement (cartes « orphelines ») ; une fiche passe en Terminée dès que
+// la commande liée est expédiée (FULFILLED), ou à la main.
+// ════════════════════════════════════════════
+const PRO_NS = 'rxwear_pro';
+const PRO_KEY = 'demandes';
+const PRO_ADMIN = 'https://therxshop.myshopify.com/admin/';
+const PRO_ORDERS_WINDOW_DAYS = 120;
+const PRO_MAX_FILE_BYTES = 20 * 1024 * 1024;
+const PRO_STAGES = [
+  { key: 'demande', label: 'Demande', ico: 'note' },
+  { key: 'commande', label: 'Commande', ico: 'package' },
+  { key: 'terminee', label: 'Terminée', ico: 'checkCircle' }
+];
+
+const proState = {
+  demandes: [], drafts: [], orders: [], byId: {},
+  loaded: false, search: '', showAllDone: false,
+  edit: null,          // copie de travail de la fiche ouverte dans la modale
+  custResults: [], custTimer: null, uploading: 0
+};
+
+const PRO_ORDER_FIELDS = 'id name createdAt tags displayFulfillmentStatus cancelledAt totalPriceSet{ shopMoney{ amount currencyCode } } customer{ id displayName email } dl: metafield(namespace:"custom", key:"date_limite_traitement"){ value }';
+const PRO_DRAFT_FIELDS = 'id name status createdAt tags totalPriceSet{ shopMoney{ amount currencyCode } } customer{ id displayName email } order{ id name displayFulfillmentStatus }';
+
+function proUid() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function proTodayIso() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function proNumId(gid) { return gid ? String(gid).split('/').pop() : ''; }
+function proAdminUrl(gid) {
+  if (!gid) return '#';
+  return PRO_ADMIN + (String(gid).indexOf('/DraftOrder/') > -1 ? 'draft_orders/' : 'orders/') + proNumId(gid);
+}
+function proFmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
+  return isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+}
+function proFmtMoney(t) {
+  if (!t || !t.shopMoney) return '';
+  const n = parseFloat(t.shopMoney.amount);
+  return isNaN(n) || n === 0 ? '' : n.toLocaleString('fr-FR', { style: 'currency', currency: t.shopMoney.currencyCode || 'EUR' });
+}
+function proDaysLeft(isoDate) {
+  if (!isoDate) return null;
+  const a = new Date(proTodayIso() + 'T00:00:00'), b = new Date(isoDate.slice(0, 10) + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+function proDeadlineBadge(isoDate, label) {
+  const n = proDaysLeft(isoDate);
+  if (n === null) return '';
+  const cls = n < 0 ? 'badge-solid-critical' : n <= 2 ? 'pro-badge-warn' : 'badge-muted';
+  const txt = n < 0 ? 'En retard ' + (-n) + ' j' : n === 0 ? "Aujourd'hui" : n === 1 ? 'Demain' : 'J-' + n;
+  return '<span class="badge ' + cls + '" title="' + escapeHtml((label || 'Échéance') + ' : ' + proFmtDate(isoDate)) + '">' + icon('clock') + txt + '</span>';
+}
+
+// ── Chargement ──
+async function proFetchDemandes() {
+  const data = await gql('query{ shop{ id m: metafield(namespace:"' + PRO_NS + '", key:"' + PRO_KEY + '"){ value } } }');
+  state.shopGid = data.shop.id;
+  let list = [];
+  const raw = data.shop.m ? data.shop.m.value : null;
+  if (raw) { try { list = JSON.parse(raw); } catch (e) { list = []; } }
+  return Array.isArray(list) ? list : [];
+}
+
+// Relit la liste fraîche, applique la modification, écrit, puis relit pour vérifier.
+async function proSave(mutator) {
+  const fresh = await proFetchDemandes();
+  const next = mutator(fresh) || fresh;
+  await metafieldsSetOne(PRO_KEY, JSON.stringify(next), 'json', PRO_NS);
+  const check = await proFetchDemandes();
+  if (check.length !== next.length) throw new Error('Vérification échouée (' + check.length + ' fiches relues au lieu de ' + next.length + ')');
+  proState.demandes = check;
+  return check;
+}
+
+async function proLoad() {
+  const since = new Date(Date.now() - PRO_ORDERS_WINDOW_DAYS * 86400000).toISOString().slice(0, 10);
+  const demandes = await proFetchDemandes();
+  const ids = [];
+  demandes.forEach(function (d) { if (d.draftId) ids.push(d.draftId); if (d.orderId) ids.push(d.orderId); });
+  const q = 'query($dq:String!,$oq:String!,$ids:[ID!]!){' +
+    ' draftOrders(first:50, query:$dq, sortKey:UPDATED_AT, reverse:true){ nodes{ ' + PRO_DRAFT_FIELDS + ' } }' +
+    ' orders(first:100, query:$oq, sortKey:CREATED_AT, reverse:true){ nodes{ ' + PRO_ORDER_FIELDS + ' } }' +
+    ' nodes(ids:$ids){ __typename ... on DraftOrder{ ' + PRO_DRAFT_FIELDS + ' } ... on Order{ ' + PRO_ORDER_FIELDS + ' } } }';
+  const data = await gql(q, { dq: 'tag:custompro status:open', oq: 'tag:custompro created_at:>=' + since, ids: Array.from(new Set(ids)) });
+  const byId = {};
+  (data.draftOrders.nodes || []).forEach(function (n) { byId[n.id] = n; });
+  (data.orders.nodes || []).forEach(function (n) { byId[n.id] = n; });
+  (data.nodes || []).forEach(function (n) { if (n && n.id) byId[n.id] = n; });
+  proState.demandes = demandes;
+  proState.drafts = data.draftOrders.nodes || [];
+  proState.orders = data.orders.nodes || [];
+  proState.byId = byId;
+  proState.loaded = true;
+  await proAutoSync();
+}
+
+// Avancement automatique : brouillon payé → commande liée ; commande expédiée → Terminée.
+async function proAutoSync() {
+  const changes = {};
+  proState.demandes.forEach(function (d) {
+    if (d.statut === 'terminee' || d.statut === 'abandon') return;
+    const draft = d.draftId ? proState.byId[d.draftId] : null;
+    const ch = {};
+    if (draft && draft.order && !d.orderId) { ch.orderId = draft.order.id; ch.orderName = draft.order.name; }
+    const order = proState.byId[ch.orderId || d.orderId] || (draft && draft.order) || null;
+    if (order && order.displayFulfillmentStatus === 'FULFILLED') ch.statut = 'terminee';
+    else if ((draft || order || d.draftId || d.orderId) && d.statut === 'demande') ch.statut = 'commande';
+    if (Object.keys(ch).length) changes[d.id] = ch;
+  });
+  if (!Object.keys(changes).length) return;
+  try {
+    await proSave(function (list) {
+      list.forEach(function (d) {
+        const ch = changes[d.id];
+        if (!ch) return;
+        if (ch.statut && ch.statut !== d.statut) proLog(d, 'Passage auto en « ' + proStageLabel(ch.statut) + ' »');
+        if (ch.orderId && ch.orderId !== d.orderId) proLog(d, 'Commande ' + ch.orderName + ' liée (brouillon converti)');
+        Object.assign(d, ch);
+        d.updatedAt = new Date().toISOString();
+      });
+      return list;
+    });
+  } catch (e) { console.log('Pro auto-sync:', e.message); }
+}
+
+function proLog(d, texte) {
+  d.historique = d.historique || [];
+  d.historique.unshift({ date: new Date().toISOString(), texte: texte });
+  if (d.historique.length > 30) d.historique.length = 30;
+}
+function proStageLabel(k) { return k === 'abandon' ? 'Sans suite' : (PRO_STAGES.find(function (s) { return s.key === k; }) || {}).label || k; }
+
+// ── Construction du tableau ──
+function proBuildBoard() {
+  const cols = { demande: [], commande: [], terminee: [] };
+  const linked = {};
+  proState.demandes.forEach(function (d) {
+    const draft = d.draftId ? proState.byId[d.draftId] : null;
+    const order = d.orderId ? proState.byId[d.orderId] : (draft && draft.order ? proState.byId[draft.order.id] || draft.order : null);
+    if (d.draftId) linked[d.draftId] = 1;
+    if (d.orderId) linked[d.orderId] = 1;
+    if (draft && draft.order) linked[draft.order.id] = 1;
+    const stage = (d.statut === 'terminee' || d.statut === 'abandon') ? 'terminee' : (d.statut === 'commande' || draft || order) ? 'commande' : 'demande';
+    cols[stage].push({ kind: 'fiche', d: d, draft: draft, order: order });
+  });
+  // Orphelins : brouillons ouverts et commandes custompro sans fiche
+  proState.drafts.forEach(function (dr) {
+    if (linked[dr.id] || (dr.order && linked[dr.order.id]) || dr.status !== 'OPEN') return;
+    cols.commande.push({ kind: 'orphan', draft: dr, order: null });
+  });
+  proState.orders.forEach(function (o) {
+    if (linked[o.id] || o.cancelledAt) return;
+    cols[o.displayFulfillmentStatus === 'FULFILLED' ? 'terminee' : 'commande'].push({ kind: 'orphan', draft: null, order: o });
+  });
+  const s = proState.search.trim().toLowerCase();
+  if (s) Object.keys(cols).forEach(function (k) { cols[k] = cols[k].filter(function (c) { return proCardText(c).indexOf(s) > -1; }); });
+  const dl = function (c) { return proCardDeadline(c) || '9999'; };
+  cols.demande.sort(function (a, b) { return dl(a).localeCompare(dl(b)); });
+  cols.commande.sort(function (a, b) { return dl(a).localeCompare(dl(b)); });
+  cols.terminee.sort(function (a, b) { return proCardDate(b).localeCompare(proCardDate(a)); });
+  return cols;
+}
+function proCardText(c) {
+  const d = c.d || {}, n = c.order || c.draft || {};
+  return [d.titre, d.clientName, d.clientEmail, d.brief, d.draftName, d.orderName, n.name, n.customer && n.customer.displayName, n.customer && n.customer.email].join(' ').toLowerCase();
+}
+function proCardDeadline(c) {
+  if (c.d) {
+    const stage = (c.draft || c.order || c.d.draftId || c.d.orderId || c.d.statut === 'commande') ? 'commande' : 'demande';
+    const e = (c.d.echeances || {})[stage];
+    if (e) return e;
+  }
+  return c.order && c.order.dl && c.order.dl.value ? c.order.dl.value.slice(0, 10) : '';
+}
+function proCardDate(c) { return (c.d && c.d.updatedAt) || (c.order && c.order.createdAt) || (c.draft && c.draft.createdAt) || ''; }
+
+// ── Rendu ──
+async function renderProTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = pageHead('Commandes pro', 'Demandes, brouillons et commandes taguées custompro') + loadingBlock();
+  try {
+    await proLoad();
+    renderProBoard();
+  } catch (e) {
+    c.innerHTML = pageHead('Commandes pro', '') + errorBlock(e.message, 'renderProTab()');
+  }
+}
+
+function renderProBoard() {
+  if (state.activeTab !== 'pro') { proUpdateBadge(); return; }
+  const c = document.getElementById('content');
+  const cols = proBuildBoard();
+  const actions = '<input class="input pro-search" type="search" placeholder="Rechercher client, n°…" value="' + escapeHtml(proState.search) + '" oninput="proState.search=this.value;proRerenderColumns()" />' +
+    '<button class="btn" onclick="renderProTab()">' + icon('refresh') + 'Actualiser</button>' +
+    '<button class="btn btn-primary" onclick="proOpenNew()">' + icon('plus') + 'Nouvelle demande</button>';
+  c.innerHTML = pageHead('Commandes pro', 'Demandes, brouillons et commandes taguées custompro', actions) +
+    '<div id="pro-board" class="pro-board">' + proColumnsHtml(cols) + '</div>';
+  proUpdateBadge(cols);
+}
+function proRerenderColumns() {
+  const b = document.getElementById('pro-board');
+  if (b) b.innerHTML = proColumnsHtml(proBuildBoard());
+}
+
+function proColumnsHtml(cols) {
+  return PRO_STAGES.map(function (st) {
+    let list = cols[st.key];
+    let more = '';
+    if (st.key === 'terminee' && !proState.showAllDone && list.length > 12) {
+      more = '<button class="btn btn-sm pro-more" onclick="proState.showAllDone=true;proRerenderColumns()">Voir les ' + (list.length - 12) + ' autres</button>';
+      list = list.slice(0, 12);
+    }
+    return '<section class="pro-col pro-col-' + st.key + '"><header class="pro-col-head">' + icon(st.ico) + '<span>' + st.label + '</span><b>' + cols[st.key].length + '</b></header>' +
+      '<div class="pro-col-body">' + (list.length ? list.map(proCardHtml).join('') : '<div class="empty-inline">Rien ici</div>') + more + '</div></section>';
+  }).join('');
+}
+
+function proCardHtml(c) {
+  const d = c.d;
+  const src = c.order || c.draft;
+  const clientName = (d && d.clientName) || (src && src.customer && src.customer.displayName) || 'Client non renseigné';
+  const title = (d && d.titre) || (src ? src.name : 'Demande');
+  let h = '<article class="pro-card' + (d ? '' : ' orphan') + (d && d.statut === 'abandon' ? ' abandon' : '') + '" onclick="' + (d ? "proOpen('" + d.id + "')" : "proAdoptOrphan('" + (src ? src.id : '') + "')") + '">';
+  h += '<div class="pro-card-top"><div class="pro-card-title">' + escapeHtml(title) + '</div>' + (d ? '' : '<span class="badge badge-muted" title="Aucune fiche : clique pour en créer une">Sans fiche</span>') + '</div>';
+  h += '<div class="pro-card-client">' + icon('star') + escapeHtml(clientName) + '</div>';
+  const chips = [];
+  if (c.draft) chips.push('<a class="pro-link" href="' + proAdminUrl(c.draft.id) + '" target="_blank" onclick="event.stopPropagation()">' + icon('file') + escapeHtml(c.draft.name) + (c.order ? '' : ' · brouillon') + '</a>');
+  if (c.order) chips.push('<a class="pro-link real" href="' + proAdminUrl(c.order.id) + '" target="_blank" onclick="event.stopPropagation()">' + icon('package') + escapeHtml(c.order.name) + (c.order.displayFulfillmentStatus === 'FULFILLED' ? ' · expédiée' : ' · réelle') + '</a>');
+  if (d && d.canva) chips.push('<a class="pro-link" href="' + escapeHtml(d.canva) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + icon('palette') + 'Canva</a>');
+  if (d && d.fichiers && d.fichiers.length) chips.push('<span class="pro-link muted">' + icon('file') + d.fichiers.length + ' fichier' + (d.fichiers.length > 1 ? 's' : '') + '</span>');
+  if (chips.length) h += '<div class="pro-card-links">' + chips.join('') + '</div>';
+  const foot = [];
+  if (d && d.statut === 'abandon') foot.push('<span class="badge badge-muted">Sans suite</span>');
+  else if (!(d && d.statut === 'terminee') && !(c.order && c.order.displayFulfillmentStatus === 'FULFILLED')) {
+    const dl = proCardDeadline(c);
+    if (dl) foot.push(proDeadlineBadge(dl));
+  }
+  const money = proFmtMoney(src && src.totalPriceSet);
+  if (money) foot.push('<span class="pro-money">' + money + '</span>');
+  if (d && d.brief) foot.push('<span class="pro-brief-hint" title="' + escapeHtml(d.brief.slice(0, 300)) + '">' + icon('note') + '</span>');
+  if (foot.length) h += '<div class="pro-card-foot">' + foot.join('') + '</div>';
+  return h + '</article>';
+}
+
+// Badge de la barre latérale : nb de fiches actives, point d'alerte si une échéance est dépassée.
+function proUpdateBadge(cols) {
+  const badge = document.getElementById('tab-pro-badge');
+  const dot = document.getElementById('tab-pro-alert-dot');
+  if (!badge || !proState.loaded) return;
+  cols = cols || proBuildBoard();
+  const active = cols.demande.length + cols.commande.length;
+  badge.style.display = active ? '' : 'none';
+  badge.textContent = active;
+  const late = cols.demande.concat(cols.commande).some(function (c) { const n = proDaysLeft(proCardDeadline(c)); return n !== null && n < 0; });
+  if (dot) dot.style.display = late ? '' : 'none';
+}
+async function proRefreshBadgeSilently() {
+  try { await proLoad(); proUpdateBadge(); } catch (e) { console.log('Badge pro:', e.message); }
+}
+
+// ── Modale fiche ──
+function proBlank() {
+  return { id: proUid(), createdAt: new Date().toISOString(), updatedAt: '', titre: '', statut: 'demande',
+    clientId: '', clientName: '', clientEmail: '', brief: '', canva: '', fichiers: [],
+    echeances: { demande: '', commande: '' }, draftId: '', draftName: '', orderId: '', orderName: '', historique: [] };
+}
+function proOpenNew() { proState.edit = proBlank(); proState.edit._new = true; proRenderModal(); }
+function proOpen(id) {
+  const d = proState.demandes.find(function (x) { return x.id === id; });
+  if (!d) return;
+  proState.edit = JSON.parse(JSON.stringify(d));
+  proState.edit.echeances = proState.edit.echeances || { demande: '', commande: '' };
+  proRenderModal();
+}
+// Carte orpheline → fiche pré-remplie avec le client et le brouillon/la commande.
+function proAdoptOrphan(gid) {
+  const n = proState.byId[gid];
+  if (!n) return;
+  const e = proBlank();
+  e._new = true;
+  e.statut = 'commande';
+  const isDraft = gid.indexOf('/DraftOrder/') > -1;
+  if (isDraft) { e.draftId = n.id; e.draftName = n.name; } else { e.orderId = n.id; e.orderName = n.name; }
+  if (n.customer) { e.clientId = n.customer.id; e.clientName = n.customer.displayName; e.clientEmail = n.customer.email || ''; }
+  e.titre = (n.customer ? n.customer.displayName : 'Commande') + ' — ' + n.name;
+  proState.edit = e;
+  proRenderModal();
+}
+function proCloseModal() {
+  if (proState.uploading) { showToast('Upload en cours…', 'warning'); return; }
+  document.getElementById('pro-modal').classList.remove('open');
+  proState.edit = null;
+}
+
+function proCurrentStage(e) {
+  if (e.statut === 'terminee' || e.statut === 'abandon') return 'terminee';
+  return (e.draftId || e.orderId || e.statut === 'commande') ? 'commande' : 'demande';
+}
+
+function proRenderModal() {
+  const e = proState.edit;
+  if (!e) return;
+  let m = document.getElementById('pro-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'pro-modal'; document.body.appendChild(m); }
+  const stage = proCurrentStage(e);
+  const draft = e.draftId ? proState.byId[e.draftId] : null;
+  const order = e.orderId ? proState.byId[e.orderId] : null;
+
+  let h = '<div class="pro-box" onclick="event.stopPropagation()">';
+  h += '<div class="pro-box-head"><h2>' + (e._new ? 'Nouvelle demande pro' : escapeHtml(e.titre || 'Demande pro')) + '</h2><button class="btn btn-icon btn-sm" onclick="proCloseModal()" title="Fermer">' + icon('x') + '</button></div>';
+
+  // Étapes
+  h += '<div class="pro-steps">' + PRO_STAGES.map(function (s, i) {
+    const idx = PRO_STAGES.findIndex(function (x) { return x.key === stage; });
+    return '<div class="pro-step' + (i < idx ? ' done' : i === idx ? ' current' : '') + '">' + icon(s.ico) + s.label + (s.key === 'commande' && stage === 'commande' ? ' <small>(' + (order || e.orderId ? 'réelle' : 'brouillon') + ')</small>' : '') + '</div>';
+  }).join('<span class="pro-step-sep"></span>') + (e.statut === 'abandon' ? '<span class="badge badge-muted" style="margin-left:8px">Sans suite</span>' : '') + '</div>';
+
+  h += '<div class="pro-grid">';
+  // Colonne gauche : demande
+  h += '<div>';
+  h += '<div class="form-group"><label for="pro-titre">Titre</label><input id="pro-titre" type="text" placeholder="ex. Maillots club saison 2027" value="' + escapeHtml(e.titre) + '" oninput="proState.edit.titre=this.value" /></div>';
+  h += '<div class="form-group"><label>Client Shopify</label>' + proClientFieldHtml() + '</div>';
+  h += '<div class="form-group"><label for="pro-brief">Brief</label><textarea id="pro-brief" rows="6" placeholder="Colle ici le mail / la demande du pro : quantités, produits, couleurs, logos, délais…" oninput="proState.edit.brief=this.value">' + escapeHtml(e.brief) + '</textarea></div>';
+  h += '<div class="form-group"><label>Fichiers</label><div id="pro-files">' + proFilesHtml() + '</div>' +
+    '<input id="pro-file-input" type="file" multiple hidden onchange="proUploadFiles(this.files);this.value=\'\'" />' +
+    '<button type="button" class="btn btn-sm pro-upload-btn" onclick="document.getElementById(\'pro-file-input\').click()">' + icon('upload') + 'Ajouter des fichiers</button>' +
+    '<div class="field-hint">Stockés dans Shopify &gt; Contenu &gt; Fichiers (20 Mo max par fichier)</div></div>';
+  h += '<div class="form-group"><label for="pro-canva">Lien Canva <span class="pro-opt">(optionnel)</span></label><div class="pro-inline"><input id="pro-canva" type="url" placeholder="https://www.canva.com/design/…" value="' + escapeHtml(e.canva) + '" oninput="proState.edit.canva=this.value.trim()" />' +
+    (e.canva ? '<a class="btn btn-sm" href="' + escapeHtml(e.canva) + '" target="_blank" rel="noopener">' + icon('external') + 'Ouvrir</a>' : '') + '</div></div>';
+  h += '</div>';
+
+  // Colonne droite : échéances, liens Shopify, historique
+  h += '<div>';
+  h += '<div class="pro-panel"><div class="pro-panel-title">' + icon('clock') + 'Échéances</div>' +
+    '<div class="form-group"><label for="pro-ech-demande">Demande <span class="pro-opt">(réponse / devis)</span></label><input id="pro-ech-demande" type="date" value="' + escapeHtml(e.echeances.demande || '') + '" onchange="proState.edit.echeances.demande=this.value" /></div>' +
+    '<div class="form-group"><label for="pro-ech-commande">Commande <span class="pro-opt">(construction / validation)</span></label><input id="pro-ech-commande" type="date" value="' + escapeHtml(e.echeances.commande || '') + '" onchange="proState.edit.echeances.commande=this.value" />' +
+    (order && order.dl && order.dl.value ? '<div class="field-hint">Date limite de traitement Shopify : ' + proFmtDate(order.dl.value) + '</div>' : '') + '</div></div>';
+
+  h += '<div class="pro-panel"><div class="pro-panel-title">' + icon('link') + 'Shopify</div>';
+  if (e.draftId) {
+    h += '<div class="pro-linked">' + icon('file') + '<a href="' + proAdminUrl(e.draftId) + '" target="_blank">Brouillon ' + escapeHtml(e.draftName || proNumId(e.draftId)) + '</a>' +
+      (draft ? '<span class="badge badge-muted">' + (draft.status === 'COMPLETED' ? 'converti' : draft.status === 'INVOICE_SENT' ? 'facture envoyée' : 'ouvert') + '</span>' : '') +
+      '<button class="btn btn-sm btn-link" onclick="proUnlink(\'draft\')">délier</button></div>';
+  } else {
+    h += '<div class="pro-linked-actions"><button class="btn btn-sm btn-primary" onclick="proCreateDraft()"' + (e.clientId ? '' : ' disabled title="Choisis d\'abord un client"') + '>' + icon('plus') + 'Créer le brouillon</button>' + proLinkSelectHtml('draft') + '</div>';
+  }
+  if (e.orderId) {
+    h += '<div class="pro-linked">' + icon('package') + '<a href="' + proAdminUrl(e.orderId) + '" target="_blank">Commande ' + escapeHtml(e.orderName || proNumId(e.orderId)) + '</a>' +
+      (order ? '<span class="badge ' + (order.displayFulfillmentStatus === 'FULFILLED' ? 'badge-muted' : 'pro-badge-ok') + '">' + (order.displayFulfillmentStatus === 'FULFILLED' ? 'expédiée' : 'en cours') + '</span>' : '') +
+      '<button class="btn btn-sm btn-link" onclick="proUnlink(\'order\')">délier</button></div>';
+  } else {
+    h += '<div class="pro-linked-actions">' + proLinkSelectHtml('order') + '<div class="field-hint">Rempli automatiquement quand le brouillon est payé.</div></div>';
+  }
+  h += '</div>';
+
+  if (e.historique && e.historique.length) {
+    h += '<div class="pro-panel"><div class="pro-panel-title">' + icon('history') + 'Historique</div><ul class="pro-histo">' +
+      e.historique.slice(0, 8).map(function (x) { return '<li><span>' + proFmtDate(x.date) + '</span>' + escapeHtml(x.texte) + '</li>'; }).join('') + '</ul></div>';
+  }
+  h += '</div></div>';
+
+  // Pied
+  h += '<div class="pro-box-foot">';
+  if (!e._new) {
+    if (e.statut === 'terminee' || e.statut === 'abandon') h += '<button class="btn" onclick="proSetStatut(\'reopen\')">' + icon('history') + 'Rouvrir</button>';
+    else h += '<button class="btn" onclick="proSetStatut(\'terminee\')">' + icon('checkCircle') + 'Terminer</button><button class="btn" onclick="proSetStatut(\'abandon\')">' + icon('archive') + 'Sans suite</button>';
+    h += '<button class="btn btn-danger" onclick="proDelete()">' + icon('trash') + 'Supprimer</button>';
+  }
+  h += '<span style="flex:1"></span><button class="btn" onclick="proCloseModal()">Annuler</button><button class="btn btn-primary" id="pro-save-btn" onclick="proSubmit()">' + icon('save') + 'Enregistrer</button></div>';
+  h += '</div>';
+  m.innerHTML = h;
+  m.classList.add('open');
+}
+
+function proClientFieldHtml() {
+  const e = proState.edit;
+  if (e.clientId) {
+    return '<div class="pro-client-sel">' + icon('star') + '<div><b>' + escapeHtml(e.clientName) + '</b><div class="field-hint" style="margin:0">' + escapeHtml(e.clientEmail || '') + '</div></div>' +
+      '<a class="btn btn-sm" href="' + PRO_ADMIN + 'customers/' + proNumId(e.clientId) + '" target="_blank">' + icon('external') + '</a>' +
+      '<button class="btn btn-sm" onclick="proState.edit.clientId=\'\';proRenderModal()">Changer</button></div>';
+  }
+  let h = '<div class="pro-client-search"><input id="pro-cust-q" type="search" autocomplete="off" placeholder="Nom, email, société…" oninput="proSearchCustomers(this.value)" />' +
+    '<div id="pro-cust-results" class="pro-cust-results"></div></div>' +
+    '<details class="pro-newcust"><summary>+ Créer un nouveau client</summary>' +
+    '<div class="pro-inline"><input id="pro-nc-first" type="text" placeholder="Prénom" /><input id="pro-nc-last" type="text" placeholder="Nom / société" /></div>' +
+    '<div class="pro-inline"><input id="pro-nc-email" type="email" placeholder="Email" /><input id="pro-nc-phone" type="tel" placeholder="Téléphone (+33…)" /></div>' +
+    '<button class="btn btn-sm" onclick="proCreateCustomer()">' + icon('plus') + 'Créer dans Shopify</button></details>';
+  return h;
+}
+
+function proSearchCustomers(q) {
+  clearTimeout(proState.custTimer);
+  const box = document.getElementById('pro-cust-results');
+  if (!q || q.trim().length < 2) { if (box) box.innerHTML = ''; return; }
+  proState.custTimer = setTimeout(async function () {
+    try {
+      const data = await gql('query($q:String!){ customers(first:8, query:$q){ nodes{ id displayName email tags numberOfOrders } } }', { q: q.trim() });
+      proState.custResults = data.customers.nodes || [];
+      const b = document.getElementById('pro-cust-results');
+      if (!b) return;
+      b.innerHTML = proState.custResults.length ? proState.custResults.map(function (c, i) {
+        return '<button type="button" class="pro-cust-item" onclick="proPickCustomer(' + i + ')"><b>' + escapeHtml(c.displayName) + '</b><span>' + escapeHtml(c.email || '') + ' · ' + (c.numberOfOrders || 0) + ' cde</span></button>';
+      }).join('') : '<div class="empty-inline">Aucun client trouvé</div>';
+    } catch (err) { showToast('Recherche client : ' + err.message, 'error'); }
+  }, 300);
+}
+function proPickCustomer(i) {
+  const c = proState.custResults[i];
+  if (!c) return;
+  Object.assign(proState.edit, { clientId: c.id, clientName: c.displayName, clientEmail: c.email || '' });
+  if (!proState.edit.titre) proState.edit.titre = c.displayName;
+  proRenderModal();
+}
+async function proCreateCustomer() {
+  const v = function (id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const input = { firstName: v('pro-nc-first') || null, lastName: v('pro-nc-last') || null, email: v('pro-nc-email') || null, tags: ['pro'] };
+  if (v('pro-nc-phone')) input.phone = v('pro-nc-phone');
+  if (!input.email && !input.phone) { showToast('Email ou téléphone requis', 'warning'); return; }
+  try {
+    const data = await gql('mutation($input:CustomerInput!){ customerCreate(input:$input){ customer{ id displayName email } userErrors{ field message } } }', { input: input });
+    const r = data.customerCreate;
+    if (r.userErrors && r.userErrors.length) throw new Error(r.userErrors.map(function (x) { return x.message; }).join(', '));
+    Object.assign(proState.edit, { clientId: r.customer.id, clientName: r.customer.displayName, clientEmail: r.customer.email || '' });
+    if (!proState.edit.titre) proState.edit.titre = r.customer.displayName;
+    proLog(proState.edit, 'Client ' + r.customer.displayName + ' créé dans Shopify');
+    showToast('Client créé');
+    proRenderModal();
+  } catch (err) { showToast('Création client : ' + err.message, 'error'); }
+}
+
+// Sélecteur « lier un brouillon / une commande existant(e) » parmi les custompro non rattachés.
+function proLinkSelectHtml(kind) {
+  const used = {};
+  proState.demandes.forEach(function (d) { if (d.id !== proState.edit.id) { if (d.draftId) used[d.draftId] = 1; if (d.orderId) used[d.orderId] = 1; } });
+  const src = kind === 'draft' ? proState.drafts.filter(function (x) { return x.status === 'OPEN'; }) : proState.orders.filter(function (x) { return !x.cancelledAt; });
+  const opts = src.filter(function (x) { return !used[x.id]; });
+  if (!opts.length) return '';
+  return '<select class="input pro-link-select" onchange="proLinkExisting(\'' + kind + '\', this.value)"><option value="">' + (kind === 'draft' ? 'Lier un brouillon existant…' : 'Lier une commande existante…') + '</option>' +
+    opts.map(function (x) { return '<option value="' + escapeHtml(x.id) + '">' + escapeHtml(x.name + ' — ' + (x.customer ? x.customer.displayName : 'sans client') + ' — ' + proFmtDate(x.createdAt)) + '</option>'; }).join('') + '</select>';
+}
+function proLinkExisting(kind, gid) {
+  if (!gid) return;
+  const n = proState.byId[gid];
+  const e = proState.edit;
+  if (kind === 'draft') {
+    e.draftId = gid; e.draftName = n ? n.name : '';
+    if (n && n.order && !e.orderId) { e.orderId = n.order.id; e.orderName = n.order.name; }
+  } else { e.orderId = gid; e.orderName = n ? n.name : ''; }
+  if (n && n.customer && !e.clientId) { e.clientId = n.customer.id; e.clientName = n.customer.displayName; e.clientEmail = n.customer.email || ''; }
+  if (e.statut === 'demande') e.statut = 'commande';
+  proLog(e, (kind === 'draft' ? 'Brouillon ' : 'Commande ') + (n ? n.name : '') + ' lié(e)');
+  proRenderModal();
+}
+function proUnlink(kind) {
+  const e = proState.edit;
+  if (kind === 'draft') { proLog(e, 'Brouillon ' + (e.draftName || '') + ' délié'); e.draftId = ''; e.draftName = ''; }
+  else { proLog(e, 'Commande ' + (e.orderName || '') + ' déliée'); e.orderId = ''; e.orderName = ''; }
+  if (!e.draftId && !e.orderId && e.statut === 'commande') e.statut = 'demande';
+  proRenderModal();
+}
+
+// Crée un brouillon Shopify pour le client, tag custompro, brief en note, puis l'ouvre dans l'admin.
+async function proCreateDraft() {
+  const e = proState.edit;
+  if (!e.clientId) { showToast('Choisis d\'abord un client', 'warning'); return; }
+  const note = [e.titre, e.brief, e.canva ? 'Canva : ' + e.canva : ''].filter(Boolean).join('\n\n').slice(0, 5000);
+  const base = { customerId: e.clientId, tags: ['custompro'], note: note };
+  const mut = 'mutation($input:DraftOrderInput!){ draftOrderCreate(input:$input){ draftOrder{ id name } userErrors{ field message } } }';
+  const win = window.open('about:blank', '_blank');
+  try {
+    let data = await gql(mut, { input: Object.assign({}, base, { lineItems: [] }) });
+    let r = data.draftOrderCreate;
+    if (r.userErrors && r.userErrors.length) {
+      // Shopify refuse parfois un brouillon vide : ligne provisoire à remplacer par les vrais produits.
+      data = await gql(mut, { input: Object.assign({}, base, { lineItems: [{ title: 'Commande pro — à construire', originalUnitPrice: '0', quantity: 1 }] }) });
+      r = data.draftOrderCreate;
+    }
+    if (r.userErrors && r.userErrors.length) throw new Error(r.userErrors.map(function (x) { return x.message; }).join(', '));
+    e.draftId = r.draftOrder.id; e.draftName = r.draftOrder.name;
+    if (e.statut === 'demande') e.statut = 'commande';
+    proLog(e, 'Brouillon ' + r.draftOrder.name + ' créé');
+    proState.byId[e.draftId] = { id: e.draftId, name: e.draftName, status: 'OPEN', createdAt: new Date().toISOString(), customer: { id: e.clientId, displayName: e.clientName, email: e.clientEmail } };
+    await proSubmit(true);
+    if (win) win.location = proAdminUrl(e.draftId);
+    showToast('Brouillon ' + r.draftOrder.name + ' créé');
+  } catch (err) {
+    if (win) win.close();
+    showToast('Brouillon : ' + err.message, 'error');
+  }
+}
+
+// ── Fichiers : upload direct navigateur → Shopify (staged upload), sans passer par Vercel (limite 4,5 Mo) ──
+function proFilesHtml() {
+  const f = proState.edit.fichiers || [];
+  let h = f.map(function (x, i) {
+    const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(x.name || '');
+    return '<div class="pro-file">' + (isImg && x.url ? '<img src="' + escapeHtml(x.url) + '" alt="" />' : icon('file')) +
+      (x.url ? '<a href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' + escapeHtml(x.name) + '</a>' : '<span>' + escapeHtml(x.name) + ' <small>(traitement Shopify…)</small></span>') +
+      '<button class="btn btn-icon btn-sm" onclick="proRemoveFile(' + i + ')" title="Retirer">' + icon('x') + '</button></div>';
+  }).join('');
+  if (proState.uploading) h += '<div class="empty-inline"><div class="spinner-ring" style="width:16px;height:16px;border-width:2px"></div>Upload de ' + proState.uploading + ' fichier(s)…</div>';
+  return h;
+}
+function proRefreshFiles() { const b = document.getElementById('pro-files'); if (b) b.innerHTML = proFilesHtml(); }
+function proRemoveFile(i) { proState.edit.fichiers.splice(i, 1); proRefreshFiles(); }
+
+async function proUploadFiles(fileList) {
+  const files = Array.from(fileList || []);
+  for (const f of files) {
+    if (f.size > PRO_MAX_FILE_BYTES) { showToast(f.name + ' dépasse 20 Mo', 'warning'); continue; }
+    proState.uploading++; proRefreshFiles();
+    try {
+      const rec = await proUploadOne(f);
+      if (proState.edit) { proState.edit.fichiers.push(rec); proLog(proState.edit, 'Fichier ajouté : ' + rec.name); }
+    } catch (err) { showToast('Upload ' + f.name + ' : ' + err.message, 'error'); }
+    proState.uploading--; proRefreshFiles();
+  }
+}
+async function proUploadOne(file) {
+  const isImg = /^image\/(png|jpe?g|gif|webp)$/i.test(file.type);
+  const mime = file.type || 'application/octet-stream';
+  const st = await gql('mutation($input:[StagedUploadInput!]!){ stagedUploadsCreate(input:$input){ stagedTargets{ url resourceUrl parameters{ name value } } userErrors{ field message } } }',
+    { input: [{ filename: file.name, mimeType: mime, resource: isImg ? 'IMAGE' : 'FILE', httpMethod: 'POST', fileSize: String(file.size) }] });
+  const sErr = st.stagedUploadsCreate.userErrors;
+  if (sErr && sErr.length) throw new Error(sErr.map(function (x) { return x.message; }).join(', '));
+  const target = st.stagedUploadsCreate.stagedTargets[0];
+  const form = new FormData();
+  target.parameters.forEach(function (p) { form.append(p.name, p.value); });
+  form.append('file', file);
+  const up = await fetch(target.url, { method: 'POST', body: form });
+  if (!up.ok) throw new Error('stockage Shopify ' + up.status);
+  const fc = await gql('mutation($files:[FileCreateInput!]!){ fileCreate(files:$files){ files{ id fileStatus ... on GenericFile{ url } ... on MediaImage{ image{ url } } } userErrors{ field message } } }',
+    { files: [{ originalSource: target.resourceUrl, contentType: isImg ? 'IMAGE' : 'FILE', alt: 'Brief pro — ' + file.name }] });
+  const fErr = fc.fileCreate.userErrors;
+  if (fErr && fErr.length) throw new Error(fErr.map(function (x) { return x.message; }).join(', '));
+  const created = fc.fileCreate.files[0];
+  let url = created.url || (created.image && created.image.url) || '';
+  for (let i = 0; !url && i < 10; i++) {
+    await new Promise(function (r) { setTimeout(r, 1200); });
+    const g = await gql('query($id:ID!){ node(id:$id){ ... on GenericFile{ url fileStatus } ... on MediaImage{ fileStatus image{ url } } } }', { id: created.id });
+    const n = g.node || {};
+    if (n.fileStatus === 'FAILED') throw new Error('traitement Shopify échoué');
+    url = n.url || (n.image && n.image.url) || '';
+  }
+  return { id: created.id, name: file.name, url: url, size: file.size, addedAt: new Date().toISOString() };
+}
+
+// ── Enregistrement / statut / suppression ──
+async function proSubmit(keepOpen) {
+  const e = proState.edit;
+  if (!e) return;
+  if (proState.uploading) { showToast('Attends la fin de l\'upload', 'warning'); return; }
+  if (!e.titre && !e.clientName) { showToast('Donne au moins un titre ou un client', 'warning'); return; }
+  const btn = document.getElementById('pro-save-btn');
+  if (btn) btn.disabled = true;
+  const isNew = !!e._new;
+  const rec = JSON.parse(JSON.stringify(e));
+  delete rec._new;
+  rec.updatedAt = new Date().toISOString();
+  if (isNew) proLog(rec, 'Fiche créée');
+  try {
+    await proSave(function (list) {
+      const i = list.findIndex(function (x) { return x.id === rec.id; });
+      if (i > -1) list[i] = rec; else list.unshift(rec);
+      return list;
+    });
+    if (keepOpen === true) { proState.edit = JSON.parse(JSON.stringify(rec)); proRenderModal(); }
+    else { showToast('Fiche enregistrée'); proCloseModal(); }
+    renderProBoard();
+  } catch (err) {
+    showToast('Enregistrement : ' + err.message, 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+async function proSetStatut(s) {
+  const e = proState.edit;
+  if (!e) return;
+  if (s === 'reopen') { e.statut = (e.draftId || e.orderId) ? 'commande' : 'demande'; proLog(e, 'Rouverte'); }
+  else { e.statut = s; proLog(e, s === 'abandon' ? 'Classée sans suite' : 'Terminée manuellement'); }
+  await proSubmit();
+}
+async function proDelete() {
+  const e = proState.edit;
+  if (!e || e._new) return;
+  const btn = document.getElementById('pro-save-btn');
+  if (btn && !btn.dataset.confirmDel) {
+    btn.dataset.confirmDel = '1';
+    showToast('Clique encore sur Supprimer pour confirmer', 'warning');
+    setTimeout(function () { if (btn) delete btn.dataset.confirmDel; }, 4000);
+    return;
+  }
+  try {
+    await proSave(function (list) { return list.filter(function (x) { return x.id !== e.id; }); });
+    showToast('Fiche supprimée (brouillon/commande Shopify conservés)');
+    proCloseModal();
+    renderProBoard();
+  } catch (err) { showToast('Suppression : ' + err.message, 'error'); }
 }
 
 </script>
