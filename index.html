@@ -295,6 +295,10 @@
     .co-deadline span { font-size: 18px; font-weight: 600; }
     .co-deadline.tone-critical { background: var(--critical-bg); border-color: var(--critical-border); color: #b8260b; }
     .co-deadline.tone-warning { background: var(--warning-bg); border-color: #f1c84b; color: #6b4700; }
+    .co-deadline.tone-success { background: var(--success-bg); border-color: #95c9b4; color: #006e52; }
+    .co-deadline a { text-decoration: underline; text-underline-offset: 2px; }
+    .pill-shipped { background: var(--success); }
+    .pill-cancelled { background: #6d7175; }
     .co-deadline.tone-info { background: var(--info-bg); border-color: var(--border); color: var(--text); }
     .co-meta { margin: 0; flex: 1 1 420px; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--border); border-radius: 12px; }
     .co-meta > div { padding: 10px 16px; border-right: 1px solid var(--border); min-width: 0; }
@@ -668,17 +672,7 @@
   .order-count-badge { display: flex; align-items: baseline; gap: 6px; }
   .step-status { margin-top: 12px; }
 
-  /* Impression : stepper */
-  .stepper { display: flex; align-items: center; gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
-  .stepper-item { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 0; background: none; border-radius: 20px; font-size: 14px; color: var(--text-sub); cursor: pointer; }
-  .stepper-item:hover:not(:disabled) { background: var(--bg); }
-  .stepper-item:disabled { cursor: default; opacity: .5; }
-  .stepper-item .step-number { width: 26px; height: 26px; font-size: 13px; background: var(--border); color: var(--text-sub); }
-  .stepper-item.done .step-number { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
-  .stepper-item.current { color: var(--text); font-weight: 600; }
-  .stepper-item.current .step-number { background: var(--primary); color: #fff; }
-  .stepper-sep { width: 24px; height: 1px; background: var(--border); }
-  .wizard-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+  /* Impression */
   .print-order-item { cursor: pointer; }
   .print-order-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .print-order-note { display: flex; align-items: flex-start; gap: 6px; font-style: normal; }
@@ -2008,6 +2002,8 @@ function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); 
 // CUSTOM ORDERS
 // ════════════════════════════════════════════
 const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName }
+  displayFulfillmentStatus cancelledAt
+  fulfillments(first: 5) { createdAt trackingInfo(first: 1) { number url } }
   dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
   estRush: metafield(namespace: "custom", key: "est_rush") { value }
   lineItems(first: 250) { edges { node { id title quantity currentQuantity requiresShipping
@@ -2141,6 +2137,25 @@ function shortProductTitle(title) {
 // Lignes sans expédition (frais de réimpression, etc.) : rien à préparer physiquement.
 function isPhysicalLine(li) { return li.requiresShipping !== false; }
 
+// Statut « déjà traitée » d'une commande : expédiée (totalement / partiellement) ou annulée.
+// Renvoie null pour une commande encore à préparer.
+function orderShipState(order) {
+  if (!order) return null;
+  const fmt = iso => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  if (order.cancelledAt) return { kind: 'cancelled', pill: 'ANNUL\u00c9E', title: `Annul\u00e9e le ${fmt(order.cancelledAt)}`, sub: '' };
+  const st = order.displayFulfillmentStatus;
+  if (st !== 'FULFILLED' && st !== 'PARTIALLY_FULFILLED') return null;
+  const fs = (order.fulfillments || []).filter(f => f.createdAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const last = fs[0];
+  const tr = last && last.trackingInfo && last.trackingInfo[0];
+  const sub = tr && tr.number
+    ? (tr.url ? `suivi <a href="${escapeHtml(tr.url)}" target="_blank" rel="noopener" style="color:inherit;">${escapeHtml(tr.number)}</a>` : `suivi ${escapeHtml(tr.number)}`)
+    : '';
+  const partial = st === 'PARTIALLY_FULFILLED';
+  return { kind: 'shipped', pill: partial ? 'EXP\u00c9DI\u00c9E EN PARTIE' : 'EXP\u00c9DI\u00c9E',
+    title: (partial ? 'Exp\u00e9di\u00e9e en partie' : 'Exp\u00e9di\u00e9e') + (last ? ` le ${fmt(last.createdAt)}` : ''), sub };
+}
+
 function renderOrderView() {
   const c = document.getElementById('content');
   c.classList.add('has-rail'); document.body.classList.add('rail-mode');
@@ -2208,10 +2223,20 @@ function renderOrderView() {
   }
   const estRushBadge = order.estRush?.value === 'true' ? `<span class="pill pill-rush">${ICO.bolt}RUSH</span>` : '';
 
+  // ── Commande déjà traitée (ouverte via la recherche) : expédiée ou annulée ──
+  const shipState = orderShipState(order);
+  let shipPill = '';
+  if (shipState) {
+    shipPill = `<span class="pill ${shipState.kind === 'cancelled' ? 'pill-cancelled' : 'pill-shipped'}">${shipState.kind === 'cancelled' ? ICO.alert : ICO.check}${shipState.pill}</span>`;
+    // Le délai n'a plus de sens (« en retard » serait faux) : on le remplace par le statut
+    delaiBlock = `<div class="co-deadline tone-${shipState.kind === 'cancelled' ? 'info' : 'success'}">${shipState.kind === 'cancelled' ? ICO.alert : ICO.box}<b>${shipState.title}</b>${shipState.sub ? `<span>\u00b7 ${shipState.sub}</span>` : ''}</div>`;
+  }
+
   html += `<div id="order-sticky">
     <div class="order-sticky-top">
       <h2>${order.name}</h2>
-      ${isUrgent ? `<span class="pill pill-urgent">${ICO.alert}URGENT</span>` : ''}
+      ${shipPill}
+      ${isUrgent && !shipState ? `<span class="pill pill-urgent">${ICO.alert}URGENT</span>` : ''}
       ${estRushBadge}
       ${renderStatusBadges(order.tags)}
       <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="co-shopify">${ICO.ext}Voir dans Shopify</a>
@@ -2225,7 +2250,7 @@ function renderOrderView() {
       </dl>
     </div>
     ${hasNote ? `<div class="co-note">${ICO.note}<div><strong>Note client : </strong><span class="alert-text">${order.note}</span></div></div>` : ''}
-    <div class="prep-list"><span class="prep-label">À préparer</span>${prepItems}</div>
+    <div class="prep-list"><span class="prep-label">${shipState ? 'Contenu' : 'À préparer'}</span>${prepItems}</div>
   </div>
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
@@ -2761,6 +2786,7 @@ async function renderPrintTab() {
     state.printSelected = new Set(orders.map(o => o.id));
     state.printZipDone = false;
     state.printZipOrderIds = [];
+    state.printZipZips = [];
     state.printWizardStep = 1;
     try { state.printLots = await fetchPrintLots(); state.printLotsLoaded = true; }
     catch (e) { state.printLots = []; state.printLotsLoaded = false; console.log('Erreur chargement lots impression:', e.message); }
@@ -2785,107 +2811,99 @@ function renderPrintView() {
     return;
   }
 
+  // Même schéma que l'assistant export fournisseur : les 3 étapes empilées,
+  // toujours visibles ; une étape se déverrouille quand la précédente est faite.
   const selectedCount = state.printSelected.size;
+  const zipDone = state.printZipDone;
+  const zipCount = state.printZipOrderIds.length;
   const ordersWithNotes = orders.filter(o => o.note?.trim() && state.printSelected.has(o.id));
+  const step1Done = selectedCount > 0;
+  const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
 
-  // Clamp l'étape affichée selon ce qui est réellement débloqué
-  let step = state.printWizardStep;
-  if (step === 2 && selectedCount === 0) step = 1;
-  if (step === 3 && !state.printZipDone) step = state.printZipDone ? 3 : (selectedCount === 0 ? 1 : 2);
-  state.printWizardStep = step;
+  // ── Étape 1 : sélection ──
+  const orderRows = orders.map(o => {
+    const isSelected = state.printSelected.has(o.id);
+    const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
+    const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
+    const activeItems = activeLineItemEdges(o);
+    const totalQty = activeItems.reduce((s,{node:li})=>s+li.currentQuantity,0);
+    const fileCount = activeItems.reduce((s,{node:li}) => {
+      const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
+      const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
+      return s + designs.length + jsonUrls.length;
+    }, 0);
+    return `<label class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
+      <input type="checkbox" ${isSelected?'checked':''} ${zipDone ? 'disabled' : ''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
+      <div class="print-order-info">
+        <div class="print-order-name"><span class="num">${escapeHtml(o.name)}</span> <span class="badge badge-info num">${totalQty} art.</span> <span class="badge badge-info num" title="Commande passée il y a ${ageInDays} jour${ageInDays>1?'s':''}">${ageInDays}j</span></div>
+        <div class="print-order-detail">${escapeHtml(customer||'—')} · ${plural(activeItems.length, 'ligne')} · ${plural(fileCount, 'fichier')}</div>
+        ${o.note?.trim() ? `<div class="print-order-note">${icon('note')}<span>${escapeHtml(o.note)}</span></div>` : ''}
+      </div>
+    </label>`;
+  }).join('');
 
-  const stepMeta = [
-    { n: 1, label: 'Sélection', unlocked: true },
-    { n: 2, label: 'Génération ZIP', unlocked: selectedCount > 0 },
-    { n: 3, label: 'Validation', unlocked: state.printZipDone },
-  ];
-
-  const stepper = '<div class="stepper" role="list">' + stepMeta.map((s, i) => {
-    const isCurrent = s.n === step;
-    const isDone = s.n < step;
-    return (i ? '<span class="stepper-sep" aria-hidden="true"></span>' : '') +
-      `<button type="button" role="listitem" class="stepper-item${isCurrent ? ' current' : ''}${isDone ? ' done' : ''}" ${s.unlocked ? `onclick="goToPrintStep(${s.n})"` : 'disabled'} ${isCurrent ? 'aria-current="step"' : ''}>
-        <span class="step-number">${isDone ? icon('check') : s.n}</span>${s.label}
-      </button>`;
-  }).join('') + '</div>';
-
-  let stepBodyHtml = '';
-
-  if (step === 1) {
-    stepBodyHtml = `
-      <div class="card-head">
-        <div>
-          <div class="step-title">Sélectionner les commandes à préparer</div>
-          <div class="step-desc" id="print-step1-desc">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
-        </div>
-        <div class="card-actions">
+  const step1 = `
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number ${step1Done ? 'done' : ''}">${step1Done ? icon('check') : '1'}</div>
+        <div><div class="step-title">Sélectionner les commandes à préparer</div><div class="step-desc" id="print-step1-desc">${plural(orders.length, 'commande')} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div></div>
+        ${zipDone ? '' : `<div class="btn-group" style="margin-left:auto;">
           <button class="btn btn-sm" onclick="printSelectAll()">${icon('squareCheck')}Tout sélectionner</button>
           <button class="btn btn-sm" onclick="printDeselectAll()">${icon('square')}Tout désélectionner</button>
-        </div>
+        </div>`}
       </div>
-      <div class="print-order-list">
-        ${orders.map(o => {
-          const isSelected = state.printSelected.has(o.id);
-          const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
-          const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
-          const activeItems = activeLineItemEdges(o);
-          const totalQty = activeItems.reduce((s,{node:li})=>s+li.currentQuantity,0);
-          const fileCount = activeItems.reduce((s,{node:li}) => {
-            const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
-            const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
-            return s + designs.length + jsonUrls.length;
-          }, 0);
-          return `<label class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
-            <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
-            <div class="print-order-info">
-              <div class="print-order-name"><span class="num">${escapeHtml(o.name)}</span> <span class="badge badge-info num">${totalQty} art.</span> <span class="badge badge-info num" title="Commande passée il y a ${ageInDays} jour${ageInDays>1?'s':''}">${ageInDays}j</span></div>
-              <div class="print-order-detail">${escapeHtml(customer||'—')} · ${activeItems.length} ligne${activeItems.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
-              ${o.note?.trim() ? `<div class="print-order-note">${icon('note')}<span>${escapeHtml(o.note)}</span></div>` : ''}
-            </div>
-          </label>`;
-        }).join('')}
+      <div class="step-body">
+        ${zipDone ? `<div class="empty-inline" style="margin-bottom:10px;">${icon('lock')}ZIP généré : la sélection est figée. Actualise l'onglet pour repartir de zéro.</div>` : ''}
+        <div class="print-order-list" style="margin-bottom:0;">${orderRows}</div>
+        ${ordersWithNotes.length > 0 ? `
+        <div class="alert alert-warning" style="margin-top:12px;margin-bottom:0;">
+          ${icon('note')}<div><strong>${plural(ordersWithNotes.length, 'commande')} avec note</strong><span class="alert-text"> — incluses dans le notes.txt du ZIP</span></div>
+        </div>` : ''}
       </div>
-      ${ordersWithNotes.length > 0 ? `
-      <div class="alert alert-warning" style="margin-top:12px;margin-bottom:0;">
-        ${icon('note')}<div><strong>${ordersWithNotes.length} commande${ordersWithNotes.length>1?'s':''} avec note</strong><span class="alert-text"> — incluses dans le notes.txt du ZIP</span></div>
-      </div>` : ''}
-    `;
-  } else if (step === 2) {
-    stepBodyHtml = `
-      <div class="step-title">Générer le ZIP</div>
-      <div class="step-desc" style="margin-bottom:14px;">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive — ${selectedCount} commande${selectedCount>1?'s':''} sélectionnée${selectedCount>1?'s':''}</div>
-      <div id="zip-generate-zone">
+    </div>`;
+
+  // ── Étape 2 : génération du ZIP ──
+  let step2Body;
+  if (zipDone) {
+    const links = (state.printZipZips || []).map(z =>
+      `<a href="${z.url}" target="_blank" rel="noopener">${icon('archive')}${escapeHtml(z.name)}${icon('external')}</a>`).join('');
+    step2Body = `<div class="zip-result"><div class="zip-title">${icon('checkCircle')}ZIP généré dans ton Drive — ${plural(zipCount, 'commande')}</div>${links}</div>`;
+  } else if (!step1Done) {
+    step2Body = `<div class="empty-inline">${icon('lock')}Sélectionne au moins une commande à l'étape 1.</div>`;
+  } else {
+    step2Body = `<div id="zip-generate-zone">
         <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
           ${icon('archive')}<span>Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})</span>
         </button>
       </div>
-      <div id="zip-result-zone"></div>
-    `;
-  } else {
-    stepBodyHtml = `
-      <div class="step-title">Valider — supprimer la balise TODOPRINT</div>
-      <div class="step-desc" style="margin-bottom:14px;">Supprime TODOPRINT uniquement sur les commandes zippées (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''}) et enregistre le lot dans l'historique.</div>
-      <button class="btn btn-primary" onclick="validatePrintOrders()">
-        ${icon('check')}Supprimer TODOPRINT (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})
-      </button>
-    `;
+      <div id="zip-result-zone"></div>`;
   }
+  const step2 = `
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number ${zipDone ? 'done' : (!step1Done ? 'locked' : '')}">${zipDone ? icon('check') : '2'}</div>
+        <div><div class="step-title">Générer le ZIP</div><div class="step-desc">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive (1 à 2 min)</div></div>
+      </div>
+      <div class="step-body" id="print-step2-body">${step2Body}</div>
+    </div>`;
 
-  const navButtons = `
-    <div class="wizard-foot">
-      <div>${step > 1 ? `<button class="btn" onclick="goToPrintStep(${step - 1})">${icon('arrowLeft')}Précédent</button>` : ''}</div>
-      <div>${step < 3 && stepMeta[step].unlocked ? `<button class="btn btn-primary" onclick="goToPrintStep(${step + 1})">Étape suivante${icon('arrowRight')}</button>` : ''}</div>
-    </div>
-  `;
+  // ── Étape 3 : validation ──
+  const step3 = `
+    <div class="step">
+      <div class="step-header">
+        <div class="step-number ${!zipDone ? 'locked' : ''}">3</div>
+        <div><div class="step-title">Valider — supprimer la balise TODOPRINT</div><div class="step-desc">Supprime TODOPRINT uniquement sur les commandes zippées et enregistre le lot dans l'historique</div></div>
+      </div>
+      <div class="step-body">
+        ${!zipDone ? `<div class="empty-inline">${icon('lock')}Génère d'abord le ZIP à l'étape 2.</div>`
+        : `<button class="btn btn-primary" onclick="validatePrintOrders()">${icon('check')}Supprimer TODOPRINT (${plural(zipCount, 'commande')})</button>`}
+      </div>
+    </div>`;
 
   const units = orders.reduce((s, o) => s + activeLineItemEdges(o).reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
   c.innerHTML = `
     ${pageHead('Impression', `<span class="num">${orders.length}</span> commande${orders.length>1?'s':''} à imprimer · <span class="num">${units}</span> article${units>1?'s':''}`, refreshBtn)}
-    <div class="card">
-      ${stepper}
-      ${stepBodyHtml}
-      ${navButtons}
-    </div>
+    <div class="workflow-steps">${step1}${step2}${step3}</div>
     ${renderPrintLotsSection()}
   `;
 }
@@ -2911,8 +2929,11 @@ function extractPngSvgFromJson(jsonText) {
 }
 
 function togglePrintOrder(orderId, checked) {
+  const before = state.printSelected.size;
   if (checked) state.printSelected.add(orderId);
   else state.printSelected.delete(orderId);
+  // Passage de 0 à 1+ (ou l'inverse) : l'étape 2 se (dé)verrouille, on redessine tout
+  if ((before === 0) !== (state.printSelected.size === 0)) { renderPrintView(); return; }
   // Mise à jour visuelle de la ligne
   const item = document.getElementById(`print-item-${orderId}`);
   if (item) item.classList.toggle('deselected', !checked);
@@ -2927,10 +2948,11 @@ function updatePrintCounter() {
   const desc = document.getElementById('print-step1-desc');
   if (desc) desc.textContent = `${total} commande${total>1?'s':''} avec balise TODOPRINT — ${n} sélectionnée${n>1?'s':''}`;
   // Bouton générer
-  const zipCount = document.getElementById('zip-count');
-  if (zipCount) zipCount.textContent = n;
   const genBtn = document.getElementById('generate-zip-btn');
-  if (genBtn) genBtn.disabled = n === 0;
+  if (genBtn) {
+    genBtn.innerHTML = `${icon('archive')}<span>G\u00e9n\u00e9rer le ZIP (<span id="zip-count">${n}</span> commande${n>1?'s':''})</span>`;
+    genBtn.disabled = n === 0;
+  }
 }
 
 function printSelectAll() { state.printOrders.forEach(o => state.printSelected.add(o.id)); renderPrintView(); }
@@ -2976,18 +2998,8 @@ async function generatePrintZip() {
     const result = await callGas(gasOrders);
     state.printZipDone = true;
     state.printZipOrderIds = selectedOrders.map(o => o.id);
-
-    const zipLinks = result.zips.map(z =>
-      `<a href="${z.url}" target="_blank" rel="noopener">${icon('archive')}${escapeHtml(z.name)}${icon('external')}</a>`
-    ).join('');
-
-    document.getElementById('zip-result-zone').innerHTML = `
-      <div class="zip-result" style="margin-top:12px;">
-        <div class="zip-title">${icon('checkCircle')}ZIP généré dans ton Drive</div>
-        ${zipLinks}
-      </div>`;
-
-    // Affiche le bouton étape 3
+    state.printZipZips = result.zips || [];
+    // Les liens restent affichés dans l'étape 2, l'étape 3 se déverrouille
     renderPrintView();
     showToast('✅ ZIP généré avec succès !');
   } catch(e) {
@@ -3078,6 +3090,8 @@ async function checkCurrentOrderDone() {
 
   const order = state.orders[state.currentIndex];
   if (!order) return;
+  // Commande déjà expédiée/annulée à l'ouverture (ex. via la recherche) : rien à fêter ni à retirer
+  if (orderShipState(order)) return;
 
   try {
     const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
