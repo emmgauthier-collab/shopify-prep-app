@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Assistant personnalisation</title>
   <style>
-
-    style id="gallery-css-to-copy">
   /* ── Galerie back-office ── */
   .gallery-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
   @media (max-width: 900px) { .gallery-layout { grid-template-columns: 1fr; } }
@@ -18,8 +16,7 @@
  
   /* Grille de browsing commandes */
   .order-browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-  .order-img-card { position: relative; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, transform .1s; background: var(--bg); }
-  .order-img-card:hover { transform: scale(1.03); }
+  .order-img-card { position: relative; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, box-shadow .15s; background: var(--bg); }
   .order-img-card.selected { border-color: var(--primary); }
   .order-img-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
   .order-img-card .img-meta { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 10px; padding: 3px 5px; line-height: 1.3; }
@@ -515,6 +512,304 @@
   .supplier-note-client { color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .supplier-note-text { color: #7a5600; line-height: 1.5; }
 
+  /* ════════════════════════════════════════════════════════════════
+     SYSTÈME BUREAU (sept. 2026) — onglets Tableau de bord, Fournisseur,
+     Impression, Galerie, Délais & FOMO. Interface souris/clavier classique.
+     La vue « Commandes custom » (tactile) garde ses propres styles co-*.
+     ════════════════════════════════════════════════════════════════ */
+  :root {
+    --text-strong: #b8260b; --warning-text: #6b4700;
+    --success-border: #95c9b4; --warning-border: #f1c84b; --warning-soft: #fffbef;
+    --radius-sm: 6px; --focus: 0 0 0 3px rgba(0,128,96,.22);
+  }
+  ::selection { background: #cde9dd; color: var(--text); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--text-sub); font-size: 13px; }
+  .text-critical { color: var(--critical); }
+  .text-success { color: var(--success); }
+  .text-warning { color: var(--warning); }
+  code { font: 12px/1.4 ui-monospace, Consolas, monospace; background: var(--info-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+
+  /* En-tête de page : titre + contexte à gauche, actions à droite */
+  .page-head { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin: 4px 0 20px; }
+  .page-head h1 { font-size: 22px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; }
+  .page-head .page-sub { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+  .page-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .page-head.sticky { position: sticky; top: 0; z-index: 150; background: var(--bg); margin: -16px 0 16px; padding: 16px 0 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .page-head.sticky .tabs { flex-basis: 100%; }
+
+  /* Cartes */
+  .card-title .ico { font-size: 18px; color: var(--text-sub); }
+  .card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .card-head .card-title { margin-bottom: 0; }
+  .card-head .card-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .card-desc { font-size: 13px; color: var(--text-sub); margin: -4px 0 14px; max-width: 80ch; }
+  .card.tone-critical { border-color: var(--critical-border); box-shadow: 0 1px 3px rgba(216,44,13,.12); }
+  .card.tone-critical .card-title, .card.tone-critical .card-title .ico { color: var(--text-strong); }
+  .card-stack { display: flex; flex-direction: column; gap: 16px; }
+  .card-stack > .card + .card, .card-stack > * + .card { margin-top: 0; }
+  .section-sep { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+  .section-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+
+  /* Boutons */
+  .btn { min-height: 36px; justify-content: center; }
+  .btn .ico { font-size: 16px; }
+  .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .btn-primary:disabled:hover { background: var(--primary); }
+  .btn-sm { min-height: 30px; padding: 0 10px; font-size: 13px; gap: 5px; }
+  .btn-sm .ico { font-size: 14px; }
+  .btn-danger { color: var(--critical); }
+  .btn-danger:hover { background: var(--critical-bg); border-color: var(--critical-border); }
+  .btn-icon { width: 36px; padding: 0; }
+  .btn-icon.btn-sm { width: 30px; }
+  .btn-link { border: 0; background: none; color: var(--primary); padding: 0; cursor: pointer; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* Badges : icône + libellé */
+  .badge { gap: 4px; line-height: 18px; white-space: nowrap; }
+  .badge .ico { font-size: 12px; stroke-width: 2.4; }
+  .badge-solid-critical { background: var(--critical); color: #fff; border: 1px solid var(--critical); }
+  .badge-muted { background: var(--info-bg); color: var(--text-sub); border: 1px solid var(--border); }
+
+  /* Champs */
+  .input, .form-group input:not([type=checkbox]):not([type=radio]):not([type=file]), .form-group select, .form-group textarea, .settings-box input {
+    width: 100%; min-height: 36px; padding: 7px 10px; border: 1px solid #c9cccf; border-radius: var(--radius); background: var(--surface); font-size: 14px; line-height: 1.4; transition: border-color .15s, box-shadow .15s; }
+  textarea.input, .form-group textarea { resize: vertical; }
+  .input:focus, .form-group input:focus, .form-group select:focus, .form-group textarea:focus, .settings-box input:focus { outline: none; border-color: var(--primary); box-shadow: var(--focus); }
+  .input:disabled { background: var(--info-bg); color: var(--text-sub); cursor: not-allowed; }
+  .input-sm { min-height: 30px; padding: 4px 8px; font-size: 13px; }
+  .form-group label { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 5px; }
+  .form-group .settings-hint, .field-hint { font-size: 12px; color: var(--text-sub); margin-top: 5px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px 20px; }
+  .form-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 700px) { .form-grid.cols-2 { grid-template-columns: 1fr; } }
+  .field-narrow input { max-width: 180px; }
+  .form-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .check-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+  .option-box { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .option-box input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+  .option-box.is-locked { background: var(--info-bg); cursor: default; }
+  .option-box .muted { font-weight: 400; }
+  .option-sub { margin: 8px 0 0 12px; padding-left: 14px; border-left: 2px solid var(--border); }
+  .field-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .file-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .file-row input[type=file] { flex: 1; min-width: 0; font-size: 12px; color: var(--text-sub); }
+  .search-results { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+  .search-result { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 13px; cursor: pointer; }
+  .search-result:hover:not(:disabled) { border-color: var(--primary); background: var(--success-bg); }
+  .search-result:disabled { opacity: .55; cursor: default; }
+  .search-result img { width: 28px; height: 28px; object-fit: cover; border-radius: 4px; }
+  .search-result .aside { margin-left: auto; font-size: 12px; color: var(--success); display: inline-flex; align-items: center; gap: 4px; }
+
+  /* Sous-onglets (galerie, niches, langues FOMO) */
+  .tabs.plain { background: none; padding: 0; margin-bottom: 14px; }
+  .tab-btn { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+  .tab-btn .ico { font-size: 16px; }
+  .tab-btn .tab-count { font-size: 12px; font-weight: 600; padding: 0 7px; border-radius: 10px; line-height: 18px; background: var(--info-bg); color: var(--text-sub); font-variant-numeric: tabular-nums; }
+  .tab-btn.active .tab-count { background: var(--success-bg); color: var(--primary); }
+  .tabs.accent .tab-btn.active { color: var(--tab-accent, var(--primary)); border-bottom-color: var(--tab-accent, var(--primary)); }
+  .tabs.accent .tab-btn.active .tab-count { background: var(--info-bg); color: var(--tab-accent, var(--primary)); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--text-sub)); flex-shrink: 0; display: inline-block; }
+
+  /* Listes de lignes */
+  .row-list { display: flex; flex-direction: column; }
+  .row-item { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .row-item:last-child { border-bottom: 0; padding-bottom: 0; }
+  .row-item .row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .row-item .row-aside { margin-left: auto; font-size: 13px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .empty-inline { color: var(--text-sub); font-size: 13px; display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+  .empty-inline .ico { font-size: 16px; }
+  .empty-inline.ok, .empty-inline.ok .ico { color: var(--success); }
+
+  /* Tableau de bord */
+  .stat-chip { font: inherit; font-size: 13px; }
+  .stat-chip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .chip b { font-variant-numeric: tabular-nums; }
+  .quick-bar-title { display: flex; align-items: center; gap: 6px; }
+  .quick-bar-title .ico { font-size: 15px; }
+  .cal-legend { display: flex; gap: 16px; font-size: 12px; color: var(--text-sub); margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .cal-legend i { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--sw); display: inline-block; }
+  .cal-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; }
+  .cal-day { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 56px; height: 94px; flex-shrink: 0; border-radius: var(--radius); cursor: pointer; padding: 6px 0 8px; border: 1.5px solid var(--ring, var(--border)); background: var(--surface); font: inherit; color: var(--text); transition: box-shadow .15s, transform .15s; }
+  .cal-day:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+  .cal-day.today { border: 2px solid var(--primary); }
+  .cal-day.selected { background: var(--success-bg); }
+  .cal-day .m { font-size: 10px; color: var(--text-sub); line-height: 1; height: 11px; }
+  .cal-day .w { font-size: 10px; color: var(--text-sub); text-transform: uppercase; line-height: 1; }
+  .cal-day .d { font-size: 13px; font-weight: 600; line-height: 1; color: var(--text-sub); }
+  .cal-day .n { font-size: 19px; font-weight: 800; line-height: 1.15; min-height: 22px; font-variant-numeric: tabular-nums; display: flex; align-items: center; }
+  .cal-day .n .ico { font-size: 18px; stroke-width: 3; }
+  .cal-day .bar { width: 34px; height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; margin-top: auto; }
+  .cal-day .bar > span { display: block; height: 100%; background: var(--success); }
+  .cal-detail { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13px; }
+  .cal-detail .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chart-wrap { position: relative; overflow-x: auto; }
+  .chart-wrap svg { width: 100%; height: auto; min-width: 480px; display: block; }
+  .chart-tip { position: fixed; display: none; pointer-events: none; background: var(--text); color: #fff; font-size: 12px; padding: 6px 9px; border-radius: var(--radius-sm); z-index: 10000; max-width: 240px; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  .data-table th, .data-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  .data-table th { color: var(--text-sub); font-weight: 600; font-size: 12px; }
+  .data-table td { font-variant-numeric: tabular-nums; }
+  .note-age { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Fournisseur */
+  .supplier-notes-block { margin-top: 14px; border-color: var(--warning-border); border-radius: var(--radius); }
+  .supplier-notes-header { display: flex; align-items: center; gap: 8px; background: var(--warning-soft); color: var(--warning-text); }
+  .supplier-notes-header .ico { font-size: 16px; }
+  .supplier-note-row { grid-template-columns: minmax(130px, max-content) 170px 1fr; background: #fff; align-items: center; }
+  .supplier-note-order { display: inline-flex; align-items: center; gap: 6px; }
+  .supplier-note-text { color: var(--text); }
+  .supplier-note-row .badge { justify-self: start; }
+  .order-count-badge { display: flex; align-items: baseline; gap: 6px; }
+  .step-status { margin-top: 12px; }
+
+  /* Impression : stepper */
+  .stepper { display: flex; align-items: center; gap: 4px; margin-bottom: 18px; flex-wrap: wrap; }
+  .stepper-item { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 0; background: none; border-radius: 20px; font-size: 14px; color: var(--text-sub); cursor: pointer; }
+  .stepper-item:hover:not(:disabled) { background: var(--bg); }
+  .stepper-item:disabled { cursor: default; opacity: .5; }
+  .stepper-item .step-number { width: 26px; height: 26px; font-size: 13px; background: var(--border); color: var(--text-sub); }
+  .stepper-item.done .step-number { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .stepper-item.current { color: var(--text); font-weight: 600; }
+  .stepper-item.current .step-number { background: var(--primary); color: #fff; }
+  .stepper-sep { width: 24px; height: 1px; background: var(--border); }
+  .wizard-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .print-order-item { cursor: pointer; }
+  .print-order-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .print-order-note { display: flex; align-items: flex-start; gap: 6px; font-style: normal; }
+  .print-order-note .ico { margin-top: 2px; }
+  .zip-result { display: flex; flex-direction: column; gap: 6px; }
+  .zip-result .zip-title { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--success); }
+  .zip-result a { display: inline-flex; align-items: center; gap: 6px; }
+  .lot-row { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .lot-row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .lot-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+  .lot-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .lot-names { font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+  .lot-comment { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; }
+  .lot-comment textarea { flex: 1; min-height: 36px; font-size: 13px; }
+
+  /* Galerie */
+  .gallery-panel { box-shadow: var(--shadow); }
+  .gallery-panel-header h3 { display: flex; align-items: center; gap: 8px; }
+  .gallery-panel-header h3 .ico { font-size: 17px; color: var(--text-sub); }
+  .gallery-panel-header .btn { margin-left: auto; }
+  .gallery-panel-body > .card-desc { margin-top: 0; }
+  .gallery-sel-panel { position: sticky; top: 132px; }
+  .browse-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
+  .browse-bar .btn-group { margin-left: auto; }
+  .niche-badge { position: absolute; top: 5px; left: 5px; background: var(--niche, #888); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; line-height: 16px; }
+  .niche-badge.inline { position: static; margin-right: 4px; vertical-align: 1px; }
+  .order-img-card { border-radius: var(--radius); }
+  .order-img-card:hover { border-color: var(--border); box-shadow: var(--shadow); }
+  .order-img-card.selected:hover { border-color: var(--primary); }
+  .order-img-card.is-saved img { opacity: .45; }
+  .order-img-card .saved-flag { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .order-img-card .saved-flag span { display: inline-flex; align-items: center; gap: 4px; background: var(--success); color: #fff; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+  .order-img-card .variant-strip { position: absolute; bottom: 22px; left: 0; right: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 2px 5px; text-align: center; }
+  .order-img-card .img-check .ico { font-size: 12px; stroke-width: 3; }
+  .img-meta { font-variant-numeric: tabular-nums; }
+  .saved-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .saved-toolbar .hint { margin-left: auto; font-size: 12px; color: var(--text-sub); display: inline-flex; align-items: center; gap: 4px; }
+  .bulk-box { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; }
+  .saved-img-card { cursor: grab; }
+  .saved-img-card.is-selected { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .saved-img-card img { cursor: pointer; }
+  .saved-img-card .sel-box { position: absolute; top: 5px; left: 5px; z-index: 2; }
+  .saved-img-card .sel-box input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+  .saved-img-card .official-flag { position: absolute; top: 4px; right: 4px; z-index: 2; background: #c9a227; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .saved-img-card .official-flag .ico { font-size: 11px; fill: currentColor; }
+  .saved-img-card .saved-actions { top: 4px; right: 4px; z-index: 3; }
+  .saved-img-card .saved-actions button { width: 26px; height: 26px; border: 0; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; background: rgba(32,34,35,.82); }
+  .saved-img-card .saved-actions button:hover { background: var(--text); }
+  .saved-img-card .saved-actions button.del:hover { background: var(--critical); }
+  .saved-img-card .saved-actions .ico { font-size: 14px; }
+  .saved-img-card:focus-within .saved-actions { display: flex; }
+  .saved-img-card .var-id { font-size: 10px; color: var(--text-sub); padding: 0 4px 3px; text-align: center; font-variant-numeric: tabular-nums; }
+  .saved-img-card .tag-edit { padding: 6px; background: var(--surface); display: flex; flex-direction: column; gap: 5px; }
+  .g-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--primary); color: #fff; border-radius: 10px; font-size: 11px; padding: 1px 7px; line-height: 16px; }
+  .g-tag button { background: none; border: 0; color: #fff; cursor: pointer; padding: 0; display: flex; opacity: .8; }
+  .g-tag button:hover { opacity: 1; }
+  .g-tag .ico { font-size: 11px; }
+  .saved-img-card .saved-tag { font-size: 10px; padding: 1px 6px; }
+  .tag-sug-btn:focus-visible, .filter-tag-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .sel-item-remove { display: flex; border-radius: var(--radius-sm); }
+  .sel-item-remove:hover { background: var(--critical-bg); }
+  .count-pill { font-size: 12px; font-weight: 600; padding: 0 7px; border-radius: 10px; line-height: 18px; background: var(--info-bg); color: var(--text-sub); font-variant-numeric: tabular-nums; }
+  .saved-img-card .market-badges { bottom: auto; top: 26px; left: 5px; }
+  .sel-empty { text-align: center; padding: 28px 12px; color: var(--text-sub); font-size: 13px; }
+  .sel-empty .ico { font-size: 28px; display: block; margin: 0 auto 8px; opacity: .5; }
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .icon-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 12px 12px; background: var(--surface); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .icon-card .thumb { width: 64px; height: 64px; border-radius: var(--radius); background: var(--bg); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text-sub); }
+  .icon-card .thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .icon-card .thumb .ico { font-size: 26px; opacity: .45; }
+  .icon-card .name { font-size: 13px; font-weight: 600; }
+  .icon-card .title-field { width: 100%; padding-top: 10px; border-top: 1px solid var(--border); }
+  .icon-card .title-field label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+  .icon-card .title-field div { display: flex; gap: 6px; }
+  .niche-list { border: 1px dashed #c9cccf; border-radius: var(--radius); margin-bottom: 12px; background: var(--surface); }
+  .niche-list.drag-over { border-color: var(--primary); background: var(--success-bg); }
+  .niche-list-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .niche-list-head h4 { font-size: 14px; font-weight: 600; }
+  .niche-list-head .input { flex: 1; min-width: 120px; max-width: 320px; font-weight: 600; }
+  .niche-list-body { padding: 10px 12px; }
+  .niche-drop-hint { font-size: 12px; color: var(--text-sub); padding: 14px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius-sm); }
+  .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .prod-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 6px 6px; text-align: center; background: var(--surface); position: relative; cursor: grab; }
+  .prod-card:hover { box-shadow: var(--shadow); }
+  .prod-card .thumb { width: 44px; height: 44px; margin: 0 auto 4px; border-radius: var(--radius-sm); background: var(--bg); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text-sub); }
+  .prod-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .prod-card .name { font-size: 11px; font-weight: 600; }
+  .prod-card .rm { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: transparent; color: var(--text-sub); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .prod-card .rm:hover { background: var(--critical-bg); color: var(--critical); }
+  .prod-card .rm .ico { font-size: 13px; }
+  .manual-form { border: 1px solid var(--primary); box-shadow: 0 0 0 3px var(--success-bg); margin-bottom: 16px; }
+  .manual-form .json-box { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 14px; }
+  .manual-form textarea.mono { font: 12px/1.45 ui-monospace, Consolas, monospace; }
+  .manual-form .form-block { margin-bottom: 14px; }
+  .manual-form .option-box + .option-box, .manual-form .market-block + .market-block { margin-top: 8px; }
+  .manual-form .option-box.tone-official { background: #fdf6e3; border-color: #e8d385; }
+  .manual-form .option-box.tone-seo { background: #eafaf1; border-color: #b7e4c7; }
+  .market-block { border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; background: var(--bg); }
+  .market-block .option-box { padding: 0; border: 0; background: none; }
+  .campaign-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; background: var(--bg); }
+  .campaign-group { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-sub); margin: 8px 0 3px; }
+  .campaign-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .campaign-row:last-child { border-bottom: 0; }
+  .campaign-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+  .campaign-row .pname { flex: 0 0 140px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .manual-submit { display: flex; gap: 10px; align-items: center; }
+  .manual-submit .btn { flex: 1; }
+  .mf-preview { width: 56px; height: 56px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--border); overflow: hidden; flex-shrink: 0; }
+  .mf-preview img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .mini-preview { display: none; margin-top: 6px; width: 48px; height: 48px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  .form-error { color: var(--critical); font-size: 13px; margin-top: 8px; display: none; }
+  .report-box { background: var(--info-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; }
+  .report-box ul { margin: 4px 0 0 18px; }
+
+  /* Délais & FOMO */
+  .delais-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .delais-grid .span-2 { grid-column: 1 / -1; }
+  @media (max-width: 1000px) { .delais-grid { grid-template-columns: 1fr; } }
+  .delais-grid > .card + .card { margin-top: 0; }
+  .toggle-line { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .current-value { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+  .period-add { margin-top: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--info-bg); }
+  .status-line { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 10px; }
+
+  /* Réglages / connexion / toast */
+  .settings-box h2, .login-box h1 { display: flex; align-items: center; gap: 8px; }
+  .login-box h1 { justify-content: center; }
+  .settings-box h2 .ico, .login-box h1 .ico { font-size: 20px; color: var(--primary); }
+  .settings-box .form-group label { color: var(--text-sub); font-weight: 500; }
+  #toast { display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+  #toast .ico { font-size: 16px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -522,7 +817,7 @@
 
   <div id="login-screen">
     <div class="login-box">
-      <h1>🎨 Assistant perso</h1>
+      <h1><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>Assistant perso</h1>
       <p>Accès réservé — entre le mot de passe</p>
       <input id="login-input" type="password" placeholder="••••••••" />
       <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;" onclick="tryLogin()">Connexion</button>
@@ -555,7 +850,7 @@
 
   <div id="settings-modal">
     <div class="settings-box">
-      <h2>⚙️ Configuration</h2>
+      <h2><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Configuration</h2>
       <div class="settings-section">Proxy Vercel</div>
       <div class="form-group">
         <label>URL du proxy Vercel</label>
@@ -597,7 +892,7 @@
   </div>
 </div>
 
-<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Remonter en haut de la page" title="Remonter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></button>
 <div id="toast"></div>
 
 <script>
@@ -746,7 +1041,7 @@ function switchTab(tab) {
   closeOrderSheet();
   document.querySelectorAll('.sb-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (!state.proxyUrl) {
-    document.getElementById('content').innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:16px;">⚙️</div><button class="btn btn-primary" onclick="openSettings()">Configurer</button></div>`;
+    document.getElementById('content').innerHTML = `<div class="empty"><p style="margin-bottom:14px;">L'appli n'est pas encore reliée au proxy Vercel.</p><button class="btn btn-primary" onclick="openSettings()">${icon('settings')}Configurer</button></div>`;
     return;
   }
   if (tab === 'custom') {
@@ -763,10 +1058,81 @@ else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPr
 // ════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════
+// ── Icônes au trait (même famille que la vue commande) — icon('nom') renvoie un <svg class="ico"> ──
+const ICONS = {
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  note: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  printer: '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+  package: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  truck: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  xCircle: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
+  save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  tag: '<path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
+  palette: '<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1a1.6 1.6 0 0 1 1.6-1.7h2c3 0 5.6-2.5 5.6-5.6C22 6 17.5 2 12 2z"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  umbrella: '<path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  arrowLeft: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  arrowRight: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  external: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  star: '<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+  move: '<path d="m5 9-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>',
+  activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  file: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  sparkle: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+  squareCheck: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/>',
+  square: '<rect x="3" y="3" width="18" height="18" rx="2"/>',
+};
+function icon(name, extraClass) {
+  return '<svg class="ico' + (extraClass ? ' ' + extraClass : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>';
+}
+// En-tête de page commun aux onglets bureau : titre, sous-titre, actions à droite.
+function pageHead(title, sub, actionsHtml) {
+  return '<div class="page-head"><div><h1>' + title + '</h1>' + (sub ? '<div class="page-sub">' + sub + '</div>' : '') + '</div>' +
+    (actionsHtml ? '<div class="page-actions">' + actionsHtml + '</div>' : '') + '</div>';
+}
+function loadingBlock(label) {
+  return '<div class="spinner"><div class="spinner-ring"></div>' + (label || 'Chargement…') + '</div>';
+}
+function errorBlock(msg, retryFn) {
+  return '<div class="alert alert-critical">' + icon('xCircle') + '<div><strong>Erreur :</strong> <span class="alert-text">' + escapeHtml(msg) + '</span>' +
+    (retryFn ? '<div style="margin-top:8px;"><button class="btn btn-sm" onclick="' + retryFn + '">' + icon('refresh') + 'Réessayer</button></div>' : '') + '</div></div>';
+}
+
+// Le toast affiche une icône selon le type ; un éventuel emoji en tête du message est retiré.
+const TOAST_EMOJI_RE = /^(?:[\u2300-\u23FF\u2600-\u27BF\u2B00-\u2BFF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDC00-\uDFFF])[\uFE0F\u200D]*\s*/;
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.style.background = type === 'warning' ? '#b98900' : type === 'error' ? '#d82c0d' : '#008060';
-  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800);
+  const clean = String(msg).replace(TOAST_EMOJI_RE, '');
+  const ic = type === 'warning' ? 'alert' : type === 'error' ? 'xCircle' : 'checkCircle';
+  t.innerHTML = icon(ic) + '<span>' + escapeHtml(clean) + '</span>';
+  t.style.background = type === 'warning' ? '#8a5a00' : type === 'error' ? '#c4260b' : '#006e52';
+  t.classList.add('show'); clearTimeout(showToast._t); showToast._t = setTimeout(() => t.classList.remove('show'), 2800);
 }
 window.addEventListener('scroll', () => document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200));
 // En-tête de commande compact au défilement : se réduit après 140 px, se réagrandit sous 20 px.
@@ -1117,42 +1483,37 @@ function renderDashboardCalendar() {
       key, dayNum: d.getDate(), isToday: offset === 0, isFirst: offset === 0,
       total, pendingCount, doneCount, ringColor,
       monthLabel: d.toLocaleDateString('fr-FR', { month: 'short' }),
-      weekdayLabel: d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')
+      weekdayLabel: d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''),
+      longLabel: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
     });
   }
 
   const cellsHtml = days.map(d => {
     const doneRatio = d.total > 0 ? (d.doneCount / d.total) : 0;
-    const bigLabel = d.total === 0 ? '' : (d.pendingCount === 0 ? '✓' : d.pendingCount);
+    const bigLabel = d.total === 0 ? '' : (d.pendingCount === 0 ? icon('check') : d.pendingCount);
     const bigColor = d.total === 0 ? 'var(--text-sub)' : (d.pendingCount === 0 ? 'var(--success)' : 'var(--text)');
     const tooltip = d.total === 0 ? 'Aucune commande' : `${d.pendingCount} à traiter sur ${d.total}${d.doneCount > 0 ? ` (${d.doneCount} déjà traitée${d.doneCount>1?'s':''})` : ''}`;
-    return `<div onclick="showCalendarDayOrders('${d.key}')" title="${escapeHtml(tooltip)}"
-      style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;width:52px;height:90px;flex-shrink:0;
-      border-radius:8px;cursor:pointer;padding:6px 0 8px;box-sizing:border-box;
-      border:${d.isToday ? '2px solid var(--primary)' : `1.5px solid ${d.ringColor}`};
-      background:var(--surface);">
-      <div style="font-size:10px;opacity:.6;line-height:1;height:11px;">${d.isFirst || d.dayNum === 1 ? d.monthLabel : ''}</div>
-      <div style="font-size:10px;color:var(--text-sub);text-transform:uppercase;line-height:1;">${d.weekdayLabel}</div>
-      <div style="font-size:13px;font-weight:600;line-height:1;color:var(--text-sub);">${d.dayNum}</div>
-      <div style="font-size:18px;font-weight:800;line-height:1.2;color:${bigColor};min-height:20px;">${bigLabel}</div>
-      <div style="width:34px;height:5px;border-radius:2.5px;background:var(--border);overflow:hidden;">
-        <div style="width:${Math.round(doneRatio*100)}%;height:100%;background:var(--success);"></div>
-      </div>
-    </div>`;
+    const selected = state.calendarSelectedDay === d.key;
+    return `<button type="button" class="cal-day${d.isToday ? ' today' : ''}${selected ? ' selected' : ''}" style="--ring:${d.ringColor}"
+      onclick="showCalendarDayOrders('${d.key}')" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(d.longLabel + ' : ' + tooltip)}" aria-pressed="${selected}">
+      <span class="m">${d.isFirst || d.dayNum === 1 ? d.monthLabel : ''}</span>
+      <span class="w">${d.weekdayLabel}</span>
+      <span class="d">${d.dayNum}</span>
+      <span class="n" style="color:${bigColor}">${bigLabel}</span>
+      <span class="bar"><span style="width:${Math.round(doneRatio*100)}%"></span></span>
+    </button>`;
   }).join('');
 
   return `<div class="card">
-    <div class="card-title">📅 Calendrier de traitement (aujourd'hui + 15 jours)</div>
-    <div style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">
-      Le chiffre = commandes <strong>restant à traiter</strong> ce jour-là
+    <div class="card-title">${icon('calendar')} Calendrier de traitement <span class="muted" style="font-weight:400;">aujourd'hui + 15 jours</span></div>
+    <div class="card-desc">Le chiffre = commandes <strong>restant à traiter</strong> ce jour-là. Clique sur un jour pour voir les commandes.</div>
+    <div class="cal-legend">
+      <span><i style="--sw:var(--border)"></i> Rien à traiter</span>
+      <span><i style="--sw:var(--warning)"></i> En attente</span>
+      <span><i style="--sw:var(--critical)"></i> En retard ou rush</span>
     </div>
-    <div style="display:flex;gap:14px;font-size:11px;color:var(--text-sub);margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:1.5px solid var(--border);"></span> Rien à traiter</span>
-      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:1.5px solid var(--warning);"></span> En attente</span>
-      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;border:1.5px solid var(--critical);"></span> En retard ou rush</span>
-    </div>
-    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;">${cellsHtml}</div>
-    <div id="calendar-day-detail" style="margin-top:10px;"></div>
+    <div class="cal-strip">${cellsHtml}</div>
+    <div id="calendar-day-detail"></div>
   </div>`;
 }
 
@@ -1161,18 +1522,23 @@ function showCalendarDayOrders(dateKey) {
   const orders = byDate[dateKey] || [];
   const zone = document.getElementById('calendar-day-detail');
   if (!zone) return;
-  if (state.calendarSelectedDay === dateKey) { state.calendarSelectedDay = null; zone.innerHTML = ''; return; }
+  const setPressed = () => document.querySelectorAll('.cal-day').forEach(b => {
+    const on = (b.getAttribute('onclick') || '').indexOf(`'${state.calendarSelectedDay}'`) > -1;
+    b.classList.toggle('selected', on); b.setAttribute('aria-pressed', on);
+  });
+  if (state.calendarSelectedDay === dateKey) { state.calendarSelectedDay = null; zone.innerHTML = ''; setPressed(); return; }
   state.calendarSelectedDay = dateKey;
+  setPressed();
   const d = new Date(dateKey + 'T00:00:00');
-  const dateFr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const dateFr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   if (!orders.length) {
-    zone.innerHTML = `<div style="font-size:12px;color:var(--text-sub);">Aucune commande avec échéance le ${dateFr}.</div>`;
+    zone.innerHTML = `<div class="cal-detail"><div class="empty-inline">Aucune commande avec échéance le ${dateFr}.</div></div>`;
     return;
   }
-  zone.innerHTML = `<div style="border-top:1px solid var(--border);padding-top:8px;font-size:12px;">
-    <strong>${dateFr}</strong> — ${orders.length} commande${orders.length>1?'s':''}
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-      ${orders.map(o => `<span class="badge ${o.fulfilled ? 'badge-info' : (o.rush ? 'badge-critical' : 'badge-urgent')}">${o.fulfilled ? '✅' : (o.rush ? '🔥' : '⏳')} ${escapeHtml(o.name)}</span>`).join('')}
+  zone.innerHTML = `<div class="cal-detail">
+    <strong style="text-transform:capitalize;">${dateFr}</strong> <span class="muted">— ${orders.length} commande${orders.length>1?'s':''}</span>
+    <div class="badges">
+      ${orders.map(o => `<span class="badge ${o.fulfilled ? 'badge-success' : (o.rush ? 'badge-critical' : 'badge-warning')}">${icon(o.fulfilled ? 'check' : (o.rush ? 'zap' : 'clock'))}${escapeHtml(o.name)}</span>`).join('')}
     </div>
   </div>`;
 }
@@ -1336,7 +1702,7 @@ function fmtWeekLabel(weekStart) {
 // faux 0. Voir aussi le bouton "Voir en tableau" pour l'équivalent accessible.
 function renderProcessingTimeChart(buckets) {
   if (!buckets || !buckets.length) {
-    return `<div class="card"><div class="card-title">⏱️ Temps de traitement moyen (hors rush)</div><div style="font-size:13px;color:var(--text-sub);">Pas assez de données pour le moment.</div></div>`;
+    return `<div class="card"><div class="card-title">${icon('activity')} Temps de traitement moyen (hors rush)</div><div class="empty-inline">Pas assez de données pour le moment.</div></div>`;
   }
   const target = state.delais && state.delais.delaiProduction ? parseFloat(state.delais.delaiProduction) : null;
   const values = buckets.map(b => b.avg).filter(v => v !== null && v !== undefined);
@@ -1387,29 +1753,23 @@ function renderProcessingTimeChart(buckets) {
   }).join('');
 
   return `<div class="card">
-    <div class="card-title">⏱️ Temps de traitement moyen (hors rush)</div>
-    <div style="font-size:11px;color:var(--text-sub);margin-bottom:10px;">
-      De la création à l'expédition, en jours ouvrés — moyenne par semaine sur les 2 derniers mois${target ? ` (cible actuelle : ${target}j)` : ''}. Commandes rush exclues, dernière semaine possiblement partielle.
+    <div class="card-head">
+      <div class="card-title">${icon('activity')} Temps de traitement moyen (hors rush)</div>
+      <div class="card-actions"><button class="btn btn-sm" id="proc-table-btn" onclick="toggleProcTable()" aria-expanded="false">${icon('table')}Voir en tableau</button></div>
     </div>
-    <div style="position:relative;overflow-x:auto;">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;min-width:480px;display:block;" role="img" aria-label="Temps de traitement moyen par semaine, hors rush, sur les deux derniers mois">
+    <div class="card-desc">De la création à l'expédition, en jours ouvrés — moyenne par semaine sur les 2 derniers mois${target ? ` (cible actuelle : ${target}j)` : ''}. Commandes rush exclues, dernière semaine possiblement partielle.</div>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Temps de traitement moyen par semaine, hors rush, sur les deux derniers mois">
         ${gridLines}${targetLine}
         <path d="${pathD}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
         ${points}${xLabels}
       </svg>
-      <div id="proc-chart-tooltip" style="position:fixed;display:none;pointer-events:none;background:var(--text);color:#fff;font-size:12px;padding:6px 9px;border-radius:6px;z-index:10000;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.25);"></div>
+      <div id="proc-chart-tooltip" class="chart-tip"></div>
     </div>
-    <button class="btn" style="margin-top:8px;font-size:12px;padding:4px 10px;" onclick="toggleProcTable()">📋 Voir en tableau</button>
-    <div id="proc-chart-table" style="display:none;margin-top:10px;overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="text-align:left;color:var(--text-sub);border-bottom:1px solid var(--border);">
-          <th style="padding:4px 8px;">Semaine du</th><th style="padding:4px 8px;">Moyenne (j ouvrés)</th><th style="padding:4px 8px;">Commandes expédiées</th>
-        </tr></thead>
-        <tbody>${buckets.map(b => `<tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:4px 8px;">${fmtWeekLabel(b.weekStart)}</td>
-            <td style="padding:4px 8px;">${fmtJours(b.avg)}</td>
-            <td style="padding:4px 8px;">${b.count}</td>
-          </tr>`).join('')}</tbody>
+    <div id="proc-chart-table" style="display:none;overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Semaine du</th><th>Moyenne (j ouvrés)</th><th>Commandes expédiées</th></tr></thead>
+        <tbody>${buckets.map(b => `<tr><td>${fmtWeekLabel(b.weekStart)}</td><td>${fmtJours(b.avg)}</td><td>${b.count}</td></tr>`).join('')}</tbody>
       </table>
     </div>
   </div>`;
@@ -1417,7 +1777,11 @@ function renderProcessingTimeChart(buckets) {
 
 function toggleProcTable() {
   const el = document.getElementById('proc-chart-table');
-  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+  if (!el) return;
+  const open = el.style.display === 'none';
+  el.style.display = open ? '' : 'none';
+  const btn = document.getElementById('proc-table-btn');
+  if (btn) { btn.setAttribute('aria-expanded', open); btn.innerHTML = icon(open ? 'activity' : 'table') + (open ? 'Masquer le tableau' : 'Voir en tableau'); }
 }
 
 function showProcTooltip(hitEl) {
@@ -1447,24 +1811,25 @@ function hideProcTooltip() {
 
 function renderDelayAlertBanner(alerts) {
   if (!alerts || !alerts.length) return '';
+  const STAGE = {
+    impression: { ic: 'printer', label: 'Impression', tab: 'print' },
+    fournisseur: { ic: 'package', label: 'Fournisseur', tab: 'supplier' },
+    traitement: { ic: 'truck', label: 'Expédition', tab: 'custom' },
+  };
   const rows = alerts.map(a => {
     const label = a.daysRemaining < 0
       ? `en retard de ${Math.abs(Math.round(a.daysRemaining))}j`
       : (a.daysRemaining < 1 ? "aujourd'hui" : `dans ${Math.ceil(a.daysRemaining)}j`);
-    const stageBadges = a.stages.map(s => s === 'impression'
-      ? `<span class="badge" style="background:var(--critical);color:#fff;">🖨️ Impression</span>`
-      : s === 'fournisseur'
-      ? `<span class="badge" style="background:var(--critical);color:#fff;">📦 Fournisseur</span>`
-      : `<span class="badge" style="background:var(--critical);color:#fff;">📮 Expédition</span>`
-    ).join(' ');
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap;">
-      <div><strong>${escapeHtml(a.name)}</strong> ${a.isRush ? '<span class="badge badge-critical">🔥 RUSH</span>' : ''} ${stageBadges}</div>
-      <div style="font-size:12px;font-weight:700;color:var(--critical);white-space:nowrap;">${label}</div>
+    const tone = a.daysRemaining < 1 ? 'text-critical' : 'text-warning';
+    const stageBadges = a.stages.map(s => `<span class="badge badge-critical">${icon(STAGE[s].ic)}${STAGE[s].label}</span>`).join('');
+    return `<div class="row-item">
+      <div class="row-main"><strong class="num">${escapeHtml(a.name)}</strong>${a.isRush ? `<span class="badge badge-solid-critical">${icon('zap')}RUSH</span>` : ''}${stageBadges}</div>
+      <div class="row-aside ${tone}">${label}</div>
     </div>`;
   }).join('');
-  return `<div class="card" style="border:2px solid var(--critical);margin-bottom:16px;">
-    <div class="card-title" style="color:var(--critical);">🚨 ${alerts.length} commande${alerts.length>1?'s':''} en retard ou à risque de retard</div>
-    ${rows}
+  return `<div class="card tone-critical" style="margin-bottom:16px;">
+    <div class="card-title">${icon('alert')} ${alerts.length} commande${alerts.length>1?'s':''} en retard ou à risque de retard</div>
+    <div class="row-list">${rows}</div>
   </div>`;
 }
 
@@ -1476,7 +1841,7 @@ function renderQuickSettingsBar() {
 
   if (!state.delaisLoaded) {
     return '<div class="quick-bar" id="quick-settings-bar">' +
-      '<div class="quick-bar-top"><div class="quick-bar-title">\u26A1 Param\u00e8tres rapides</div></div>' +
+      '<div class="quick-bar-top"><div class="quick-bar-title">' + icon('sliders') + ' Param\u00e8tres rapides</div></div>' +
       '<div class="quick-bar-recap"><div class="recap-chip off"><span class="recap-dot"></span> Chargement\u2026</div></div>' +
     '</div>';
   }
@@ -1509,7 +1874,7 @@ function renderQuickSettingsBar() {
     : '<div class="recap-chip off"><span class="recap-dot"></span> FOMO inactif</div>';
 
   return '<div class="quick-bar" id="quick-settings-bar">' +
-    '<div class="quick-bar-top"><div class="quick-bar-title">\u26A1 Param\u00e8tres rapides</div></div>' +
+    '<div class="quick-bar-top"><div class="quick-bar-title">' + icon('sliders') + ' Param\u00e8tres rapides</div><button class="btn btn-sm" onclick="switchTab(\'delaisfomo\')">' + icon('settings') + 'Tous les r\u00e9glages</button></div>' +
     '<div class="quick-bar-recap">' + chipDelai + chipRush + chipFermeture + chipFomo + '</div>' +
     '<div class="quick-bar-toggles">' +
       '<div class="toggle-row"><label class="switch"><input type="checkbox" ' + (d.rushActif ? 'checked' : '') + ' onchange="toggleQuickSetting(\'rushActif\',\'rush_actif\',this.checked)"><span class="slider"></span></label>' +
@@ -1537,7 +1902,7 @@ async function toggleQuickSetting(stateKey, metaKey, checked) {
 
 async function renderDashboard() {
   const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  c.innerHTML = pageHead('Tableau de bord', '') + loadingBlock();
   try {
     // loadDelaisData en premier, \u00e0 part : fetchProcessingTimeWeekly lit ensuite
     // state.delais.periodes/delaiProduction, il lui faut ces valeurs d\u00e9j\u00e0 en place
@@ -1599,40 +1964,42 @@ async function renderDashboard() {
     const ageD = d => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
     const notesHtml = ordersWithNotes.length === 0
-      ? `<div style="color:var(--text-sub);font-size:13px;padding:4px 0;">Aucune note en cours ✅</div>`
+      ? `<div class="empty-inline ok">${icon('checkCircle')}Aucune note en cours</div>`
       : `<div class="notes-list">${ordersWithNotes.map(o => {
           const age = ageD(o.createdAt);
           const ageColor = age < 5 ? 'var(--success)' : age <= 10 ? 'var(--warning)' : 'var(--critical)';
           const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
           return `<div class="note-item">
-            <span class="note-order">${o.name}</span>
-            <span class="note-text">${customer ? `<strong>${customer}</strong> — ` : ''}${o.note}</span>
-            <span class="note-age" style="color:${ageColor}">${age}j</span>
+            <span class="note-order num">${escapeHtml(o.name)}</span>
+            <span class="note-text">${customer ? `<strong>${escapeHtml(customer)}</strong> — ` : ''}${escapeHtml(o.note)}</span>
+            <span class="note-age" style="color:${ageColor}" title="Commande pass\u00e9e il y a ${age} jour${age>1?'s':''}">${age}j</span>
           </div>`;
         }).join('')}</div>`;
 
+    const updatedAt = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const todayLabel = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     c.innerHTML = `
+      ${pageHead('Tableau de bord', `<span style="text-transform:capitalize;">${todayLabel}</span> · mis à jour à ${updatedAt}`,
+        `<button class="btn" onclick="renderDashboard()">${icon('refresh')}Actualiser</button>`)}
       ${renderQuickSettingsBar()}
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-        <button class="btn" onclick="renderDashboard()">↺ Actualiser</button>
-      </div>
       ${renderDelayAlertBanner(delayAlerts)}
       <div class="chip-row">
-        <div class="chip" onclick="goToCustom(false)">Commandes custom <b>${counts.custom}</b></div>
-        <div class="chip" onclick="switchTab('supplier')">Fournisseur <b>${counts.toorder}</b></div>
-        <div class="chip" onclick="switchTab('print')">Impression <b>${counts.todoprint}</b></div>
-        <div class="chip ${counts.urgent > 0 ? 'urgent' : 'zero'}" onclick="goToCustom(true)">Urgentes <b>${counts.urgent}</b></div>
+        <button type="button" class="chip stat-chip" onclick="goToCustom(false)">Commandes custom <b>${counts.custom}</b></button>
+        <button type="button" class="chip stat-chip" onclick="switchTab('supplier')">Fournisseur <b>${counts.toorder}</b></button>
+        <button type="button" class="chip stat-chip" onclick="switchTab('print')">Impression <b>${counts.todoprint}</b></button>
+        <button type="button" class="chip stat-chip ${counts.urgent > 0 ? 'urgent' : 'zero'}" onclick="goToCustom(true)">Urgentes <b>${counts.urgent}</b></button>
       </div>
       ${renderDashboardCalendar()}
       <div class="dash-secondary-grid">
         <div>${renderProcessingTimeChart(processingBuckets)}</div>
         <div class="card">
-          <div class="card-title">📝 Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
+          <div class="card-title">${icon('note')} Notes sur commandes en cours ${ordersWithNotes.length > 0 ? `<span class="badge badge-critical">${ordersWithNotes.length}</span>` : ''}</div>
           ${notesHtml}
         </div>
       </div>`;
+    if (state.calendarSelectedDay) { const k = state.calendarSelectedDay; state.calendarSelectedDay = null; showCalendarDayOrders(k); }
   } catch(err) {
-    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> <span class="alert-text">${err.message}</span></div>`;
+    c.innerHTML = pageHead('Tableau de bord', '') + errorBlock(err.message, 'renderDashboard()');
   }
 }
 function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); }
@@ -2037,31 +2404,34 @@ async function fetchToOrderOrders() {
 
 async function renderSupplierTab() {
   const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement...</div>`;
+  c.innerHTML = pageHead('Commande fournisseur', '') + loadingBlock();
   try { state.supplierOrders = await fetchToOrderOrders(); state.supplierSnapshot = []; renderSupplierView(); loadHistory(); }
-  catch(e) { c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
+  catch(e) { c.innerHTML = pageHead('Commande fournisseur', '') + errorBlock(e.message, 'renderSupplierTab()'); }
 }
 
 function renderSupplierView() {
   const count = state.supplierOrders.length;
   const step1Done = state.supplierSnapshot.length > 0;
+  const units = state.supplierOrders.reduce((s, o) => s + activeLineItemEdges(o).reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
+  const sub = count === 0 ? 'Aucune commande à passer chez le fournisseur'
+    : `<span class="num">${count}</span> commande${count>1?'s':''} avec la balise TOORDER · <span class="num">${units}</span> article${units>1?'s':''}`;
   document.getElementById('content').innerHTML = `
+    ${pageHead('Commande fournisseur', sub, `<button class="btn" onclick="renderSupplierTab()">${icon('refresh')}Actualiser</button>`)}
     <div class="workflow-steps">
       <div class="step">
         <div class="step-header">
-          <div class="step-number ${step1Done ? 'done' : ''}">1</div>
+          <div class="step-number ${step1Done ? 'done' : ''}">${step1Done ? icon('check') : '1'}</div>
           <div><div class="step-title">Télécharger les fichiers de commande</div><div class="step-desc">Génère les fichiers à intégrer dans le panier fournisseur</div></div>
         </div>
         <div class="step-body">
-          <div class="order-count-badge"><strong>${count}</strong> commande${count>1?'s':''} avec balise TOORDER</div>
-          ${count === 0 ? `<div style="color:var(--text-sub);font-size:13px;">Aucune commande.</div>` : `
-          <div class="step-actions">
-            <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">⬇ Export IMBRETEX</button>
-            <button class="btn" onclick="downloadAndSnapshot('complete')">⬇ Export complet</button>
+          ${count === 0 ? `<div class="empty-inline ok">${icon('checkCircle')}Aucune commande avec la balise TOORDER.</div>` : `
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">${icon('download')}Export IMBRETEX</button>
+            <button class="btn" onclick="downloadAndSnapshot('complete')">${icon('download')}Export complet</button>
           </div>
+          ${step1Done ? `<div class="empty-inline ok step-status">${icon('checkCircle')}${state.supplierSnapshot.length} commande${state.supplierSnapshot.length>1?'s':''} exportée${state.supplierSnapshot.length>1?'s':''} — passe à l'étape 2 une fois la commande fournisseur passée.</div>` : ''}
           ${renderDelaiWarnings(state.supplierOrders)}
-          ${renderSupplierNotes(state.supplierOrders)}
-          ${step1Done ? `<div style="margin-top:10px;font-size:13px;color:var(--success);">✅ ${state.supplierSnapshot.length} commandes exportées</div>` : ''}`}
+          ${renderSupplierNotes(state.supplierOrders)}`}
         </div>
       </div>
       <div class="step">
@@ -2070,14 +2440,14 @@ function renderSupplierView() {
           <div><div class="step-title">Valider la commande fournisseur</div><div class="step-desc">Supprime TOORDER, archive uniquement les commandes exportées</div></div>
         </div>
         <div class="step-body">
-          ${!step1Done ? `<div style="color:var(--text-sub);font-size:13px;">⚠️ Télécharge d'abord les fichiers à l'étape 1.</div>`
-          : `<div id="step2-preview"><button class="btn" onclick="previewStep2()">🔍 Vérifier avant de valider</button></div>`}
+          ${!step1Done ? `<div class="empty-inline">${icon('lock')}Télécharge d'abord les fichiers à l'étape 1.</div>`
+          : `<div id="step2-preview"><button class="btn btn-primary" onclick="previewStep2()">${icon('search')}Vérifier avant de valider</button></div>`}
         </div>
       </div>
     </div>
-    <div class="card" style="margin-top:20px;">
-      <div class="card-title">📋 Historique des commandes fournisseur</div>
-      <div id="history-content"><div style="color:var(--text-sub);font-size:13px;">Chargement...</div></div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">${icon('history')} Historique des commandes fournisseur</div>
+      <div id="history-content"><div class="empty-inline">Chargement…</div></div>
     </div>`;
 }
 
@@ -2097,34 +2467,33 @@ function renderDelaiWarnings(orders) {
     const dateLabel = dateLimite.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
     const joursLabel = joursRestants < 0 ? `en retard de ${Math.abs(joursRestants)}j` : joursRestants === 0 ? "aujourd'hui" : `dans ${joursRestants}j`;
     const tone = joursRestants < 0 ? 'critical' : 'warning';
-    const rushBadge = o.estRush?.value === 'true' ? ' <span class="badge badge-critical" style="font-size:10px;">⚡ RUSH</span>' : '';
+    const rushBadge = o.estRush?.value === 'true' ? `<span class="badge badge-solid-critical">${icon('zap')}RUSH</span>` : '';
     return `<div class="supplier-note-row">
-      <span class="supplier-note-order">${o.name}${rushBadge}</span>
-      <span class="supplier-note-client">${customer}</span>
-      <span class="badge badge-${tone}">⏱️ ${dateLabel} (${joursLabel})</span>
+      <span class="supplier-note-order num">${escapeHtml(o.name)}${rushBadge}</span>
+      <span class="supplier-note-client">${escapeHtml(customer)}</span>
+      <span class="badge badge-${tone}">${icon('clock')}${dateLabel} (${joursLabel})</span>
     </div>`;
   }).join('');
-  return `<div class="supplier-notes-block" style="margin-top:12px;">
-    <div class="supplier-notes-header">⏱️ ${withDelai.length} commande${withDelai.length>1?'s':''} proche${withDelai.length>1?'s':''} ou en retard de délai</div>
+  return `<div class="supplier-notes-block">
+    <div class="supplier-notes-header">${icon('clock')}${withDelai.length} commande${withDelai.length>1?'s':''} proche${withDelai.length>1?'s':''} ou en retard de délai</div>
     ${rows}
   </div>`;
 }
 
 function renderSupplierNotes(orders) {
   const withNote = orders.filter(o => o.note && o.note.trim());
-  if (withNote.length === 0) return '<div style="margin-top:12px;font-size:13px;color:var(--success);">✅ Aucune note sur ces commandes</div>';
+  if (withNote.length === 0) return `<div class="empty-inline ok step-status">${icon('checkCircle')}Aucune note sur ces commandes</div>`;
   const rows = withNote.map(o => {
     const customer = `${o.customer?.firstName||''} ${o.customer?.lastName||''}`.trim() || '—';
-    const note = o.note.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const rushBadge = o.estRush?.value === 'true' ? ' <span class="badge badge-critical" style="font-size:10px;">⚡ RUSH</span>' : '';
+    const rushBadge = o.estRush?.value === 'true' ? `<span class="badge badge-solid-critical">${icon('zap')}RUSH</span>` : '';
     return `<div class="supplier-note-row">
-      <span class="supplier-note-order">${o.name}${rushBadge}</span>
-      <span class="supplier-note-client">${customer}</span>
-      <span class="supplier-note-text">${note}</span>
+      <span class="supplier-note-order num">${escapeHtml(o.name)}${rushBadge}</span>
+      <span class="supplier-note-client">${escapeHtml(customer)}</span>
+      <span class="supplier-note-text">${escapeHtml(o.note)}</span>
     </div>`;
   }).join('');
   return `<div class="supplier-notes-block">
-    <div class="supplier-notes-header">⚠️ ${withNote.length} commande${withNote.length>1?'s':''} avec note — à prendre en compte</div>
+    <div class="supplier-notes-header">${icon('note')}${withNote.length} commande${withNote.length>1?'s':''} avec note — à prendre en compte</div>
     ${rows}
   </div>`;
 }
@@ -2139,7 +2508,7 @@ function downloadAndSnapshot(type) {
 
 async function previewStep2() {
   const preview = document.getElementById('step2-preview');
-  preview.innerHTML = `<div class="spinner" style="padding:16px;"><div class="spinner-ring"></div>Vérification...</div>`;
+  preview.innerHTML = `<div class="spinner" style="padding:16px;"><div class="spinner-ring"></div>Vérification…</div>`;
   try {
     const currentOrders = await fetchToOrderOrders();
     const snapshotIds = new Set(state.supplierSnapshot);
@@ -2147,16 +2516,16 @@ async function previewStep2() {
     const newOrders = currentOrders.filter(o => !snapshotIds.has(o.id));
     let html = '';
     if (newOrders.length > 0) {
-      html += `<div class="alert alert-warning" style="margin-bottom:12px;">⚠️ <strong>${newOrders.length} nouvelle${newOrders.length>1?'s':''} commande${newOrders.length>1?'s':''}</strong><span class="alert-text"> exclue${newOrders.length>1?'s':''} : ${newOrders.map(o=>`<strong>${o.name}</strong>`).join(', ')}</span></div>`;
+      html += `<div class="alert alert-warning">${icon('alert')}<div><strong>${newOrders.length} nouvelle${newOrders.length>1?'s':''} commande${newOrders.length>1?'s':''}</strong><span class="alert-text"> arrivée${newOrders.length>1?'s':''} depuis l'export, exclue${newOrders.length>1?'s':''} de cette validation : ${newOrders.map(o=>`<strong>${escapeHtml(o.name)}</strong>`).join(', ')}</span></div></div>`;
     }
-    html += `<div style="margin-bottom:12px;font-size:14px;"><strong>${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à valider : ${toValidate.map(o=>`<span class="badge badge-info" style="margin:2px;">${o.name}</span>`).join('')}</div>`;
-    if (toValidate.length > 0) html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>✅ Valider ${toValidate.length} commande${toValidate.length>1?'s':''}</button>`;
+    html += `<div style="margin-bottom:12px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span><strong class="num">${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à valider :</span>${toValidate.map(o=>`<span class="badge badge-info num">${escapeHtml(o.name)}</span>`).join('')}</div>`;
+    if (toValidate.length > 0) html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>${icon('check')}Valider ${toValidate.length} commande${toValidate.length>1?'s':''}</button>`;
     preview.innerHTML = html;
-  } catch(e) { preview.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`; }
+  } catch(e) { preview.innerHTML = errorBlock(e.message, 'previewStep2()'); }
 }
 
 async function validateSupplierOrders(orderIds) {
-  const btn = event.target; btn.disabled = true; btn.textContent = 'Validation...';
+  const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'Validation\u2026';
   const today = new Date();
   const newTag = `order_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const removeMut = `mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
@@ -2170,7 +2539,7 @@ async function validateSupplierOrders(orderIds) {
   else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
   state.supplierSnapshot = [];
   // Recharge complète du tab pour refléter le nouvel état
-  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Mise à jour...</div>`;
+  document.getElementById('content').innerHTML = pageHead('Commande fournisseur', '') + loadingBlock('Mise \u00e0 jour\u2026');
   state.supplierOrders = await fetchToOrderOrders();
   // Mise à jour du badge
   const badgeSupplier = document.getElementById('tab-supplier-badge');
@@ -2215,9 +2584,9 @@ async function loadHistory() {
     const tagMap = new Map();
     orders.forEach(o => o.tags.forEach(t => { if(t.startsWith('order_')) tagMap.set(t,(tagMap.get(t)||0)+1); }));
     const tags = [...tagMap.entries()].map(([tag,count]) => { const d=tag.replace('order_',''); return d.length===8?{tag,count,date:`${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`}:null; }).filter(Boolean).sort((a,b)=>b.tag.localeCompare(a.tag));
-    if (!tags.length) { el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Aucun historique.</div>`; return; }
-    el.innerHTML = `<table class="history-table"><thead><tr><th>Date</th><th>Commandes</th><th>Actions</th></tr></thead><tbody>${tags.map(h=>`<tr><td><strong>${h.date}</strong></td><td>${h.count}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn" onclick="regenAndDownload('${h.tag}','imbretex')">↺ IMBRETEX</button><button class="btn" onclick="regenAndDownload('${h.tag}','complete')">↺ Complet</button></div></td></tr>`).join('')}</tbody></table>`;
-  } catch(e) { if(el) el.innerHTML = `<div style="color:var(--text-sub);font-size:13px;">Erreur historique.</div>`; }
+    if (!tags.length) { el.innerHTML = `<div class="empty-inline">Aucune commande fournisseur validée pour l'instant.</div>`; return; }
+    el.innerHTML = `<table class="history-table"><thead><tr><th>Date</th><th>Commandes</th><th>Retélécharger</th></tr></thead><tbody>${tags.map(h=>`<tr><td><strong class="num">${h.date}</strong></td><td class="num">${h.count}</td><td><div class="btn-group"><button class="btn btn-sm" onclick="regenAndDownload('${h.tag}','imbretex')">${icon('download')}IMBRETEX</button><button class="btn btn-sm" onclick="regenAndDownload('${h.tag}','complete')">${icon('download')}Complet</button></div></td></tr>`).join('')}</tbody></table>`;
+  } catch(e) { if(el) el.innerHTML = `<div class="empty-inline text-critical">${icon('xCircle')}Impossible de charger l'historique : ${escapeHtml(e.message)}</div>`; }
 }
 
 async function regenAndDownload(tag, type) {
@@ -2266,7 +2635,7 @@ async function savePrintLotComment(lotId) {
   const ta = document.getElementById(`lot-comment-${lotId}`);
   if (!ta) return;
   const comment = ta.value;
-  const btn = event.target; btn.disabled = true; btn.textContent = '⏳...';
+  const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'Enregistrement\u2026';
   try {
     let lots = state.printLots.slice();
     const idx = lots.findIndex(function (l) { return l.lotId === lotId; });
@@ -2278,7 +2647,7 @@ async function savePrintLotComment(lotId) {
   } catch (e) {
     showToast('Erreur: ' + e.message, 'error');
   } finally {
-    btn.disabled = false; btn.textContent = '💾 Enregistrer le commentaire';
+    btn.disabled = false; btn.innerHTML = icon('save') + 'Enregistrer';
   }
 }
 
@@ -2286,7 +2655,7 @@ async function regenPrintLotZip(lotId) {
   const lot = state.printLots.find(function (l) { return l.lotId === lotId; });
   if (!lot) return;
   const zone = document.getElementById(`lot-zip-result-${lotId}`);
-  const btn = event.target; btn.disabled = true; btn.textContent = '⏳ Régénération...';
+  const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'R\u00e9g\u00e9n\u00e9ration\u2026';
   try {
     const data = await gql(`query($ids:[ID!]!){ nodes(ids:$ids){ ... on Order {
       id name note
@@ -2313,44 +2682,46 @@ async function regenPrintLotZip(lotId) {
       }
     }
     const result = await callGas(gasOrders);
-    const zipLinks = result.zips.map(z => `<a href="${z.url}" target="_blank">📦 ${z.name}</a>`).join('<br/>');
+    const zipLinks = result.zips.map(z => `<a href="${z.url}" target="_blank" rel="noopener">${icon('archive')}${escapeHtml(z.name)}${icon('external')}</a>`).join('');
     if (zone) zone.innerHTML = `<div class="zip-result" style="margin-top:8px;">${zipLinks}</div>`;
     showToast('✅ ZIP régénéré');
   } catch (e) {
-    if (zone) zone.innerHTML = `<div class="alert alert-critical" style="margin-top:8px;"><strong>Erreur :</strong> ${e.message}</div>`;
+    if (zone) zone.innerHTML = `<div style="margin-top:8px;">${errorBlock(e.message)}</div>`;
   } finally {
-    btn.disabled = false; btn.textContent = '↺ Régénérer le ZIP';
+    btn.disabled = false; btn.innerHTML = icon('refresh') + 'R\u00e9g\u00e9n\u00e9rer le ZIP';
   }
 }
 
 function renderPrintLotsSection() {
   const lots = state.printLots || [];
   if (!lots.length) {
-    return `<div class="card" style="margin-top:20px;">
-      <div class="card-title">📋 Historique des lots d'impression</div>
-      <div style="color:var(--text-sub);font-size:13px;">Aucun lot dans l'historique pour l'instant.</div>
+    return `<div class="card" style="margin-top:16px;">
+      <div class="card-title">${icon('history')} Historique des lots d'impression</div>
+      <div class="empty-inline">Aucun lot dans l'historique pour l'instant.</div>
     </div>`;
   }
   const rows = lots.map(lot => {
     const d = new Date(lot.dateGeneration);
     const dateFr = isNaN(d.getTime()) ? '—' : `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` + (lot.retroactive ? '' : ` à ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`);
     const count = (lot.orderIds || []).length;
-    const namesPreview = (lot.orderNames || []).slice(0, 6).join(', ') + ((lot.orderNames || []).length > 6 ? '…' : '');
-    return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+    const namesPreview = (lot.orderNames || []).slice(0, 8).join(', ') + ((lot.orderNames || []).length > 8 ? '…' : '');
+    return `<div class="lot-row">
+      <div class="lot-top">
         <div>
-          <div><strong>${dateFr}</strong> — ${count} commande${count>1?'s':''} <span class="badge badge-info">${escapeHtml(lot.tag||'')}</span>${lot.retroactive ? ' <span class="badge" style="background:#999;color:#fff;">reconstitué</span>' : ''}</div>
-          <div style="font-size:11px;color:var(--text-sub);margin-top:2px;">${escapeHtml(namesPreview)}</div>
+          <div class="lot-title"><strong class="num">${dateFr}</strong> <span class="muted">— ${count} commande${count>1?'s':''}</span> <span class="badge badge-info">${escapeHtml(lot.tag||'')}</span>${lot.retroactive ? ` <span class="badge badge-muted" title="Lot reconstitué a posteriori depuis les balises">reconstitué</span>` : ''}</div>
+          <div class="lot-names num">${escapeHtml(namesPreview)}</div>
         </div>
-        <button class="btn" onclick="regenPrintLotZip('${lot.lotId}')">↺ Régénérer le ZIP</button>
+        <button class="btn btn-sm" onclick="regenPrintLotZip('${lot.lotId}')">${icon('refresh')}Régénérer le ZIP</button>
       </div>
-      <textarea id="lot-comment-${lot.lotId}" placeholder="Commentaire (optionnel)..." style="width:100%;font-size:12px;padding:6px;border:1px solid var(--border);border-radius:var(--radius);margin-top:8px;box-sizing:border-box;" rows="2">${escapeHtml(lot.comment||'')}</textarea>
-      <button class="btn" style="margin-top:4px;" onclick="savePrintLotComment('${lot.lotId}')">💾 Enregistrer le commentaire</button>
+      <div class="lot-comment">
+        <textarea class="input" id="lot-comment-${lot.lotId}" placeholder="Commentaire (optionnel)…" rows="1" aria-label="Commentaire du lot du ${dateFr}">${escapeHtml(lot.comment||'')}</textarea>
+        <button class="btn btn-sm" style="min-height:36px;" onclick="savePrintLotComment('${lot.lotId}')">${icon('save')}Enregistrer</button>
+      </div>
       <div id="lot-zip-result-${lot.lotId}"></div>
     </div>`;
   }).join('');
-  return `<div class="card" style="margin-top:20px;">
-    <div class="card-title">📋 Historique des lots d'impression</div>
+  return `<div class="card" style="margin-top:16px;">
+    <div class="card-title">${icon('history')} Historique des lots d'impression</div>
     ${rows}
   </div>`;
 }
@@ -2383,7 +2754,7 @@ async function fetchTodoPrintOrders() {
 
 async function renderPrintTab() {
   const c = document.getElementById('content');
-  c.innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Chargement des commandes TODOPRINT...</div>`;
+  c.innerHTML = pageHead('Impression', '') + loadingBlock('Chargement des commandes TODOPRINT…');
   try {
     const orders = await fetchTodoPrintOrders();
     state.printOrders = orders;
@@ -2395,7 +2766,7 @@ async function renderPrintTab() {
     catch (e) { state.printLots = []; state.printLotsLoaded = false; console.log('Erreur chargement lots impression:', e.message); }
     renderPrintView();
   } catch(e) {
-    c.innerHTML = `<div class="alert alert-critical"><strong>Erreur :</strong> ${e.message}</div>`;
+    c.innerHTML = pageHead('Impression', '') + errorBlock(e.message, 'renderPrintTab()');
   }
 }
 
@@ -2407,8 +2778,10 @@ function goToPrintStep(n) {
 function renderPrintView() {
   const c = document.getElementById('content');
   const orders = state.printOrders;
+  const refreshBtn = `<button class="btn" onclick="renderPrintTab()">${icon('refresh')}Actualiser</button>`;
   if (!orders.length) {
-    c.innerHTML = `<div class="empty">Aucune commande avec la balise TODOPRINT.</div>${renderPrintLotsSection()}`;
+    c.innerHTML = pageHead('Impression', 'Aucune commande à imprimer', refreshBtn) +
+      `<div class="card"><div class="empty-inline ok">${icon('checkCircle')}Aucune commande avec la balise TODOPRINT.</div></div>${renderPrintLotsSection()}`;
     return;
   }
 
@@ -2427,25 +2800,28 @@ function renderPrintView() {
     { n: 3, label: 'Validation', unlocked: state.printZipDone },
   ];
 
-  const breadcrumb = stepMeta.map(s => {
+  const stepper = '<div class="stepper" role="list">' + stepMeta.map((s, i) => {
     const isCurrent = s.n === step;
-    const clickable = s.unlocked;
-    return `<span class="step-crumb ${isCurrent ? 'current' : ''} ${clickable ? '' : 'locked'}"
-      ${clickable ? `onclick="goToPrintStep(${s.n})"` : ''}
-      style="cursor:${clickable ? 'pointer' : 'default'};opacity:${clickable ? 1 : .45};font-weight:${isCurrent ? 700 : 400};">
-      ${s.n}. ${s.label}
-    </span>`;
-  }).join('<span style="margin:0 8px;color:var(--text-sub);">→</span>');
+    const isDone = s.n < step;
+    return (i ? '<span class="stepper-sep" aria-hidden="true"></span>' : '') +
+      `<button type="button" role="listitem" class="stepper-item${isCurrent ? ' current' : ''}${isDone ? ' done' : ''}" ${s.unlocked ? `onclick="goToPrintStep(${s.n})"` : 'disabled'} ${isCurrent ? 'aria-current="step"' : ''}>
+        <span class="step-number">${isDone ? icon('check') : s.n}</span>${s.label}
+      </button>`;
+  }).join('') + '</div>';
 
   let stepBodyHtml = '';
 
   if (step === 1) {
     stepBodyHtml = `
-      <div class="step-title">Sélectionner les commandes à préparer</div>
-      <div class="step-desc" id="print-step1-desc" style="margin-bottom:10px;">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="btn" onclick="printSelectAll()">✅ Tout sélectionner</button>
-        <button class="btn" onclick="printDeselectAll()">☐ Tout désélectionner</button>
+      <div class="card-head">
+        <div>
+          <div class="step-title">Sélectionner les commandes à préparer</div>
+          <div class="step-desc" id="print-step1-desc">${orders.length} commande${orders.length>1?'s':''} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-sm" onclick="printSelectAll()">${icon('squareCheck')}Tout sélectionner</button>
+          <button class="btn btn-sm" onclick="printDeselectAll()">${icon('square')}Tout désélectionner</button>
+        </div>
       </div>
       <div class="print-order-list">
         ${orders.map(o => {
@@ -2459,28 +2835,28 @@ function renderPrintView() {
             const jsonUrls = extractPngSvgFromJson(attrs['Customization JSON']||'');
             return s + designs.length + jsonUrls.length;
           }, 0);
-          return `<div class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
+          return `<label class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
             <input type="checkbox" ${isSelected?'checked':''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
             <div class="print-order-info">
-              <div class="print-order-name">${o.name} <span class="badge badge-info">${totalQty} art.</span> <span class="badge badge-info">${ageInDays}j</span></div>
-              <div class="print-order-detail">${customer||'—'} · ${activeItems.length} ligne${activeItems.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
-              ${o.note?.trim() ? `<div class="print-order-note">📝 ${o.note}</div>` : ''}
+              <div class="print-order-name"><span class="num">${escapeHtml(o.name)}</span> <span class="badge badge-info num">${totalQty} art.</span> <span class="badge badge-info num" title="Commande passée il y a ${ageInDays} jour${ageInDays>1?'s':''}">${ageInDays}j</span></div>
+              <div class="print-order-detail">${escapeHtml(customer||'—')} · ${activeItems.length} ligne${activeItems.length>1?'s':''} · ${fileCount} fichier${fileCount>1?'s':''}</div>
+              ${o.note?.trim() ? `<div class="print-order-note">${icon('note')}<span>${escapeHtml(o.note)}</span></div>` : ''}
             </div>
-          </div>`;
+          </label>`;
         }).join('')}
       </div>
       ${ordersWithNotes.length > 0 ? `
-      <div class="alert alert-warning" style="margin-top:12px;">
-        📝 <strong>${ordersWithNotes.length} commande${ordersWithNotes.length>1?'s':''} avec note</strong> — incluses dans le notes.txt du ZIP
+      <div class="alert alert-warning" style="margin-top:12px;margin-bottom:0;">
+        ${icon('note')}<div><strong>${ordersWithNotes.length} commande${ordersWithNotes.length>1?'s':''} avec note</strong><span class="alert-text"> — incluses dans le notes.txt du ZIP</span></div>
       </div>` : ''}
     `;
   } else if (step === 2) {
     stepBodyHtml = `
       <div class="step-title">Générer le ZIP</div>
-      <div class="step-desc" style="margin-bottom:10px;">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive — ${selectedCount} commande${selectedCount>1?'s':''} sélectionnée${selectedCount>1?'s':''}</div>
+      <div class="step-desc" style="margin-bottom:14px;">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive — ${selectedCount} commande${selectedCount>1?'s':''} sélectionnée${selectedCount>1?'s':''}</div>
       <div id="zip-generate-zone">
         <button id="generate-zip-btn" class="btn btn-primary" onclick="generatePrintZip()">
-          🗜️ Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})
+          ${icon('archive')}<span>Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})</span>
         </button>
       </div>
       <div id="zip-result-zone"></div>
@@ -2488,30 +2864,30 @@ function renderPrintView() {
   } else {
     stepBodyHtml = `
       <div class="step-title">Valider — supprimer la balise TODOPRINT</div>
-      <div class="step-desc" style="margin-bottom:10px;">Supprime TODOPRINT uniquement sur les commandes zippées (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})</div>
+      <div class="step-desc" style="margin-bottom:14px;">Supprime TODOPRINT uniquement sur les commandes zippées (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''}) et enregistre le lot dans l'historique.</div>
       <button class="btn btn-primary" onclick="validatePrintOrders()">
-        ✅ Supprimer TODOPRINT (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})
+        ${icon('check')}Supprimer TODOPRINT (${state.printZipOrderIds.length} commande${state.printZipOrderIds.length>1?'s':''})
       </button>
     `;
   }
 
   const navButtons = `
-    <div style="display:flex;justify-content:space-between;margin-top:16px;">
-      <div>${step > 1 ? `<button class="btn" onclick="goToPrintStep(${step - 1})">← Précédent</button>` : ''}</div>
-      <div>${step < 3 && stepMeta[step].unlocked ? `<button class="btn btn-primary" onclick="goToPrintStep(${step + 1})">Étape suivante →</button>` : ''}</div>
+    <div class="wizard-foot">
+      <div>${step > 1 ? `<button class="btn" onclick="goToPrintStep(${step - 1})">${icon('arrowLeft')}Précédent</button>` : ''}</div>
+      <div>${step < 3 && stepMeta[step].unlocked ? `<button class="btn btn-primary" onclick="goToPrintStep(${step + 1})">Étape suivante${icon('arrowRight')}</button>` : ''}</div>
     </div>
   `;
 
-  const html = `
+  const units = orders.reduce((s, o) => s + activeLineItemEdges(o).reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
+  c.innerHTML = `
+    ${pageHead('Impression', `<span class="num">${orders.length}</span> commande${orders.length>1?'s':''} à imprimer · <span class="num">${units}</span> article${units>1?'s':''}`, refreshBtn)}
     <div class="card">
-      <div style="display:flex;align-items:center;margin-bottom:14px;font-size:13px;">${breadcrumb}</div>
+      ${stepper}
       ${stepBodyHtml}
       ${navButtons}
     </div>
     ${renderPrintLotsSection()}
   `;
-
-  c.innerHTML = html;
 }
 
 function extractPngSvgFromJson(jsonText) {
@@ -2561,8 +2937,8 @@ function printSelectAll() { state.printOrders.forEach(o => state.printSelected.a
 function printDeselectAll() { state.printSelected.clear(); renderPrintView(); }
 
 async function generatePrintZip() {
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = '⏳ Génération en cours... (peut prendre 1-2 min)';
+  const btn = event.target.closest('button');
+  btn.disabled = true; btn.textContent = 'G\u00e9n\u00e9ration en cours\u2026 (1 \u00e0 2 min)';
 
   const selectedOrders = state.printOrders.filter(o => state.printSelected.has(o.id));
 
@@ -2602,12 +2978,12 @@ async function generatePrintZip() {
     state.printZipOrderIds = selectedOrders.map(o => o.id);
 
     const zipLinks = result.zips.map(z =>
-      `<a href="${z.url}" target="_blank">📦 ${z.name}</a>`
-    ).join('<br/>');
+      `<a href="${z.url}" target="_blank" rel="noopener">${icon('archive')}${escapeHtml(z.name)}${icon('external')}</a>`
+    ).join('');
 
     document.getElementById('zip-result-zone').innerHTML = `
       <div class="zip-result" style="margin-top:12px;">
-        <div style="font-weight:600;margin-bottom:8px;">✅ ZIP généré dans ton Drive !</div>
+        <div class="zip-title">${icon('checkCircle')}ZIP généré dans ton Drive</div>
         ${zipLinks}
       </div>`;
 
@@ -2615,13 +2991,13 @@ async function generatePrintZip() {
     renderPrintView();
     showToast('✅ ZIP généré avec succès !');
   } catch(e) {
-    btn.disabled = false; btn.textContent = `🗜️ Générer le ZIP (${state.printSelected.size} commande${state.printSelected.size>1?'s':''})`;
-    document.getElementById('zip-result-zone').innerHTML = `<div class="alert alert-critical" style="margin-top:8px;"><strong>Erreur :</strong> <span class="alert-text">${e.message}</span></div>`;
+    btn.disabled = false; btn.innerHTML = `${icon('archive')}<span>Générer le ZIP (<span id="zip-count">${state.printSelected.size}</span> commande${state.printSelected.size>1?'s':''})</span>`;
+    document.getElementById('zip-result-zone').innerHTML = `<div style="margin-top:12px;">${errorBlock(e.message)}</div>`;
   }
 }
 
 async function validatePrintOrders() {
-  const btn = event.target; btn.disabled = true; btn.textContent = 'Suppression en cours...';
+  const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'Suppression en cours\u2026';
   const today = new Date();
   const printTag = `print_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const removeMut = `mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
@@ -2655,7 +3031,7 @@ async function validatePrintOrders() {
   }
 
   // Spinner pendant le rechargement
-  document.getElementById('content').innerHTML = `<div class="spinner"><div class="spinner-ring"></div>Mise à jour...</div>`;
+  document.getElementById('content').innerHTML = pageHead('Impression', '') + loadingBlock('Mise \u00e0 jour\u2026');
   // Petit délai pour laisser Shopify indexer les tags
   await new Promise(r => setTimeout(r, 2000));
   state.printZipOrderIds = [];
@@ -2669,7 +3045,7 @@ async function validatePrintOrders() {
     }
     await renderPrintTab();
   } catch (e) {
-    document.getElementById('content').innerHTML = `<div class="alert alert-critical"><strong>Tags mis à jour, mais erreur au rafraîchissement :</strong> ${e.message}<br/><button class="btn" style="margin-top:8px;" onclick="renderPrintTab()">🔄 Réessayer</button></div>`;
+    document.getElementById('content').innerHTML = pageHead('Impression', '') + errorBlock('Balises mises \u00e0 jour, mais le rafra\u00eechissement a \u00e9chou\u00e9 : ' + e.message, 'renderPrintTab()');
   }
 }
 
@@ -2969,10 +3345,10 @@ function renderIconsPanel() {
   var allTags = getAllTags();
   var displayTags = Array.from(new Set(['crossfit', 'running'].concat(allTags)));
 
-  var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>Ic\u00f4nes des filtres</h3></div>';
+  var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>' + icon('palette') + 'Icônes des filtres</h3></div>';
   h += '<div class="gallery-panel-body">';
-  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Importe une image (PNG, SVG, JPG) pour chaque tag. Elle remplacera le texte/emoji dans les filtres du front. Le titre est affiché à côté de l’icône et est traduisible nativement dans Shopify (Traduire le contenu).</p>';
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">';
+  h += '<p class="card-desc">Importe une image (PNG, SVG, JPG) pour chaque tag. Elle remplacera le texte/emoji dans les filtres du front. Le titre est affiché à côté de l’icône et est traduisible nativement dans Shopify (Traduire le contenu).</p>';
+  h += '<div class="icon-grid">';
 
   displayTags.forEach(function(tag) {
     var iconUrl = galleryState.tagIcons[tag];
@@ -2982,27 +3358,22 @@ function renderIconsPanel() {
     var inputId = 'tag-title-input-' + slug;
     var currentTitle = galleryState.tagTitles[slug] || '';
     var isSaving = galleryState.savingTitle === tag;
+    var tagJs = tag.replace(/'/g, "\\'");
 
-    h += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;background:var(--surface);">';
-    h += '<div style="width:64px;height:64px;margin:0 auto 8px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-    if (isUploading) {
-      h += '<div style="font-size:11px;color:var(--text-sub);">Envoi...</div>';
-    } else if (iconUrl) {
-      h += '<img src="' + iconUrl + '" alt="' + label + '" style="width:100%;height:100%;object-fit:contain;" />';
-    } else {
-      h += '<div style="font-size:24px;opacity:.3;">&#128247;</div>';
-    }
+    h += '<div class="icon-card">';
+    h += '<div class="thumb">';
+    if (isUploading) h += '<div class="spinner-ring" style="width:22px;height:22px;border-width:2px;"></div>';
+    else if (iconUrl) h += '<img src="' + iconUrl + '" alt="' + escapeHtml(label) + '" />';
+    else h += icon('image');
     h += '</div>';
-    h += '<div style="font-size:12px;font-weight:600;margin-bottom:8px;">' + label + '</div>';
-    h += '<div style="display:flex;gap:4px;justify-content:center;">';
-    h += '<button class="btn" style="font-size:11px;padding:4px 8px;" onclick="triggerIconUpload(\'' + tag + '\')">' + (iconUrl ? 'Changer' : 'Importer') + '</button>';
-    if (iconUrl) h += '<button class="btn" style="font-size:11px;padding:4px 8px;color:var(--critical);" onclick="removeTagIcon(\'' + tag + '\')">Retirer</button>';
+    h += '<div class="name">' + escapeHtml(label) + '</div>';
+    h += '<div class="btn-group" style="justify-content:center;">';
+    h += '<button class="btn btn-sm" onclick="triggerIconUpload(\'' + tagJs + '\')">' + icon('upload') + (iconUrl ? 'Changer' : 'Importer') + '</button>';
+    if (iconUrl) h += '<button class="btn btn-sm btn-danger" onclick="removeTagIcon(\'' + tagJs + '\')">' + icon('trash') + 'Retirer</button>';
     h += '</div>';
-    h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);text-align:left;">';
-    h += '<label style="display:block;font-size:10px;color:var(--text-sub);margin-bottom:4px;">Titre affiché</label>';
-    h += '<div style="display:flex;gap:4px;">';
-    h += '<input id="' + inputId + '" type="text" value="' + escapeHtml(currentTitle) + '" placeholder="' + escapeHtml(label) + '" style="flex:1;min-width:0;font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);" />';
-    h += '<button class="btn" style="font-size:11px;padding:4px 8px;flex-shrink:0;" ' + (isSaving ? 'disabled' : '') + ' onclick="saveTagTitleValue(\'' + tag.replace(/'/g, "\\'") + '\', document.getElementById(\'' + inputId + '\').value)">' + (isSaving ? '...' : 'OK') + '</button>';
+    h += '<div class="title-field"><label for="' + inputId + '">Titre affiché</label><div>';
+    h += '<input class="input input-sm" id="' + inputId + '" type="text" value="' + escapeHtml(currentTitle) + '" placeholder="' + escapeHtml(label) + '" />';
+    h += '<button class="btn btn-sm" ' + (isSaving ? 'disabled' : '') + ' onclick="saveTagTitleValue(\'' + tagJs + '\', document.getElementById(\'' + inputId + '\').value)">' + (isSaving ? '…' : 'OK') + '</button>';
     h += '</div></div>';
     h += '</div>';
   });
@@ -3042,46 +3413,44 @@ async function persistNicheProducts() {
 function renderParamsPanel() {
   var niche = galleryState.paramsNiche || 'cf';
   var entry = ensureNicheLists(niche);
-  var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>&#9881;&#65039; Produits partagés par niche</h3></div>';
+  var h = '<div class="gallery-panel"><div class="gallery-panel-header"><h3>' + icon('sliders') + 'Produits partagés par niche</h3></div>';
   h += '<div class="gallery-panel-body">';
-  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:16px;">Organise les produits de chaque niche en listes (ex : "T-shirt oversize + T-shirt", "Tank", "Crop"). Un produit ne peut être que dans une seule liste — glisse-le d\'une liste à l\'autre pour le reclasser. Ces listes servent ensuite, design par design (onglet &#9999;&#65039; Ajout manuel), à choisir quels produits proposer dans la popup — chacun avec son propre customization-id Teeinblue.</p>';
+  h += '<p class="card-desc">Organise les produits de chaque niche en listes (ex : "T-shirt oversize + T-shirt", "Tank", "Crop"). Un produit ne peut être que dans une seule liste — glisse-le d\'une liste à l\'autre pour le reclasser. Ces listes servent ensuite, design par design (bouton Ajout manuel), à choisir quels produits proposer dans la popup — chacun avec son propre customization-id Teeinblue.</p>';
 
-  h += '<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:14px;">';
-  [{id:'cf',label:'🏋️ CrossFit',color:'#d93025'},{id:'running',label:'🏃 Running',color:'#1a73e8'}].forEach(function(t){
+  h += '<div class="tabs plain accent" role="tablist">';
+  [{id:'cf',label:'CrossFit'},{id:'running',label:'Running'}].forEach(function(t){
     var active = niche === t.id;
-    h += '<button onclick="galleryState.paramsNiche=\''+t.id+'\';galleryState.paramsSearchResults=[];renderGalleryUI()" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-weight:600;font-size:13px;border-bottom:'+(active?'2px solid '+t.color+';color:'+t.color:'2px solid transparent;color:var(--text-sub)')+';">'+t.label+'</button>';
+    h += '<button role="tab" aria-selected="' + active + '" class="tab-btn' + (active ? ' active' : '') + '" style="--tab-accent:' + nicheColor(t.id) + '" onclick="galleryState.paramsNiche=\'' + t.id + '\';galleryState.paramsSearchResults=[];renderGalleryUI()"><span class="dot" style="--dot:' + nicheColor(t.id) + '"></span>' + t.label + '</button>';
   });
   h += '</div>';
 
-  h += '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">';
-  h += '<button class="btn" onclick="syncNicheFromShopify(\''+niche+'\')" '+(galleryState.paramsSyncing?'disabled':'')+'>'+(galleryState.paramsSyncing?'Synchronisation...':'&#128260; Synchroniser depuis Shopify')+'</button>';
-  h += '<button class="btn btn-primary" onclick="createNicheList()">&#10133; Nouvelle liste</button>';
+  h += '<div class="btn-group" style="margin-bottom:14px;">';
+  h += '<button class="btn" onclick="syncNicheFromShopify(\'' + niche + '\')" ' + (galleryState.paramsSyncing ? 'disabled' : '') + '>' + icon('refresh') + (galleryState.paramsSyncing ? 'Synchronisation…' : 'Synchroniser depuis Shopify') + '</button>';
+  h += '<button class="btn btn-primary" onclick="createNicheList()">' + icon('plus') + 'Nouvelle liste</button>';
   h += '</div>';
 
   entry.lists.forEach(function(list) {
     var isDefault = list.id === 'default';
-    h += '<div class="gallery-panel" style="margin-bottom:14px;border:1px dashed var(--border);" ondragover="onParamsDragOver(event)" ondrop="onParamsDrop(event,\''+niche+'\',\''+list.id+'\')">';
-    h += '<div class="gallery-panel-header" style="padding:8px 12px;flex-wrap:wrap;gap:6px;">';
+    h += '<div class="niche-list" ondragover="onParamsDragOver(event)" ondragleave="this.classList.remove(\'drag-over\')" ondrop="onParamsDrop(event,\'' + niche + '\',\'' + list.id + '\')">';
+    h += '<div class="niche-list-head">';
     if (isDefault) {
-      h += '<h3 style="font-size:13px;">'+escapeHtml(list.name)+' <span style="font-weight:400;color:var(--text-sub);">('+list.products.length+')</span></h3>';
+      h += '<h4>' + escapeHtml(list.name) + '</h4><span class="muted num">(' + list.products.length + ')</span>';
     } else {
-      h += '<input type="text" value="'+escapeHtml(list.name)+'" onchange="renameNicheList(\''+niche+'\',\''+list.id+'\',this.value)" style="font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface);padding:3px 6px;border-radius:4px;flex:1;min-width:100px;" />';
-      h += '<span style="font-size:11px;color:var(--text-sub);">('+list.products.length+')</span>';
-      h += '<button class="btn" style="font-size:11px;padding:3px 8px;color:var(--critical);" onclick="deleteNicheList(\''+niche+'\',\''+list.id+'\')">Supprimer la liste</button>';
+      h += '<input class="input input-sm" type="text" value="' + escapeHtml(list.name) + '" aria-label="Nom de la liste" onchange="renameNicheList(\'' + niche + '\',\'' + list.id + '\',this.value)" />';
+      h += '<span class="muted num">(' + list.products.length + ')</span>';
+      h += '<button class="btn btn-sm btn-danger" style="margin-left:auto;" onclick="deleteNicheList(\'' + niche + '\',\'' + list.id + '\')">' + icon('trash') + 'Supprimer la liste</button>';
     }
     h += '</div>';
-    h += '<div class="gallery-panel-body" style="padding:10px 12px;min-height:70px;">';
+    h += '<div class="niche-list-body">';
     if (!list.products.length) {
-      h += '<div style="font-size:11px;color:var(--text-sub);padding:14px;text-align:center;border:1px dashed var(--border);border-radius:6px;">Glisse des produits ici</div>';
+      h += '<div class="niche-drop-hint">Glisse des produits ici</div>';
     } else {
-      h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">';
+      h += '<div class="prod-grid">';
       list.products.forEach(function(p) {
-        h += '<div draggable="true" ondragstart="onParamsDragStart(event,\''+niche+'\',\''+list.id+'\',\''+p.productHandle+'\')" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px;text-align:center;background:var(--surface);position:relative;cursor:grab;">';
-        h += '<button onclick="removeNicheProduct(\''+niche+'\',\''+list.id+'\',\''+p.productHandle+'\')" title="Retirer" style="position:absolute;top:3px;right:3px;background:var(--critical);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;line-height:1;">&#x2715;</button>';
-        h += '<div style="width:44px;height:44px;margin:0 auto 4px;border-radius:6px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-        h += p.imageUrl ? '<img src="'+p.imageUrl+'" alt="" style="width:100%;height:100%;object-fit:cover;" />' : '<div style="font-size:16px;opacity:.3;">&#128230;</div>';
-        h += '</div>';
-        h += '<div style="font-size:10px;font-weight:600;">'+escapeHtml(p.title||p.productHandle)+'</div>';
+        h += '<div class="prod-card" draggable="true" ondragstart="onParamsDragStart(event,\'' + niche + '\',\'' + list.id + '\',\'' + p.productHandle + '\')">';
+        h += '<button class="rm" onclick="removeNicheProduct(\'' + niche + '\',\'' + list.id + '\',\'' + p.productHandle + '\')" title="Retirer de la liste" aria-label="Retirer ' + escapeHtml(p.title || p.productHandle) + '">' + icon('x') + '</button>';
+        h += '<div class="thumb">' + (p.imageUrl ? '<img src="' + p.imageUrl + '" alt="" />' : icon('package')) + '</div>';
+        h += '<div class="name">' + escapeHtml(p.title || p.productHandle) + '</div>';
         h += '</div>';
       });
       h += '</div>';
@@ -3089,10 +3458,10 @@ function renderParamsPanel() {
     h += '</div></div>';
   });
 
-  h += '<div style="border-top:1px solid var(--border);padding-top:12px;">';
-  h += '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Ajouter un produit manuellement (atterrit dans "'+escapeHtml(entry.lists[0].name)+'")</label>';
-  h += '<input type="text" id="params-search-input" placeholder="Rechercher un produit par titre..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" oninput="searchParamProductDebounced(this.value)" />';
-  h += '<div id="params-search-results" style="margin-top:6px;"></div>';
+  h += '<div class="form-group" style="margin:16px 0 0;padding-top:14px;border-top:1px solid var(--border);">';
+  h += '<label for="params-search-input">Ajouter un produit manuellement <span class="muted" style="font-weight:400;">(atterrit dans « ' + escapeHtml(entry.lists[0].name) + ' »)</span></label>';
+  h += '<input type="text" id="params-search-input" placeholder="Rechercher un produit par titre…" oninput="searchParamProductDebounced(this.value)" />';
+  h += '<div id="params-search-results"></div>';
   h += '</div>';
 
   h += '</div></div>';
@@ -3102,14 +3471,14 @@ function renderParamsPanel() {
 }
 
 function renderDesignPagesPanel() {
-  var h = '<div class="gallery-panel" style="margin-top:16px;"><div class="gallery-panel-header"><h3>&#127760; Pages designs (SEO)</h3></div>';
+  var h = '<div class="gallery-panel" style="margin-top:16px;"><div class="gallery-panel-header"><h3>' + icon('globe') + 'Pages designs (SEO)</h3></div>';
   h += '<div class="gallery-panel-body">';
-  h += '<p style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">Chaque design signature (coché "Créer une page SEO" dans l\'ajout manuel) devient une vraie page Shopify — template dédié, contenu piloté par metafields, éditable dans le thème. Rien n\'est automatique : cliquer sur "Synchroniser" pour appliquer les derniers changements (nouveaux designs, descriptions modifiées, produits alternatifs modifiés).</p>';
-  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
-  h += '<button class="btn" id="btn-install-template" onclick="installDesignTemplateUI()">&#128295; Installer / mettre à jour le template</button>';
-  h += '<button class="btn btn-primary" id="btn-sync-pages" onclick="syncDesignPagesUI()">&#128260; Synchroniser les pages designs</button>';
+  h += '<p class="card-desc">Chaque design signature (coché "Créer une page SEO" dans l\'ajout manuel) devient une vraie page Shopify — template dédié, contenu piloté par metafields, éditable dans le thème. Rien n\'est automatique : cliquer sur "Synchroniser" pour appliquer les derniers changements (nouveaux designs, descriptions modifiées, produits alternatifs modifiés).</p>';
+  h += '<div class="btn-group" style="margin-bottom:12px;">';
+  h += '<button class="btn" id="btn-install-template" onclick="installDesignTemplateUI()">' + icon('wrench') + 'Installer / mettre à jour le template</button>';
+  h += '<button class="btn btn-primary" id="btn-sync-pages" onclick="syncDesignPagesUI()">' + icon('refresh') + 'Synchroniser les pages designs</button>';
   h += '</div>';
-  h += '<div id="design-pages-report" style="font-size:12px;"></div>';
+  h += '<div id="design-pages-report"></div>';
   h += '</div></div>';
   return h;
 }
@@ -3117,33 +3486,33 @@ function renderDesignPagesPanel() {
 async function installDesignTemplateUI() {
   var btn = document.getElementById('btn-install-template');
   var report = document.getElementById('design-pages-report');
-  if (btn) { btn.disabled = true; btn.textContent = 'Installation...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Installation…'; }
   try {
     var r = await galleryApi('installDesignTemplate', {});
     showToast('Template installé sur le thème "' + r.result.themeName + '"');
-    if (report) report.innerHTML = '<div style="color:var(--success,#1a7f37);">Template installé sur le thème live ("' + escapeHtml(r.result.themeName) + '") : ' + r.result.files.map(function(f){return escapeHtml(f.filename);}).join(', ') + '</div>';
+    if (report) report.innerHTML = '<div class="empty-inline ok">' + icon('checkCircle') + 'Template installé sur le thème live ("' + escapeHtml(r.result.themeName) + '") : ' + r.result.files.map(function(f){return escapeHtml(f.filename);}).join(', ') + '</div>';
   } catch (e) {
     showToast('Erreur: ' + e.message, 'error');
-    if (report) report.innerHTML = '<div style="color:var(--critical);">Erreur installation template : ' + escapeHtml(e.message) + '</div>';
+    if (report) report.innerHTML = errorBlock('Installation du template : ' + e.message);
   }
-  if (btn) { btn.disabled = false; btn.textContent = '🔧 Installer / mettre à jour le template'; }
+  if (btn) { btn.disabled = false; btn.innerHTML = icon('wrench') + 'Installer / mettre à jour le template'; }
 }
 
 async function syncDesignPagesUI() {
   var btn = document.getElementById('btn-sync-pages');
   var report = document.getElementById('design-pages-report');
-  if (btn) { btn.disabled = true; btn.textContent = 'Synchronisation...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Synchronisation…'; }
   try {
     var r = await galleryApi('syncDesignPages', {});
     var rep = r.report;
     showToast('Synchro terminée : ' + rep.created + ' créée(s), ' + rep.updated + ' mise(s) à jour');
-    var html = '<div style="background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;">';
-    html += '<div>&#9989; ' + rep.created + ' page(s) créée(s) &middot; ' + rep.updated + ' mise(s) à jour &middot; ' + rep.unpublished + ' dépubliée(s) &middot; ' + rep.skipped + ' ignorée(s)</div>';
+    var html = '<div class="report-box">';
+    html += '<div class="empty-inline ok" style="padding:0;">' + icon('checkCircle') + rep.created + ' page(s) créée(s) · ' + rep.updated + ' mise(s) à jour · ' + rep.unpublished + ' dépubliée(s) · ' + rep.skipped + ' ignorée(s)</div>';
     if (rep.errors && rep.errors.length) {
-      html += '<div style="color:var(--critical);margin-top:6px;">' + rep.errors.length + ' erreur(s) :<ul style="margin:4px 0 0 18px;padding:0;">' + rep.errors.map(function(e){return '<li>' + escapeHtml(e.title || '?') + ' — ' + escapeHtml(e.message) + '</li>';}).join('') + '</ul></div>';
+      html += '<div class="text-critical" style="margin-top:6px;">' + rep.errors.length + ' erreur(s) :<ul>' + rep.errors.map(function(e){return '<li>' + escapeHtml(e.title || '?') + ' — ' + escapeHtml(e.message) + '</li>';}).join('') + '</ul></div>';
     }
     if (rep.definitionsWarning) {
-      html += '<div style="color:#8a6d00;margin-top:6px;">&#9888;&#65039; Définitions de metafields non créées (' + escapeHtml(rep.definitionsWarning) + '). Sans impact si les pages ci-dessus se sont bien créées/actualisées — juste moins pratique à éditer depuis l\'admin. Voir les instructions pour ajouter le scope manquant.</div>';
+      html += '<div class="text-warning" style="margin-top:6px;display:flex;gap:6px;">' + icon('alert') + '<span>Définitions de metafields non créées (' + escapeHtml(rep.definitionsWarning) + '). Sans impact si les pages ci-dessus se sont bien créées/actualisées — juste moins pratique à éditer depuis l\'admin. Voir les instructions pour ajouter le scope manquant.</span></div>';
     }
     html += '</div>';
     if (report) report.innerHTML = html;
@@ -3152,9 +3521,9 @@ async function syncDesignPagesUI() {
     galleryState.savedItems = fresh.items || [];
   } catch (e) {
     showToast('Erreur: ' + e.message, 'error');
-    if (report) report.innerHTML = '<div style="color:var(--critical);">Erreur synchro : ' + escapeHtml(e.message) + '</div>';
+    if (report) report.innerHTML = errorBlock('Synchro : ' + e.message);
   }
-  if (btn) { btn.disabled = false; btn.textContent = '🔄 Synchroniser les pages designs'; }
+  if (btn) { btn.disabled = false; btn.innerHTML = icon('refresh') + 'Synchroniser les pages designs'; }
 }
 
 // ── Drag & drop entre listes ──
@@ -3163,7 +3532,7 @@ function onParamsDragStart(e, niche, listId, handle) {
   _paramsDrag = { niche: niche, listId: listId, handle: handle };
   e.dataTransfer.effectAllowed = 'move';
 }
-function onParamsDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function onParamsDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
 async function onParamsDrop(e, niche, targetListId) {
   e.preventDefault();
   if (!_paramsDrag || _paramsDrag.niche !== niche) { _paramsDrag = null; return; }
@@ -3255,15 +3624,15 @@ function renderParamsSearchResults() {
   var products = galleryState.paramsSearchResults || [];
   var niche = galleryState.paramsNiche || 'cf';
   var already = allNicheProductHandles(niche);
-  if (!products.length) { box.innerHTML = '<div style="font-size:11px;color:var(--text-sub);">Aucun résultat</div>'; return; }
-  box.innerHTML = products.map(function (p, i) {
+  if (!products.length) { box.innerHTML = '<div class="field-hint">Aucun résultat</div>'; return; }
+  box.innerHTML = '<div class="search-results">' + products.map(function (p, i) {
     var inList = !!already[p.handle];
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);margin-top:4px;'+(inList?'opacity:.5;':'cursor:pointer;')+'" '+(inList?'':'onclick="addNicheProduct('+i+')"')+'>' +
-      (p.featuredImage && p.featuredImage.url ? '<img src="' + p.featuredImage.url + '" style="width:28px;height:28px;object-fit:cover;border-radius:4px;" />' : '') +
-      '<span style="font-size:12px;">' + escapeHtml(p.title) + ' <span style="color:var(--text-sub);">(' + escapeHtml(p.handle) + ')</span></span>' +
-      (inList ? '<span style="margin-left:auto;font-size:10px;color:var(--success);">&#10003; déjà dans une liste</span>' : '') +
-      '</div>';
-  }).join('');
+    return '<button type="button" class="search-result" ' + (inList ? 'disabled' : 'onclick="addNicheProduct(' + i + ')"') + '>' +
+      (p.featuredImage && p.featuredImage.url ? '<img src="' + p.featuredImage.url + '" alt="" />' : '') +
+      '<span>' + escapeHtml(p.title) + ' <span class="muted">(' + escapeHtml(p.handle) + ')</span></span>' +
+      (inList ? '<span class="aside">' + icon('check') + 'déjà dans une liste</span>' : '') +
+      '</button>';
+  }).join('') + '</div>';
 }
 async function addNicheProduct(resultIdx) {
   var p = (galleryState.paramsSearchResults || [])[resultIdx];
@@ -3297,24 +3666,24 @@ async function removeNicheProduct(niche, listId, handle) {
 // ── Sélection des produits compatibles pour UN design (dans le formulaire manuel) ──
 function buildCampaignProductsHtml(niche, existingList) {
   existingList = existingList || [];
-  if (!niche) return '<div style="font-size:11px;color:var(--text-sub);">Choisis d\'abord une niche ci-dessus.</div>';
+  if (!niche) return '<div class="field-hint" style="margin:0;">Choisis d\'abord une niche ci-dessus.</div>';
   var entry = ensureNicheLists(niche);
   var hasAny = entry.lists.some(function (l) { return l.products.length > 0; });
-  if (!hasAny) return '<div style="font-size:11px;color:var(--text-sub);">Aucun produit configuré pour cette niche. Va dans l\'onglet &#9881;&#65039; Paramètres pour en ajouter.</div>';
+  if (!hasAny) return '<div class="field-hint" style="margin:0;">Aucun produit configuré pour cette niche. Va dans l\'onglet Paramètres pour en ajouter.</div>';
   var h = '';
   var i = 0;
   entry.lists.forEach(function (list) {
     if (!list.products.length) return;
-    h += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-sub);margin:8px 0 3px;">' + escapeHtml(list.name) + '</div>';
+    h += '<div class="campaign-group">' + escapeHtml(list.name) + '</div>';
     list.products.forEach(function (p) {
       var thisIdx = i++;
       var existing = existingList.find(function (cp) { return cp.productHandle === p.productHandle; });
       var checked = !!existing;
-      h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);">';
-      h += '<input type="checkbox" id="mf-cp-check-' + thisIdx + '" data-handle="' + escapeHtml(p.productHandle) + '" ' + (checked ? 'checked' : '') + ' onchange="toggleCampaignProductRow(' + thisIdx + ')" style="cursor:pointer;flex-shrink:0;" />';
-      h += '<span style="flex:0 0 120px;font-size:11px;" title="' + escapeHtml(p.productHandle) + '">' + escapeHtml(p.title || p.productHandle) + '</span>';
-      h += '<input type="text" id="mf-cp-cid-' + thisIdx + '" placeholder="Customization ID *" value="' + escapeHtml(existing && existing.customizationId || '') + '" style="flex:1;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;min-width:0;" ' + (checked ? '' : 'disabled') + ' />';
-      h += '<input type="text" id="mf-cp-vid-' + thisIdx + '" placeholder="Variant ID" value="' + escapeHtml(existing && existing.variantId || '') + '" style="flex:0 0 110px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;" ' + (checked ? '' : 'disabled') + ' />';
+      h += '<div class="campaign-row">';
+      h += '<input type="checkbox" id="mf-cp-check-' + thisIdx + '" data-handle="' + escapeHtml(p.productHandle) + '" ' + (checked ? 'checked' : '') + ' onchange="toggleCampaignProductRow(' + thisIdx + ')" />';
+      h += '<label class="pname" for="mf-cp-check-' + thisIdx + '" title="' + escapeHtml(p.productHandle) + '">' + escapeHtml(p.title || p.productHandle) + '</label>';
+      h += '<input class="input input-sm" type="text" id="mf-cp-cid-' + thisIdx + '" placeholder="Customization ID *" value="' + escapeHtml(existing && existing.customizationId || '') + '" style="flex:1;min-width:0;" ' + (checked ? '' : 'disabled') + ' />';
+      h += '<input class="input input-sm" type="text" id="mf-cp-vid-' + thisIdx + '" placeholder="Variant ID" value="' + escapeHtml(existing && existing.variantId || '') + '" style="flex:0 0 130px;" ' + (checked ? '' : 'disabled') + ' />';
       h += '</div>';
     });
   });
@@ -3353,7 +3722,7 @@ function collectCampaignProducts(niche) {
 
 async function renderGalleryTab() {
   const c = document.getElementById('content');
-  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement...</div>';
+  c.innerHTML = pageHead('Galerie', '') + loadingBlock();
   if (!galleryState.savedLoaded) {
     try { const r = await galleryApi('get'); galleryState.savedItems = (r.items || []).filter(Boolean); }
     catch(e) { galleryState.savedItems = []; }
@@ -3415,7 +3784,7 @@ function startEditItem(ri){
 
 function isAlreadySaved(url){return galleryState.savedItems.some(function(i){return i.imageUrl===url;});}
 function isInSelection(url){return galleryState.selection.some(function(i){return i.imageUrl===url;});}
-function mkBadge(niche,left){if(!niche)return '';return '<span style="position:absolute;top:5px;left:'+left+'px;background:'+nicheColor(niche)+';color:#fff;font-size:9px;padding:2px 5px;border-radius:3px;">'+nicheLabel(niche)+'</span>';}
+function mkBadge(niche){if(!niche)return '';return '<span class="niche-badge" style="--niche:'+nicheColor(niche)+'">'+nicheLabel(niche)+'</span>';}
 
 // ── Drag & drop ──
 function onDragStart(e,idx,niche){galleryState.dragSrcIdx=idx;galleryState.dragNiche=niche;e.dataTransfer.effectAllowed='move';}
@@ -3475,26 +3844,26 @@ function renderBrowsePanel() {
   var h = '';
 
   // Barre infos + actions
-  h += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:var(--info-bg);border-radius:var(--radius);border:1px solid var(--border);">';
-  h += '<span style="font-size:13px;">&#128247; <strong>'+imgs.length+'</strong> rendus charg\u00e9s';
-  if (publishedCount) h += ' &nbsp;\u00b7&nbsp; <span style="color:var(--success);">&#10003; '+publishedCount+' d\u00e9j\u00e0 publi\u00e9s</span>';
-  if (newCount) h += ' &nbsp;\u00b7&nbsp; <span style="color:var(--primary);">'+newCount+' \u00e0 traiter</span>';
+  h += '<div class="browse-bar">';
+  h += '<span><strong class="num">'+imgs.length+'</strong> rendus chargés';
+  if (publishedCount) h += ' <span class="muted">·</span> <span class="text-success">'+publishedCount+' déjà publiés</span>';
+  if (newCount) h += ' <span class="muted">·</span> <strong>'+newCount+'</strong> à traiter';
   h += '</span>';
-  h += '<div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">';
-  if (galleryState.browseHasNext) h += '<button class="btn" style="font-size:12px;padding:4px 10px;" onclick="loadMoreAndRefresh()">Charger plus (+250)</button>';
-  h += '<button class="btn" style="font-size:12px;padding:4px 10px;" onclick="resetBrowse()">&#8635; Recommencer</button>';
+  h += '<div class="btn-group">';
+  if (galleryState.browseHasNext) h += '<button class="btn btn-sm" onclick="loadMoreAndRefresh()">'+icon('plus')+'Charger plus (+250)</button>';
+  h += '<button class="btn btn-sm" onclick="resetBrowse()">'+icon('refresh')+'Recommencer</button>';
   h += '</div></div>';
 
   // Grille
   if (!imgs.length) {
-    h += '<div class="gallery-empty">Aucune image teeinblue trouv\u00e9e';
+    h += '<div class="gallery-empty">Aucune image teeinblue trouvée';
     var d = galleryState.lastDebug;
     if (d) {
-      h += '<div style="margin-top:12px;font-size:11px;text-align:left;background:var(--bg);padding:10px;border-radius:6px;max-width:420px;margin:12px auto 0;">';
+      h += '<div class="report-box" style="margin:12px auto 0;max-width:420px;text-align:left;font-size:12px;">';
       h += (d.totalOrders||0)+' commandes, '+(d.ordersWithImages||0)+' avec images<br>';
-      if (d.sampleAttrs&&d.sampleAttrs.length) h += 'Cl\u00e9s : '+d.sampleAttrs.map(function(a){return a.key;}).join(', ');
-      if (d.error) h += '<br><span style="color:var(--critical)">'+d.error+'</span>';
-      h += '<br><br><button class="btn" style="font-size:11px;padding:4px 8px;" onclick="loadAllOrdersDebug()">Scanner sans filtre</button></div>';
+      if (d.sampleAttrs&&d.sampleAttrs.length) h += 'Clés : '+d.sampleAttrs.map(function(a){return escapeHtml(a.key);}).join(', ');
+      if (d.error) h += '<br><span class="text-critical">'+escapeHtml(d.error)+'</span>';
+      h += '<div style="margin-top:10px;"><button class="btn btn-sm" onclick="loadAllOrdersDebug()">'+icon('search')+'Scanner sans filtre</button></div></div>';
     }
     h += '</div>';
   } else {
@@ -3502,13 +3871,13 @@ function renderBrowsePanel() {
     imgs.forEach(function(img, idx) {
       var sel = isInSelection(img.imageUrl);
       var sav = isAlreadySaved(img.imageUrl);
-      h += '<div class="order-img-card'+(sel?' selected':'')+'" onclick="toggleSelection('+idx+')" style="opacity:'+(sav?'0.45':'1')+';position:relative;">';
+      h += '<div class="order-img-card'+(sel?' selected':'')+(sav?' is-saved':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" aria-label="Rendu '+escapeHtml(img.orderName)+(sav?' (déjà publié)':'')+'" onclick="toggleSelection('+idx+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleSelection('+idx+')}">';
       h += '<img src="'+img.imageUrl+'" alt="" loading="lazy" />';
-      if (sav) h += '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);"><span style="background:var(--success);color:#fff;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;">&#10003; Publi\u00e9</span></div>';
-      h += mkBadge(img.niche, 5);
-      if (img.variantTitle&&img.variantTitle!=='Default Title') h += '<span style="position:absolute;bottom:22px;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:2px 5px;text-align:center;">'+img.variantTitle+'</span>';
-      h += '<div class="img-meta">'+img.orderName+'</div>';
-      h += '<div class="img-check">\u2713</div>';
+      if (sav) h += '<div class="saved-flag"><span>'+icon('check')+'Publié</span></div>';
+      h += mkBadge(img.niche);
+      if (img.variantTitle&&img.variantTitle!=='Default Title') h += '<span class="variant-strip">'+escapeHtml(img.variantTitle)+'</span>';
+      h += '<div class="img-meta">'+escapeHtml(img.orderName)+'</div>';
+      h += '<div class="img-check">'+icon('check')+'</div>';
       h += '</div>';
     });
     h += '</div>';
@@ -3546,27 +3915,40 @@ function renderSavedNicheTab(niche) {
   var allSel=nicheIndices.length>0&&nicheIndices.every(function(ri){return galleryState.savedSelection.indexOf(ri)>-1;});
   var selCount=galleryState.savedSelection.length;
   var h='';
-  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">';
-  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;"><input type="checkbox" '+(allSel?'checked':'')+' onchange="selectAllNiche(\''+niche+'\')" style="cursor:pointer;" /> Tout s\u00e9lectionner</label>';
-  if(selCount>0){h+='<span style="font-size:12px;color:var(--text-sub);">'+selCount+' s\u00e9lectionn\u00e9(s)</span>';h+='<button class="btn btn-primary" style="font-size:12px;padding:4px 10px;" onclick="galleryState.showBulkTag=!galleryState.showBulkTag;renderGalleryUI()">&#127991; Tag en masse</button>';h+='<button class="btn" style="font-size:12px;padding:4px 10px;color:var(--critical);" onclick="galleryState.savedSelection=[];renderGalleryUI()">D\u00e9s\u00e9lectionner</button>';}
-  h+='<span style="margin-left:auto;font-size:11px;color:var(--text-sub);">&#8597; Glisse &nbsp;\u00b7&nbsp; &#9998; tags</span>';
+  h+='<div class="saved-toolbar">';
+  h+='<label class="check-row" style="font-size:13px;"><input type="checkbox" '+(allSel?'checked':'')+' onchange="selectAllNiche(\''+niche+'\')" /> Tout sélectionner</label>';
+  if(selCount>0){
+    h+='<span class="muted num">'+selCount+' sélectionné(s)</span>';
+    h+='<button class="btn btn-sm btn-primary" onclick="galleryState.showBulkTag=!galleryState.showBulkTag;renderGalleryUI()">'+icon('tag')+'Tag en masse</button>';
+    h+='<button class="btn btn-sm" onclick="galleryState.savedSelection=[];renderGalleryUI()">'+icon('x')+'Désélectionner</button>';
+  }
+  h+='<span class="hint">'+icon('move')+'Glisse pour réordonner · survole une vignette pour la modifier</span>';
   h+='</div>';
-  if(galleryState.showBulkTag&&selCount>0){h+='<div style="background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px;"><div style="font-size:12px;font-weight:600;margin-bottom:8px;">Tag en masse sur '+selCount+' rendu(s)</div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><input id="bulk-tag-input" type="text" placeholder="Nom du tag..." list="bulk-tag-dl" style="padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;min-width:160px;" onkeydown="if(event.key===\'Enter\'){applyBulkTag();}" /><datalist id="bulk-tag-dl">'+allTags.map(function(t){return '<option value="'+t+'">';}).join('')+'</datalist><button class="btn btn-primary" style="font-size:12px;padding:5px 10px;" onclick="applyBulkTag()">+ Ajouter</button><button class="btn" style="font-size:12px;padding:5px 10px;color:var(--critical);" onclick="removeBulkTag()">- Retirer</button><button class="btn" style="font-size:12px;padding:5px 10px;" onclick="galleryState.showBulkTag=false;renderGalleryUI()">Annuler</button></div>';if(allTags.length){h+='<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="document.getElementById(\'bulk-tag-input\').value=\''+t+'\'">'+t+'</button>';}).join('')+'</div>';}h+='</div>';}
-  if(!items.length)return h+'<div class="gallery-empty">Aucun rendu publi\u00e9 ici</div>';
+  if(galleryState.showBulkTag&&selCount>0){
+    h+='<div class="bulk-box"><div class="section-label" style="font-size:13px;margin-bottom:8px;">Tag en masse sur '+selCount+' rendu(s)</div>';
+    h+='<div class="btn-group"><input class="input input-sm" id="bulk-tag-input" type="text" placeholder="Nom du tag…" list="bulk-tag-dl" style="width:200px;" onkeydown="if(event.key===\'Enter\'){applyBulkTag();}" /><datalist id="bulk-tag-dl">'+allTags.map(function(t){return '<option value="'+escapeHtml(t)+'">';}).join('')+'</datalist>';
+    h+='<button class="btn btn-sm btn-primary" onclick="applyBulkTag()">'+icon('plus')+'Ajouter</button><button class="btn btn-sm btn-danger" onclick="removeBulkTag()">'+icon('minus')+'Retirer</button><button class="btn btn-sm" onclick="galleryState.showBulkTag=false;renderGalleryUI()">Annuler</button></div>';
+    if(allTags.length){h+='<div class="tag-suggestions" style="margin-top:8px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="document.getElementById(\'bulk-tag-input\').value=\''+t+'\'">'+escapeHtml(t)+'</button>';}).join('')+'</div>';}
+    h+='</div>';
+  }
+  if(!items.length)return h+'<div class="gallery-empty">Aucun rendu publié ici</div>';
   h+='<div class="saved-gallery-grid">';
   items.forEach(function(item,idx){
     var ri=galleryState.savedItems.indexOf(item);
     var isEditing=galleryState.editingTags===ri;
     var isSel=galleryState.savedSelection.indexOf(ri)>-1;
-    h+='<div class="saved-img-card" draggable="true" ondragstart="onDragStart(event,'+idx+',\''+niche+'\')" ondragover="onDragOver(event)" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'+idx+',\''+niche+'\')" ondragend="onDragEnd()" style="cursor:grab;outline:'+(isSel?'2px solid var(--primary)':'none')+';outline-offset:2px;">';
-    h+='<div style="position:absolute;top:5px;left:5px;z-index:2;"><input type="checkbox" '+(isSel?'checked':'')+' onclick="event.stopPropagation();toggleSavedSelection('+ri+')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);" /></div>';
-    if(item.source==='official')h+='<div style="position:absolute;top:4px;right:4px;z-index:2;background:#c9a227;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 1px 3px rgba(0,0,0,.3);" title="Design officiel">&#11088;</div>';
+    h+='<div class="saved-img-card'+(isSel?' is-selected':'')+'" draggable="true" ondragstart="onDragStart(event,'+idx+',\''+niche+'\')" ondragover="onDragOver(event)" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'+idx+',\''+niche+'\')" ondragend="onDragEnd()">';
+    h+='<div class="sel-box"><input type="checkbox" '+(isSel?'checked':'')+' aria-label="Sélectionner" onclick="event.stopPropagation();toggleSavedSelection('+ri+')" /></div>';
+    if(item.source==='official')h+='<div class="official-flag" title="Design officiel">'+icon('star')+'</div>';
     h+=renderMarketBadges(item);
-    h+='<img src="'+item.imageUrl+'" alt="" loading="lazy" onclick="toggleSavedSelection('+ri+')" style="cursor:pointer;" />';
-    if(isEditing){h+='<div style="padding:6px;background:var(--surface);"><div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;">'+(item.tags||[]).map(function(t){return '<span style="background:var(--primary);color:#fff;border-radius:8px;font-size:10px;padding:1px 5px;display:flex;align-items:center;gap:2px;">'+t+'<button onclick="removeEditTag('+ri+',\''+t+'\')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:11px;padding:0;">&#x2715;</button></span>';}).join('')+'</div><div style="display:flex;gap:3px;margin-bottom:4px;"><input id="edit-tag-input-'+ri+'" type="text" placeholder="Tag..." list="etdl-'+ri+'" style="flex:1;padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:11px;" onkeydown="if(event.key===\'Enter\'||event.key===\',\'){event.preventDefault();addEditTag('+ri+')}" /><button onclick="addEditTag('+ri+')" style="padding:3px 6px;font-size:11px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;">+</button></div><datalist id="etdl-'+ri+'">'+allTags.map(function(t){return '<option value="'+t+'">';}).join('')+'</datalist><div style="display:flex;gap:4px;"><button onclick="saveEditTags('+ri+')" style="flex:1;padding:3px;font-size:11px;background:var(--primary);color:#fff;border:none;border-radius:4px;cursor:pointer;">Sauver</button><button onclick="cancelEditTags()" style="padding:3px 6px;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Annuler</button></div></div>';}
-    else{h+='<div class="saved-tags">'+(item.tags||[]).map(function(t){return '<span class="saved-tag">'+t+'</span>';}).join('')+'</div>';if(item.variantId)h+='<div style="font-size:9px;color:var(--text-sub);padding:0 4px 2px;text-align:center;">var. ...'+String(item.variantId).slice(-6)+'</div>';}
-    h+='<div class="saved-actions"><button onclick="startEditItem('+ri+')" title="Modifier tous les champs" style="background:#c9a227;color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#128221;</button><button onclick="startEditTags('+ri+')" title="Modifier les tags" style="background:var(--primary);color:#fff;border:none;border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#9998;</button><button class="saved-del" onclick="removeSavedItem('+ri+')">&#x2715;</button></div>';
-    h+='<div style="position:absolute;top:4px;right:4px;color:rgba(255,255,255,.7);font-size:14px;pointer-events:none;">&#8597;</div>';
+    h+='<img src="'+item.imageUrl+'" alt="'+escapeHtml(item.title||'')+'" loading="lazy" onclick="toggleSavedSelection('+ri+')" />';
+    if(isEditing){
+      h+='<div class="tag-edit"><div style="display:flex;flex-wrap:wrap;gap:3px;">'+(item.tags||[]).map(function(t){return '<span class="g-tag">'+escapeHtml(t)+'<button onclick="removeEditTag('+ri+',\''+t+'\')" aria-label="Retirer le tag '+escapeHtml(t)+'">'+icon('x')+'</button></span>';}).join('')+'</div>';
+      h+='<div style="display:flex;gap:3px;"><input class="input input-sm" id="edit-tag-input-'+ri+'" type="text" placeholder="Tag…" list="etdl-'+ri+'" style="min-width:0;" onkeydown="if(event.key===\'Enter\'||event.key===\',\'){event.preventDefault();addEditTag('+ri+')}" /><button class="btn btn-sm btn-icon" onclick="addEditTag('+ri+')" aria-label="Ajouter le tag">'+icon('plus')+'</button></div><datalist id="etdl-'+ri+'">'+allTags.map(function(t){return '<option value="'+escapeHtml(t)+'">';}).join('')+'</datalist>';
+      h+='<div style="display:flex;gap:4px;"><button class="btn btn-sm btn-primary" style="flex:1;" onclick="saveEditTags('+ri+')">Sauver</button><button class="btn btn-sm" onclick="cancelEditTags()">Annuler</button></div></div>';
+    }
+    else{h+='<div class="saved-tags">'+(item.tags||[]).map(function(t){return '<span class="saved-tag">'+escapeHtml(t)+'</span>';}).join('')+'</div>';if(item.variantId)h+='<div class="var-id">var. …'+String(item.variantId).slice(-6)+'</div>';}
+    h+='<div class="saved-actions"><button onclick="startEditItem('+ri+')" title="Modifier tous les champs" aria-label="Modifier le design">'+icon('pencil')+'</button><button onclick="startEditTags('+ri+')" title="Modifier les tags" aria-label="Modifier les tags">'+icon('tag')+'</button><button class="del" onclick="removeSavedItem('+ri+')" title="Retirer de la galerie" aria-label="Retirer de la galerie">'+icon('trash')+'</button></div>';
     h+='</div>';
   });
   return h+'</div>';
@@ -3578,11 +3960,12 @@ function renderSavedPanel(){
   var otherCount=galleryState.savedItems.filter(function(i){return !i.niche||(i.niche!=='cf'&&i.niche!=='running');}).length;
   var officialCount=galleryState.savedItems.filter(function(i){return i.source==='official';}).length;
   var total=galleryState.savedItems.length;
-  var tabs=[{id:'cf',label:'&#127947;&#65039; CF',count:cfCount,color:'#d93025'},{id:'running',label:'&#127939; Running',count:runCount,color:'#1a73e8'},{id:'official',label:'&#11088; Mes designs',count:officialCount,color:'#c9a227'},{id:'other',label:'&#128360; Autres',count:otherCount,color:'#888'},{id:'all',label:'Tous',count:total,color:'var(--primary)'}];
-  var h='<div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px;overflow-x:auto;">';
+  var tabs=[{id:'cf',label:'CrossFit',count:cfCount,color:nicheColor('cf')},{id:'running',label:'Running',count:runCount,color:nicheColor('running')},{id:'official',label:'Mes designs',count:officialCount,color:'#a8841c',ic:'star'},{id:'other',label:'Autres',count:otherCount,color:'#6d7175'},{id:'all',label:'Tous',count:total,color:'var(--primary)'}];
+  var h='<div class="tabs plain accent" role="tablist">';
   tabs.forEach(function(tab){
     var active=galleryState.activeNiche===tab.id;
-    h+='<button onclick="galleryState.activeNiche=\''+tab.id+'\';galleryState.savedSelection=[];galleryState.showBulkTag=false;renderGalleryUI()" style="flex:1;min-width:70px;padding:8px 4px;border:none;background:none;cursor:pointer;font-weight:600;font-size:12px;white-space:nowrap;border-bottom:'+(active?'2px solid '+tab.color+';color:'+tab.color:'2px solid transparent;color:var(--text-sub)')+';"><span>'+tab.label+'</span> <span style="opacity:.7;font-size:11px;">('+tab.count+')</span></button>';
+    var lead=tab.ic?icon(tab.ic):(tab.id==='cf'||tab.id==='running'?'<span class="dot" style="--dot:'+tab.color+'"></span>':'');
+    h+='<button role="tab" aria-selected="'+active+'" class="tab-btn'+(active?' active':'')+'" style="--tab-accent:'+tab.color+'" onclick="galleryState.activeNiche=\''+tab.id+'\';galleryState.savedSelection=[];galleryState.showBulkTag=false;renderGalleryUI()">'+lead+tab.label+'<span class="tab-count">'+tab.count+'</span></button>';
   });
   h+='</div>';
   h+=renderSavedNicheTab(galleryState.activeNiche);
@@ -3599,14 +3982,16 @@ function renderSavedPanel(){
 // est réutilisé tel quel pour ce marché (rien à saisir).
 var MARKET_DEFS=[{code:'en',label:'Anglais (EN)'},{code:'es',label:'Espagnol (ES)'}];
 function renderMarketFieldset(code,label){
-  var h='<div id="mf-mkt-'+code+'-block" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px;background:var(--bg);">';
-  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;"><input id="mf-mkt-'+code+'-avail" type="checkbox" onchange="onMarketAvailChange(\''+code+'\')" style="width:15px;height:15px;cursor:pointer;" /> Disponible sur ce marché &mdash; '+label+'</label>';
-  h+='<div id="mf-mkt-'+code+'-sub" style="display:none;margin-top:8px;padding-left:20px;border-left:2px solid var(--border);">';
-  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;"><input id="mf-mkt-'+code+'-adapt" type="checkbox" onchange="onMarketAdaptChange(\''+code+'\')" style="width:15px;height:15px;cursor:pointer;" /> Nécessite une adaptation du design pour ce marché</label>';
-  h+='<div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Décoché : le design FR (image + customization ID ci-dessus) est réutilisé tel quel sur ce marché.</div>';
-  h+='<div id="mf-mkt-'+code+'-fields" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">';
-  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Customization ID '+label+'</label><input id="mf-mkt-'+code+'-cid" type="text" placeholder="1a33ab74-..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /></div>';
-  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">URL du mockup '+label+'</label><input id="mf-mkt-'+code+'-img" type="text" placeholder="https://cdn.teeinblue.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /><div style="display:flex;align-items:center;gap:6px;margin-top:4px;"><input id="mf-mkt-'+code+'-img-file" type="file" accept="image/*" style="font-size:11px;flex:1;min-width:0;" /><button class="btn" type="button" style="font-size:11px;padding:4px 8px;white-space:nowrap;" onclick="uploadMarketImage(\''+code+'\')">Uploader</button></div><div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Colle une URL, ou uploade ton propre mockup (PNG/JPG)</div><img id="mf-mkt-'+code+'-prev" src="" style="display:none;margin-top:4px;width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" /></div>';
+  var h='<div class="market-block" id="mf-mkt-'+code+'-block">';
+  h+='<label class="option-box"><input id="mf-mkt-'+code+'-avail" type="checkbox" onchange="onMarketAvailChange(\''+code+'\')" /> Disponible sur ce marché — '+label+'</label>';
+  h+='<div id="mf-mkt-'+code+'-sub" class="option-sub" style="display:none;">';
+  h+='<label class="check-row" style="font-size:13px;"><input id="mf-mkt-'+code+'-adapt" type="checkbox" onchange="onMarketAdaptChange(\''+code+'\')" /> Nécessite une adaptation du design pour ce marché</label>';
+  h+='<div class="field-hint" style="margin-top:3px;">Décoché : le design FR (image + customization ID ci-dessus) est réutilisé tel quel sur ce marché.</div>';
+  h+='<div id="mf-mkt-'+code+'-fields" class="form-grid cols-2" style="display:none;margin-top:10px;">';
+  h+='<div class="form-group"><label for="mf-mkt-'+code+'-cid">Customization ID '+label+'</label><input id="mf-mkt-'+code+'-cid" type="text" placeholder="1a33ab74-…" /></div>';
+  h+='<div class="form-group"><label for="mf-mkt-'+code+'-img">URL du mockup '+label+'</label><input id="mf-mkt-'+code+'-img" type="text" placeholder="https://cdn.teeinblue.com/…" />';
+  h+='<div class="file-row"><input id="mf-mkt-'+code+'-img-file" type="file" accept="image/*" aria-label="Fichier mockup '+label+'" /><button class="btn btn-sm" type="button" onclick="uploadMarketImage(\''+code+'\')">'+icon('upload')+'Uploader</button></div>';
+  h+='<div class="field-hint">Colle une URL, ou uploade ton propre mockup (PNG/JPG)</div><img id="mf-mkt-'+code+'-prev" class="mini-preview" src="" alt="" /></div>';
   h+='</div></div></div>';
   return h;
 }
@@ -3638,32 +4023,35 @@ function collectMarketData(code){
 function renderManualForm(){
   var allTags=getAllTags();
   var isEditing=galleryState.editingItemIndex!==null&&galleryState.editingItemIndex!==undefined;
-  var h='<div class="gallery-panel" style="margin-bottom:16px;border:2px dashed var(--primary);"><div class="gallery-panel-header"><h3>'+(isEditing?'Modifier le design':'Ajout manuel')+'</h3><button class="btn" style="font-size:12px;padding:4px 8px;" onclick="galleryState.showManualForm=false;galleryState.editingItemIndex=null;renderGalleryUI()">Fermer</button></div><div class="gallery-panel-body">';
-  h+='<div style="background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px;">';
-  h+='<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">JSON Teeinblue (ligne de commande / properties)</label>';
-  h+='<textarea id="mf-json" rows="3" placeholder="Colle ici le JSON complet ou juste l objet properties" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:11px;font-family:monospace;resize:vertical;"></textarea>';
-  h+='<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><button class="btn" style="font-size:12px;padding:5px 10px;" onclick="parseTeeinblueJson()">Parser le JSON</button><span style="font-size:10px;color:var(--text-sub);">Remplit automatiquement les champs ci-dessous</span></div>';
-  h+='<div id="mf-json-err" style="color:var(--critical);font-size:12px;margin-top:6px;display:none;"></div>';
+  var h='<div class="gallery-panel manual-form"><div class="gallery-panel-header"><h3>'+icon(isEditing?'pencil':'plus')+(isEditing?'Modifier le design':'Ajout manuel')+'</h3><button class="btn btn-sm" onclick="galleryState.showManualForm=false;galleryState.editingItemIndex=null;renderGalleryUI()">'+icon('x')+'Fermer</button></div><div class="gallery-panel-body">';
+  h+='<div class="json-box"><div class="form-group" style="margin-bottom:8px;">';
+  h+='<label for="mf-json">JSON Teeinblue (ligne de commande / properties)</label>';
+  h+='<textarea id="mf-json" class="mono" rows="3" placeholder="Colle ici le JSON complet ou juste l’objet properties"></textarea></div>';
+  h+='<div class="btn-group"><button class="btn btn-sm" onclick="parseTeeinblueJson()">'+icon('file')+'Parser le JSON</button><span class="field-hint" style="margin:0;">Remplit automatiquement les champs ci-dessous</span></div>';
+  h+='<div id="mf-json-err" class="form-error"></div>';
   h+='</div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">';
-  function fld(id,lbl,ph,note){var f='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">'+lbl+'</label><input id="'+id+'" type="text" placeholder="'+ph+'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';if(note)f+='<div style="font-size:10px;color:var(--text-sub);margin-top:2px;">'+note+'</div>';return f+'</div>';}
-  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Image URL *</label><input id="mf-img" type="text" placeholder="https://cdn.teeinblue.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" /><div style="display:flex;align-items:center;gap:6px;margin-top:4px;"><input id="mf-img-file" type="file" accept="image/*" style="font-size:11px;flex:1;min-width:0;" /><button class="btn" type="button" style="font-size:11px;padding:4px 8px;white-space:nowrap;" onclick="uploadManualImage()">Uploader</button></div><div style="font-size:10px;color:var(--text-sub);margin-top:2px;">Colle une URL Teeinblue, ou uploade ton propre mockup (PNG/JPG)</div></div>';
-  h+=fld('mf-cid','Customization ID *','1a33ab74-...','');h+=fld('mf-hdl','Handle produit *','t-shirt-running-personnalise','');h+=fld('mf-vid','Variant ID','47332888510766',"Depuis l'URL admin");h+=fld('mf-ttl','Titre','T-shirt Running Bleu','');
-  h+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Niche</label><select id="mf-niche" onchange="onManualNicheChange()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);"><option value="">-- Choisir --</option><option value="running">Running</option><option value="cf">CrossFit</option></select></div>';
+  h+='<div class="form-grid cols-2">';
+  function fld(id,lbl,ph,note){var f='<div class="form-group"><label for="'+id+'">'+lbl+'</label><input id="'+id+'" type="text" placeholder="'+ph+'" />';if(note)f+='<div class="field-hint">'+note+'</div>';return f+'</div>';}
+  h+='<div class="form-group"><label for="mf-img">Image URL *</label><input id="mf-img" type="text" placeholder="https://cdn.teeinblue.com/…" /><div class="file-row"><input id="mf-img-file" type="file" accept="image/*" aria-label="Fichier mockup" /><button class="btn btn-sm" type="button" onclick="uploadManualImage()">'+icon('upload')+'Uploader</button></div><div class="field-hint">Colle une URL Teeinblue, ou uploade ton propre mockup (PNG/JPG)</div></div>';
+  h+=fld('mf-cid','Customization ID *','1a33ab74-…','');h+=fld('mf-hdl','Handle produit *','t-shirt-running-personnalise','');h+=fld('mf-vid','Variant ID','47332888510766',"Depuis l'URL admin");h+=fld('mf-ttl','Titre','T-shirt Running Bleu','');
+  h+='<div class="form-group"><label for="mf-niche">Niche</label><select id="mf-niche" onchange="onManualNicheChange()"><option value="">— Choisir —</option><option value="running">Running</option><option value="cf">CrossFit</option></select></div>';
   h+='</div>';
-  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px;">Marchés</label>';
-  h+='<div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;margin-bottom:8px;opacity:.75;"><input type="checkbox" checked disabled style="width:15px;height:15px;" /> Disponible sur ce marché &mdash; Français (FR) <span style="font-weight:400;color:var(--text-sub);">(toujours actif)</span></div>';
+  h+='<div class="form-block"><div class="field-label">Marchés</div>';
+  h+='<div class="market-block"><label class="option-box is-locked"><input type="checkbox" checked disabled /> Disponible sur ce marché — Français (FR) <span class="muted">(toujours actif)</span></label></div>';
   h+=MARKET_DEFS.map(function(md){return renderMarketFieldset(md.code,md.label);}).join('');
   h+='</div>';
-  h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fdf6e3;border:1px solid #e8d385;border-radius:var(--radius);padding:6px 8px;"><input id="mf-official" type="checkbox" onchange="document.getElementById(\'mf-create-page\').checked=this.checked" style="width:15px;height:15px;cursor:pointer;" /> Design officiel (mockup cree par moi, pas une realisation client)</label></div>';
-  h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--info-bg);border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;"><input id="mf-also-inspiration" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Aussi visible dans la galerie Inspiration (en plus des pages Designs signature)</label></div>';
-  h+='<div style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;background:#eafaf1;border:1px solid #b7e4c7;border-radius:var(--radius);padding:6px 8px;"><input id="mf-create-page" type="checkbox" style="width:15px;height:15px;cursor:pointer;" /> Créer une page SEO pour ce design</label><div style="font-size:10px;color:var(--text-sub);margin-top:4px;">Coché par défaut uniquement pour les designs officiels (coche "Design officiel" ci-dessus). Coché : ce design aura sa propre page (/pages/design-...), générée/actualisée au prochain clic sur "Synchroniser les pages designs" (onglet Paramètres). Décoché : la page existante (s\'il y en a une) sera dépubliée, jamais supprimée. Réservé aux vrais designs curatés — évite d\'en cocher pour de simples rendus de commandes clients (titres génériques, risque de contenu dupliqué en SEO).</div></div>';
-  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Description de la page</label><textarea id="mf-page-desc" rows="3" placeholder="Texte affiché sur la page du design (et utilisé pour la meta description SEO)..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;resize:vertical;"></textarea></div>';
-  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Produits partagés (popup de choix) — <a href="#" onclick="event.preventDefault();galleryState.galleryTab=\'params\';renderGalleryUI();">gérer la liste</a></label><div style="font-size:10px;color:var(--text-sub);margin-bottom:6px;">Coche uniquement les produits où CE design existe vraiment, avec son propre customization-id Teeinblue. Laissé vide : pas de popup, lien direct classique. Sert aussi au bloc "Aussi personnalisable sur" de la page SEO du design.</div><div id="mf-campaign-products" style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg);">'+buildCampaignProductsHtml('', [])+'</div></div>';
-  h+='<div style="margin-bottom:10px;"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;" />';
-  if(allTags.length){h+='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'+allTags.map(function(t){return '<button class="tag-sug-btn" onclick="var i=document.getElementById(\'mf-tags\');i.value=(i.value?i.value+\',\':\'\')+\''+t+'\'">'+t+'</button>';}).join('')+'</div>';}
-  h+='</div><div style="display:flex;gap:8px;align-items:center;"><button class="btn btn-primary" onclick="submitManual()" style="flex:1;">'+(isEditing?'Enregistrer les modifications':'Ajouter')+'</button><div style="width:56px;height:56px;border-radius:6px;background:var(--bg);border:1px solid var(--border);overflow:hidden;flex-shrink:0;"><img id="mf-prev" src="" style="width:100%;height:100%;object-fit:cover;display:none;" /></div></div>';
-  h+='<div id="mf-err" style="color:var(--critical);font-size:12px;margin-top:6px;display:none;"></div></div></div>';
+  h+='<div class="form-block">';
+  h+='<label class="option-box tone-official"><input id="mf-official" type="checkbox" onchange="document.getElementById(\'mf-create-page\').checked=this.checked" /> Design officiel (mockup créé par moi, pas une réalisation client)</label>';
+  h+='<label class="option-box"><input id="mf-also-inspiration" type="checkbox" /> Aussi visible dans la galerie Inspiration (en plus des pages Designs signature)</label>';
+  h+='<label class="option-box tone-seo"><input id="mf-create-page" type="checkbox" /> Créer une page SEO pour ce design</label>';
+  h+='<div class="field-hint">Coché par défaut uniquement pour les designs officiels. Coché : ce design aura sa propre page (/pages/design-…), générée/actualisée au prochain clic sur « Synchroniser les pages designs » (onglet Paramètres). Décoché : la page existante (s\'il y en a une) sera dépubliée, jamais supprimée. Réservé aux vrais designs curatés — évite d\'en cocher pour de simples rendus de commandes clients (titres génériques, risque de contenu dupliqué en SEO).</div>';
+  h+='</div>';
+  h+='<div class="form-group"><label for="mf-page-desc">Description de la page</label><textarea id="mf-page-desc" rows="3" placeholder="Texte affiché sur la page du design (et utilisé pour la meta description SEO)…"></textarea></div>';
+  h+='<div class="form-group"><label>Produits partagés (popup de choix) — <button type="button" class="btn-link" onclick="galleryState.galleryTab=\'params\';renderGalleryUI();">gérer la liste</button></label><div class="field-hint" style="margin:0 0 6px;">Coche uniquement les produits où CE design existe vraiment, avec son propre customization-id Teeinblue. Laissé vide : pas de popup, lien direct classique. Sert aussi au bloc « Aussi personnalisable sur » de la page SEO du design.</div><div id="mf-campaign-products" class="campaign-box">'+buildCampaignProductsHtml('', [])+'</div></div>';
+  h+='<div class="form-group"><label for="mf-tags">Tags *</label><input id="mf-tags" type="text" placeholder="running, trail…" />';
+  if(allTags.length){h+='<div class="tag-suggestions" style="margin-top:6px;">'+allTags.map(function(t){return '<button type="button" class="tag-sug-btn" onclick="var i=document.getElementById(\'mf-tags\');i.value=(i.value?i.value+\',\':\'\')+\''+t+'\'">'+escapeHtml(t)+'</button>';}).join('')+'</div>';}
+  h+='</div><div class="manual-submit"><button class="btn btn-primary" onclick="submitManual()">'+icon(isEditing?'save':'plus')+(isEditing?'Enregistrer les modifications':'Ajouter à la galerie')+'</button><div class="mf-preview"><img id="mf-prev" src="" alt="Aperçu" /></div></div>';
+  h+='<div id="mf-err" class="form-error"></div></div></div>';
   return h;
 }
 
@@ -3707,26 +4095,25 @@ function parseTeeinblueJson(){
 
 function renderSelPanel(){
   var allTags=getAllTags();var sel=galleryState.selection;var n=sel.length;
-  var h='<div class="gallery-panel-header"><h3>S\u00e9lection ('+n+')</h3>';
-  if(n)h+='<button class="btn" style="font-size:12px;padding:4px 8px;" onclick="clearSelection()">Vider</button>';
+  var h='<div class="gallery-panel-header"><h3>'+icon('squareCheck')+'Sélection <span class="count-pill">'+n+'</span></h3>';
+  if(n)h+='<button class="btn btn-sm" onclick="clearSelection()">'+icon('x')+'Vider</button>';
   h+='</div><div class="gallery-panel-body">';
-  if(!n)return h+'<div class="gallery-empty" style="padding:20px;"><div style="font-size:32px">&#128070;</div>Clique sur les images</div></div>';
+  if(!n)return h+'<div class="sel-empty">'+icon('image')+'Clique sur les rendus à gauche pour les ajouter, puis tague-les avant de sauvegarder.</div></div>';
   h+='<div class="selection-preview">';
   sel.forEach(function(item,idx){
-    var col=nicheColor(item.niche);
     var suggs=[];
     if(item.niche==='running'&&(item.tags||[]).indexOf('running')===-1)suggs.push('running');
     if(item.niche==='cf'&&(item.tags||[]).indexOf('crossfit')===-1)suggs.push('crossfit');
     allTags.filter(function(t){return(item.tags||[]).indexOf(t)===-1&&suggs.indexOf(t)===-1;}).slice(0,3).forEach(function(t){suggs.push(t);});
     h+='<div class="sel-item"><img src="'+item.imageUrl+'" alt="" /><div class="sel-item-body"><div class="sel-item-title">';
-    if(item.niche)h+='<span style="background:'+col+';color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-right:3px;">'+nicheLabel(item.niche)+'</span>';
-    h+=item.title+'</div>';
-    if(item.variantTitle&&item.variantTitle!=='Default Title')h+='<div style="font-size:11px;color:var(--text-sub);">'+item.variantTitle+'</div>';
-    h+='<div class="sel-item-tags">'+(item.tags||[]).map(function(t){return '<span class="sel-tag">'+t+'<button onclick="removeTagSel('+idx+',\''+t+'\')">&#215;</button></span>';}).join('')+'</div>';
-    h+='<div class="tag-input-row"><input type="text" id="ti-'+idx+'" placeholder="Tag..." onkeydown="if(event.key===\'Enter\'||event.key===\',\'){event.preventDefault();addTagSel('+idx+')}" list="tdl-'+idx+'" /><button class="btn" style="padding:4px 8px;font-size:12px;" onclick="addTagSel('+idx+')">+</button></div>';
-    h+='<datalist id="tdl-'+idx+'">'+suggs.map(function(t){return '<option value="'+t+'">';}).join('')+'</datalist>';
-    if(suggs.length)h+='<div class="tag-suggestions" style="margin-top:4px;">'+suggs.map(function(t){return '<button class="tag-sug-btn" onclick="quickTagSel('+idx+',\''+t+'\')">'+t+'</button>';}).join('')+'</div>';
-    h+='</div><button class="sel-item-remove" onclick="removeFromSel('+idx+')">&#x2715;</button></div>';
+    if(item.niche)h+='<span class="niche-badge inline" style="--niche:'+nicheColor(item.niche)+'">'+nicheLabel(item.niche)+'</span>';
+    h+=escapeHtml(item.title)+'</div>';
+    if(item.variantTitle&&item.variantTitle!=='Default Title')h+='<div class="muted" style="font-size:12px;">'+escapeHtml(item.variantTitle)+'</div>';
+    h+='<div class="sel-item-tags">'+(item.tags||[]).map(function(t){return '<span class="g-tag">'+escapeHtml(t)+'<button onclick="removeTagSel('+idx+',\''+t+'\')" aria-label="Retirer le tag '+escapeHtml(t)+'">'+icon('x')+'</button></span>';}).join('')+'</div>';
+    h+='<div class="tag-input-row"><input class="input input-sm" type="text" id="ti-'+idx+'" placeholder="Tag…" aria-label="Nouveau tag" onkeydown="if(event.key===\'Enter\'||event.key===\',\'){event.preventDefault();addTagSel('+idx+')}" list="tdl-'+idx+'" /><button class="btn btn-sm btn-icon" onclick="addTagSel('+idx+')" aria-label="Ajouter le tag">'+icon('plus')+'</button></div>';
+    h+='<datalist id="tdl-'+idx+'">'+suggs.map(function(t){return '<option value="'+escapeHtml(t)+'">';}).join('')+'</datalist>';
+    if(suggs.length)h+='<div class="tag-suggestions" style="margin-top:6px;">'+suggs.map(function(t){return '<button class="tag-sug-btn" onclick="quickTagSel('+idx+',\''+t+'\')">'+escapeHtml(t)+'</button>';}).join('')+'</div>';
+    h+='</div><button class="sel-item-remove" onclick="removeFromSel('+idx+')" aria-label="Retirer de la sélection" title="Retirer de la sélection">'+icon('x')+'</button></div>';
   });
   return h+'</div></div>';
 }
@@ -3735,37 +4122,46 @@ function renderGalleryUI() {
   var c = document.getElementById('content');
   var sel = galleryState.selection.length;
   var total = galleryState.savedItems.length;
+  var tab = galleryState.galleryTab;
 
-  // Barre sticky
-  var h = '<div style="position:sticky;top:0;z-index:150;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;margin:-16px -16px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);">';
-  h += '<div style="display:flex;gap:0;">';
-  // Onglets principaux
-  h += '<button onclick="galleryState.galleryTab=\'browse\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='browse'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#128247; Parcourir</button>';
-  h += '<button onclick="galleryState.galleryTab=\'published\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='published'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#10003; Publi\u00e9s ('+total+')</button>';
-  h += '<button onclick="galleryState.galleryTab=\'icons\';Promise.all([loadTagIcons(),loadTagTitles()]).then(renderGalleryUI);" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='icons'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#127912; Ic\u00f4nes</button>';
-  h += '<button onclick="galleryState.galleryTab=\'params\';renderGalleryUI()" style="padding:8px 16px;border:none;border-bottom:2px solid '+(galleryState.galleryTab==='params'?'var(--primary);color:var(--primary);font-weight:700':'transparent;color:var(--text-sub)')+';background:none;cursor:pointer;font-size:13px;">&#9881;&#65039; Param\u00e8tres</button>';
-  h += '</div>';
-  h += '<div style="display:flex;gap:8px;">';
-  if (galleryState.galleryTab === 'browse') {
-    h += '<button class="btn" onclick="galleryState.showManualForm=!galleryState.showManualForm;renderGalleryUI()">'+(galleryState.showManualForm?'Fermer':'&#9999;&#65039; Ajout manuel')+'</button>';
+  // En-tête collant : titre + actions, puis les sous-onglets de la galerie
+  var actions = '';
+  if (tab === 'browse') {
+    actions += '<button class="btn" onclick="galleryState.showManualForm=!galleryState.showManualForm;galleryState.editingItemIndex=null;renderGalleryUI()">' + (galleryState.showManualForm ? icon('x') + 'Fermer l’ajout manuel' : icon('plus') + 'Ajout manuel') + '</button>';
   }
-  if (galleryState.galleryTab !== 'icons') {
-    h += '<button class="btn btn-primary" onclick="saveGallery()" id="btn-sg"'+(!sel?' disabled':'')+'>&#128190; Sauvegarder ('+sel+')</button>';
+  if (tab === 'browse' || tab === 'published') {
+    actions += '<button class="btn btn-primary" onclick="saveGallery()" id="btn-sg"' + (!sel ? ' disabled' : '') + ' title="Publier les rendus sélectionnés dans la galerie">' + icon('save') + 'Sauvegarder (' + sel + ')</button>';
   }
+  var tabs = [
+    { id: 'browse', ic: 'image', label: 'Parcourir' },
+    { id: 'published', ic: 'check', label: 'Publiés', count: total },
+    { id: 'icons', ic: 'palette', label: 'Icônes' },
+    { id: 'params', ic: 'sliders', label: 'Paramètres' },
+  ];
+  var h = '<div class="page-head sticky"><div><h1>Galerie</h1><div class="page-sub">Galerie d’inspiration du site · <span class="num">' + total + '</span> rendu' + (total > 1 ? 's' : '') + ' publié' + (total > 1 ? 's' : '') + '</div></div>';
+  h += '<div class="page-actions">' + actions + '</div>';
+  h += '<div class="tabs plain" role="tablist" style="margin:0;">';
+  tabs.forEach(function (t) {
+    var active = tab === t.id;
+    var click = t.id === 'icons'
+      ? "galleryState.galleryTab='icons';Promise.all([loadTagIcons(),loadTagTitles()]).then(renderGalleryUI);"
+      : "galleryState.galleryTab='" + t.id + "';renderGalleryUI()";
+    h += '<button role="tab" aria-selected="' + active + '" class="tab-btn' + (active ? ' active' : '') + '" onclick="' + click + '">' + icon(t.ic) + t.label + (t.count !== undefined ? '<span class="tab-count">' + t.count + '</span>' : '') + '</button>';
+  });
   h += '</div></div>';
 
   if (galleryState.showManualForm) h += renderManualForm();
 
-  if (galleryState.galleryTab === 'browse') {
+  if (tab === 'browse') {
     h += '<div class="gallery-layout">';
-    h += '<div class="gallery-panel"><div class="gallery-panel-header"><h3>&#128247; Rendus des commandes</h3></div><div class="gallery-panel-body" id="gallery-browse-panel"></div></div>';
-    h += '<div class="gallery-panel" style="position:sticky;top:56px;">'+renderSelPanel()+'</div>';
+    h += '<div class="gallery-panel"><div class="gallery-panel-header"><h3>' + icon('image') + 'Rendus des commandes</h3></div><div class="gallery-panel-body" id="gallery-browse-panel"></div></div>';
+    h += '<div class="gallery-panel gallery-sel-panel">' + renderSelPanel() + '</div>';
     h += '</div>';
-  } else if (galleryState.galleryTab === 'published') {
-    h += '<div class="gallery-panel"><div class="gallery-panel-body">'+renderSavedPanel()+'</div></div>';
-  } else if (galleryState.galleryTab === 'icons') {
+  } else if (tab === 'published') {
+    h += '<div class="gallery-panel"><div class="gallery-panel-body">' + renderSavedPanel() + '</div></div>';
+  } else if (tab === 'icons') {
     h += renderIconsPanel();
-  } else if (galleryState.galleryTab === 'params') {
+  } else if (tab === 'params') {
     h += renderParamsPanel();
   }
 
@@ -3777,7 +4173,7 @@ function renderGalleryUI() {
     document.head.appendChild(s);
   }
 
-  if (galleryState.galleryTab === 'browse') renderBrowsePanel();
+  if (tab === 'browse') renderBrowsePanel();
 
   if (galleryState.showManualForm) {
     var inp=document.getElementById('mf-img');var prv=document.getElementById('mf-prev');
@@ -3923,12 +4319,12 @@ function toggleSelection(idx){
   var img=window._galleryImages[idx];if(!img)return;
   var xi=galleryState.selection.findIndex(function(i){return i.imageUrl===img.imageUrl;});
   if(xi>=0)galleryState.selection.splice(xi,1);
-  else{if(isAlreadySaved(img.imageUrl)){showToast('D\u00e9j\u00e0 publi\u00e9','warning');return;}var auto=[];if(img.niche==='running')auto.push('running');if(img.niche==='cf')auto.push('crossfit');galleryState.selection.push(Object.assign({},img,{tags:auto}));}
+  else{if(isAlreadySaved(img.imageUrl)){showToast('Déjà publié','warning');return;}var auto=[];if(img.niche==='running')auto.push('running');if(img.niche==='cf')auto.push('crossfit');galleryState.selection.push(Object.assign({},img,{tags:auto}));}
   // Mettre à jour juste le panel browse et sel sans tout re-render
   renderBrowsePanel();
-  var selPanel=document.querySelector('.gallery-panel[style*="sticky"]');
+  var selPanel=document.querySelector('.gallery-sel-panel');
   if(selPanel)selPanel.innerHTML=renderSelPanel();
-  var btn=document.getElementById('btn-sg');if(btn){btn.disabled=galleryState.selection.length===0;btn.textContent='\uD83D\uDCBE Sauvegarder ('+galleryState.selection.length+')';}
+  var btn=document.getElementById('btn-sg');if(btn){btn.disabled=galleryState.selection.length===0;btn.innerHTML=icon('save')+'Sauvegarder ('+galleryState.selection.length+')';}
 }
 
 function removeFromSel(idx){galleryState.selection.splice(idx,1);renderGalleryUI();}
@@ -3957,13 +4353,13 @@ async function saveGallery(){
   if(!galleryState.selection.length)return;
   var untagged=galleryState.selection.filter(function(i){return !i.tags||!i.tags.length;});
   if(untagged.length){showToast(untagged.length+' image(s) sans tag','warning');return;}
-  var btn=document.getElementById('btn-sg');if(btn){btn.disabled=true;btn.textContent='Sauvegarde...';}
+  var btn=document.getElementById('btn-sg');if(btn){btn.disabled=true;btn.textContent='Sauvegarde\u2026';}
   try{
     var newItems=galleryState.savedItems.concat(galleryState.selection.map(function(item){return{imageUrl:item.imageUrl,productHandle:item.productHandle,variantId:item.variantId||null,customizationId:item.customizationId,title:item.title,niche:item.niche,tags:item.tags,addedAt:new Date().toISOString()};}));
     await galleryApi('save',{items:newItems});
     var n=galleryState.selection.length;galleryState.savedItems=newItems;galleryState.selection=[];
     showToast(n+' rendu(s) ajout\u00e9(s) !');renderGalleryUI();
-  }catch(e){showToast('Erreur: '+e.message,'error');if(btn){btn.disabled=false;btn.textContent='Sauvegarder';}}
+  }catch(e){showToast('Erreur: '+e.message,'error');if(btn){btn.disabled=false;btn.innerHTML=icon('save')+'Sauvegarder ('+galleryState.selection.length+')';}}
 }
 
 // ════════════════════════════════════════════
@@ -3990,11 +4386,11 @@ const DELAIS_QUERY = `query {
 
 async function renderDelaisFomoTab() {
   const c = document.getElementById('content');
-  c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-sub)">Chargement...</div>';
+  c.innerHTML = pageHead('Délais & FOMO', '') + loadingBlock();
   try {
     await loadDelaisData();
   } catch (e) {
-    c.innerHTML = '<div class="empty">Erreur de chargement: ' + e.message + '</div>';
+    c.innerHTML = pageHead('Délais & FOMO', '') + errorBlock(e.message, 'renderDelaisFomoTab()');
     return;
   }
   renderDelaisUI();
@@ -4098,81 +4494,97 @@ function renderDelaisUI() {
   let fomoStatusBadge = '';
   if (d.fomoFin) {
     const fin = new Date(d.fomoFin);
-    if (fin < now) fomoStatusBadge = '<span class="badge tab-badge-total" style="background:#999">Expir\u00e9e</span>';
-    else if (d.fomoActif) fomoStatusBadge = '<span class="badge tab-badge-urgent">Active</span>';
+    if (fin < now) fomoStatusBadge = '<span class="badge badge-muted">Offre expirée</span>';
+    else if (d.fomoActif) fomoStatusBadge = '<span class="badge badge-success">' + icon('check') + 'En ligne</span>';
+    else fomoStatusBadge = '<span class="badge badge-muted">Désactivé</span>';
   }
 
   let periodesHtml = '';
   if (d.periodes.length === 0) {
-    periodesHtml = '<div style="color:var(--text-sub);font-size:13px;padding:8px 0;">Aucune p\u00e9riode de fermeture enregistr\u00e9e.</div>';
+    periodesHtml = '<div class="empty-inline">Aucune période de fermeture enregistrée.</div>';
   } else {
-    periodesHtml = d.periodes.map(function (p) {
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">' +
-        '<div style="flex:1;font-size:14px;"><strong>' + p.debut + '</strong> \u2192 <strong>' + p.fin + '</strong>' +
-        (p.label ? ' <span style="color:var(--text-sub);font-size:12px;">(' + escapeHtml(p.label) + ')</span>' : '') + '</div>' +
-        '<button class="btn" onclick="deletePeriode(\'' + p.id + '\')" title="Supprimer">\uD83D\uDDD1\uFE0F</button>' +
+    periodesHtml = '<div class="row-list">' + d.periodes.map(function (p) {
+      const isNow = new Date(p.debut) <= now && new Date(p.fin + 'T23:59:59') >= now;
+      return '<div class="row-item">' +
+        '<div class="row-main"><strong class="num">' + escapeHtml(p.debut) + '</strong> → <strong class="num">' + escapeHtml(p.fin) + '</strong>' +
+        (p.label ? ' <span class="muted">' + escapeHtml(p.label) + '</span>' : '') +
+        (isNow ? ' <span class="badge badge-critical">En cours</span>' : '') + '</div>' +
+        '<button class="btn btn-sm btn-danger" onclick="deletePeriode(\'' + p.id + '\')" aria-label="Supprimer la période du ' + escapeHtml(p.debut) + ' au ' + escapeHtml(p.fin) + '">' + icon('trash') + 'Supprimer</button>' +
         '</div>';
-    }).join('');
+    }).join('') + '</div>';
   }
 
   const addFormHtml = state.delaisShowAddPeriode ? (
-    '<div class="card" style="margin-top:10px;background:var(--info-bg,#f4f6f8);">' +
-    '<div class="form-group"><label>Date de d\u00e9but</label><input type="date" id="np-debut"></div>' +
-    '<div class="form-group"><label>Date de fin</label><input type="date" id="np-fin"></div>' +
-    '<div class="form-group"><label>Label interne (optionnel)</label><input type="text" id="np-label" placeholder="ex: Vacances \u00e9t\u00e9"></div>' +
-    '<button class="btn btn-primary" onclick="savePeriode()">Ajouter</button> ' +
-    '<button class="btn" onclick="state.delaisShowAddPeriode=false;renderDelaisUI();">Annuler</button>' +
+    '<div class="period-add">' +
+    '<div class="form-grid">' +
+    '<div class="form-group"><label for="np-debut">Date de début</label><input type="date" id="np-debut"></div>' +
+    '<div class="form-group"><label for="np-fin">Date de fin</label><input type="date" id="np-fin"></div>' +
+    '</div>' +
+    '<div class="form-group"><label for="np-label">Label interne <span class="muted" style="font-weight:400;">(optionnel)</span></label><input type="text" id="np-label" placeholder="ex : Vacances été"></div>' +
+    '<div class="form-actions"><button class="btn btn-primary" onclick="savePeriode()">' + icon('plus') + 'Ajouter la période</button>' +
+    '<button class="btn" onclick="state.delaisShowAddPeriode=false;renderDelaisUI();">Annuler</button></div>' +
     '</div>'
   ) : '';
 
   c.innerHTML =
+    pageHead('Délais & FOMO', 'Délais annoncés sur le site, seuils d’alerte, bandeau promo et fermetures') +
+    '<div class="delais-grid">' +
+
     '<div class="card">' +
-    '<div class="card-title">\u23F1\uFE0F D\u00e9lais de traitement</div>' +
-    '<div class="form-group"><label>D\u00e9lai normal (jours ouvr\u00e9s)</label><input type="number" id="df-delai-production" value="' + escapeHtml(d.delaiProduction) + '"></div>' +
-    '<div class="form-group"><label>D\u00e9lai rush (jours ouvr\u00e9s) \u2014 laisser vide si non disponible</label><input type="number" id="df-delai-rush" value="' + escapeHtml(d.delaiRush) + '"></div>' +
-    '<div class="form-group"><label>Plancher avant fermeture (jours ouvr\u00e9s)</label><input type="number" id="df-delai-plancher" value="' + escapeHtml(d.delaiPlancher) + '"><div class="settings-hint">En dessous de ce seuil, on arr\u00eate de r\u00e9duire le d\u00e9lai annonc\u00e9 \u00e0 l\u2019approche d\u2019une fermeture.</div></div>' +
-    '<div class="form-group"><label>Produit qui active le rush</label>' +
-    (d.rushProductId ? '<div class="settings-hint" style="margin-bottom:6px;">Actuel: <strong>' + escapeHtml(d.rushProductTitle) + '</strong></div>' : '<div class="settings-hint" style="margin-bottom:6px;">Aucun produit rush configur\u00e9</div>') +
-    '<input type="text" id="df-rush-search" placeholder="Rechercher un produit par titre..." oninput="searchRushProductDebounced(this.value)">' +
+    '<div class="card-title">' + icon('clock') + ' Délais de traitement</div>' +
+    '<div class="form-grid">' +
+    '<div class="form-group field-narrow"><label for="df-delai-production">Délai normal</label><input type="number" min="0" id="df-delai-production" value="' + escapeHtml(d.delaiProduction) + '"><div class="settings-hint">Jours ouvrés</div></div>' +
+    '<div class="form-group field-narrow"><label for="df-delai-rush">Délai rush</label><input type="number" min="0" id="df-delai-rush" value="' + escapeHtml(d.delaiRush) + '"><div class="settings-hint">Jours ouvrés — vide si non disponible</div></div>' +
+    '</div>' +
+    '<div class="form-group field-narrow"><label for="df-delai-plancher">Plancher avant fermeture</label><input type="number" min="0" id="df-delai-plancher" value="' + escapeHtml(d.delaiPlancher) + '"><div class="settings-hint">Jours ouvrés. En dessous de ce seuil, on arrête de réduire le délai annoncé à l’approche d’une fermeture.</div></div>' +
+    '<div class="form-group"><label for="df-rush-search">Produit qui active le rush</label>' +
+    '<div class="current-value">' + (d.rushProductId ? icon('link') + 'Actuel : <strong>' + escapeHtml(d.rushProductTitle) + '</strong>' : '<span class="muted">Aucun produit rush configuré</span>') + '</div>' +
+    '<input type="text" id="df-rush-search" placeholder="Rechercher un autre produit par titre…" oninput="searchRushProductDebounced(this.value)">' +
     '<div id="df-rush-results"></div>' +
     '</div>' +
-    '<button class="btn btn-primary" onclick="saveDelaisBase()">Enregistrer les d\u00e9lais</button>' +
+    '<div class="form-actions"><button class="btn btn-primary" onclick="saveDelaisBase()">' + icon('save') + 'Enregistrer les délais</button></div>' +
     '</div>' +
 
     '<div class="card">' +
-    '<div class="card-title">\uD83D\uDEA8 Alertes de retard</div>' +
-    '<div class="settings-hint" style="margin-bottom:8px;">Signale, sur le tableau de bord et les onglets concern\u00e9s, les commandes dont l\u2019\u00e9ch\u00e9ance approche alors que l\u2019impression ou la commande fournisseur n\u2019a pas encore \u00e9t\u00e9 faite.</div>' +
-    '<div class="form-group"><label>Alerte impression \u2014 seuil (jours avant \u00e9ch\u00e9ance)</label><input type="number" step="0.5" id="df-alerte-impression" value="' + escapeHtml(d.alerteImpression) + '"><div class="settings-hint">D\u00e9clenche une alerte si une commande a encore la balise TODOPRINT \u00e0 moins de ce nombre de jours de l\u2019\u00e9ch\u00e9ance.</div></div>' +
-    '<div class="form-group"><label>Alerte commande fournisseur \u2014 seuil (jours avant \u00e9ch\u00e9ance)</label><input type="number" step="0.5" id="df-alerte-fournisseur" value="' + escapeHtml(d.alerteFournisseur) + '"><div class="settings-hint">D\u00e9clenche une alerte si une commande a encore la balise TOORDER \u00e0 moins de ce nombre de jours de l\u2019\u00e9ch\u00e9ance.</div></div>' +
-    '<button class="btn btn-primary" onclick="saveAlertesRetard()">Enregistrer les alertes</button>' +
+    '<div class="card-title">' + icon('bell') + ' Alertes de retard</div>' +
+    '<p class="card-desc">Signale, sur le tableau de bord et les onglets concernés, les commandes dont l’échéance approche alors que l’impression ou la commande fournisseur n’a pas encore été faite.</p>' +
+    '<div class="form-group field-narrow"><label for="df-alerte-impression">Seuil alerte impression</label><input type="number" step="0.5" min="0" id="df-alerte-impression" value="' + escapeHtml(d.alerteImpression) + '"><div class="settings-hint">Jours avant échéance. Alerte si la commande a encore la balise TODOPRINT.</div></div>' +
+    '<div class="form-group field-narrow"><label for="df-alerte-fournisseur">Seuil alerte commande fournisseur</label><input type="number" step="0.5" min="0" id="df-alerte-fournisseur" value="' + escapeHtml(d.alerteFournisseur) + '"><div class="settings-hint">Jours avant échéance. Alerte si la commande a encore la balise TOORDER.</div></div>' +
+    '<div class="form-actions"><button class="btn btn-primary" onclick="saveAlertesRetard()">' + icon('save') + 'Enregistrer les alertes</button></div>' +
     '</div>' +
 
-    '<div class="card">' +
-    '<div class="card-title">\uD83D\uDD25 Bandeau FOMO (page produit personnalisation) ' + fomoStatusBadge + '</div>' +
-    '<div class="form-group"><label><input type="checkbox" id="df-fomo-actif" ' + (d.fomoActif ? 'checked' : '') + ' style="width:16px;height:16px;vertical-align:middle;margin-right:6px;accent-color:var(--primary);"> Bandeau actif</label></div>' +
-    '<div class="form-group"><label>Pourcentage de r\u00e9duction (%)</label><input type="number" step="0.5" min="0" max="100" id="df-fomo-pourcentage" value="' + escapeHtml(d.fomoPourcentage) + '"><div class="settings-hint">Utilis\u00e9 pour calculer le prix affich\u00e9 dans le bandeau. Identique pour tous les march\u00e9s/langues.</div></div>' +
-    '<div class="form-group"><label>Code promo (laisser vide = pas de code affich\u00e9)</label><input type="text" id="df-fomo-code" value="' + escapeHtml(d.fomoCode) + '"><div class="settings-hint">Un seul code, identique pour tous les march\u00e9s/langues.</div></div>' +
-    '<div class="form-group"><label>Fin de l\u2019offre</label><input type="datetime-local" id="df-fomo-fin" value="' + toDatetimeLocal(d.fomoFin) + '"><div class="settings-hint">Sert au compte \u00e0 rebours, masque automatiquement le bandeau une fois pass\u00e9e.</div></div>' +
-    '<button class="btn btn-primary" onclick="saveFomo()">Enregistrer le FOMO</button>' +
-    '<hr style="margin:18px 0;border:none;border-top:1px solid var(--border);">' +
-    '<div style="font-weight:600;margin-bottom:6px;">Texte de l\u2019offre, par langue</div>' +
-    '<div class="settings-hint" style="margin-bottom:8px;">Le pourcentage et le code ci-dessus restent les m\u00EAmes partout \u2014 seul ce texte peut \u00EAtre diff\u00e9rent par langue. Une langue sans texte enregistr\u00e9 affiche automatiquement le texte FR.</div>' +
+    '<div class="card span-2">' +
+    '<div class="card-head"><div class="card-title">' + icon('flame') + ' Bandeau FOMO <span class="muted" style="font-weight:400;">page produit personnalisation</span></div>' + (fomoStatusBadge ? '<div class="card-actions">' + fomoStatusBadge + '</div>' : '') + '</div>' +
+    '<div class="toggle-line"><label class="switch"><input type="checkbox" id="df-fomo-actif" ' + (d.fomoActif ? 'checked' : '') + '><span class="slider"></span></label>' +
+      '<label for="df-fomo-actif" style="cursor:pointer;"><div class="toggle-label">Bandeau actif</div><div class="toggle-sub">Pris en compte au clic sur « Enregistrer le FOMO »</div></label></div>' +
+    '<div class="form-grid">' +
+    '<div class="form-group field-narrow"><label for="df-fomo-pourcentage">Réduction (%)</label><input type="number" step="0.5" min="0" max="100" id="df-fomo-pourcentage" value="' + escapeHtml(d.fomoPourcentage) + '"><div class="settings-hint">Sert à calculer le prix affiché. Identique pour tous les marchés.</div></div>' +
+    '<div class="form-group"><label for="df-fomo-code">Code promo</label><input type="text" id="df-fomo-code" value="' + escapeHtml(d.fomoCode) + '" style="max-width:240px;text-transform:uppercase;"><div class="settings-hint">Vide = pas de code affiché. Un seul code pour tous les marchés.</div></div>' +
+    '<div class="form-group"><label for="df-fomo-fin">Fin de l’offre</label><input type="datetime-local" id="df-fomo-fin" value="' + toDatetimeLocal(d.fomoFin) + '" style="max-width:260px;"><div class="settings-hint">Compte à rebours ; masque le bandeau une fois passée.</div></div>' +
+    '</div>' +
+    '<div class="form-actions"><button class="btn btn-primary" onclick="saveFomo()">' + icon('save') + 'Enregistrer le FOMO</button></div>' +
+    '<hr class="section-sep">' +
+    '<div class="section-label">Texte de l’offre, par langue</div>' +
+    '<p class="card-desc" style="margin:0 0 10px;">Le pourcentage et le code ci-dessus restent les mêmes partout — seul ce texte peut être différent par langue. Une langue sans texte enregistré affiche automatiquement le texte FR.</p>' +
     renderFomoLocaleTabs() +
     renderFomoLocaleEditor() +
     '</div>' +
 
     '<div class="card">' +
-    '<div class="card-title">\uD83C\uDFD6\uFE0F P\u00e9riodes de fermeture (vacances)</div>' +
-    '<div class="settings-hint" style="margin-bottom:8px;">D\u00e9cale automatiquement les d\u00e9lais affich\u00e9s sur le site pendant ces p\u00e9riodes.</div>' +
+    '<div class="card-head"><div class="card-title">' + icon('umbrella') + ' Périodes de fermeture</div>' +
+    (state.delaisShowAddPeriode ? '' : '<div class="card-actions"><button class="btn btn-sm" onclick="state.delaisShowAddPeriode=true;renderDelaisUI();">' + icon('plus') + 'Ajouter une période</button></div>') + '</div>' +
+    '<p class="card-desc">Décale automatiquement les délais affichés sur le site pendant ces périodes.</p>' +
     periodesHtml +
-    (state.delaisShowAddPeriode ? addFormHtml : '<button class="btn" style="margin-top:10px;" onclick="state.delaisShowAddPeriode=true;renderDelaisUI();">+ Ajouter une p\u00e9riode</button>') +
+    addFormHtml +
     '</div>' +
 
     '<div class="card">' +
-    '<div class="card-title">\uD83D\uDD17 Webhook commande \u2192 date limite</div>' +
-    '<div class="settings-hint" style="margin-bottom:8px;">Cr\u00e9e (une seule fois) le webhook <code>orders/create</code> qui \u00e9crit automatiquement <code>custom.date_limite_traitement</code> et <code>custom.est_rush</code> sur chaque nouvelle commande.</div>' +
-    '<button class="btn btn-primary" onclick="setupOrderWebhook()">V\u00e9rifier / activer le webhook</button>' +
-    '<div id="df-webhook-status" style="margin-top:10px;font-size:13px;"></div>' +
+    '<div class="card-title">' + icon('link') + ' Webhook commande → date limite</div>' +
+    '<p class="card-desc">Crée (une seule fois) le webhook <code>orders/create</code> qui écrit automatiquement <code>custom.date_limite_traitement</code> et <code>custom.est_rush</code> sur chaque nouvelle commande.</p>' +
+    '<div class="form-actions"><button class="btn" onclick="setupOrderWebhook()">' + icon('search') + 'Vérifier / activer le webhook</button></div>' +
+    '<div id="df-webhook-status"></div>' +
+    '</div>' +
+
     '</div>';
 }
 
@@ -4228,11 +4640,11 @@ async function searchRushProduct(term) {
     const data = await gql('query($q:String!){ products(first:8, query:$q){ edges{ node{ id title } } } }', { q: 'title:*' + term.trim() + '*' });
     const edges = data.products.edges || [];
     if (!box) return;
-    if (!edges.length) { box.innerHTML = '<div class="settings-hint">Aucun r\u00e9sultat</div>'; return; }
-    box.innerHTML = edges.map(function (e) {
-      return '<div style="padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);margin-top:4px;cursor:pointer;" onclick="selectRushProduct(\'' + e.node.id + '\',\'' + escapeHtml(e.node.title).replace(/'/g, "\\'") + '\')">' + escapeHtml(e.node.title) + '</div>';
-    }).join('');
-  } catch (e) { if (box) box.innerHTML = '<div class="settings-hint">Erreur: ' + e.message + '</div>'; }
+    if (!edges.length) { box.innerHTML = '<div class="settings-hint">Aucun résultat</div>'; return; }
+    box.innerHTML = '<div class="search-results">' + edges.map(function (e) {
+      return '<button type="button" class="search-result" onclick="selectRushProduct(\'' + e.node.id + '\',\'' + escapeHtml(e.node.title).replace(/'/g, "\\'") + '\')">' + escapeHtml(e.node.title) + '<span class="aside" style="color:var(--primary);">Choisir</span></button>';
+    }).join('') + '</div>';
+  } catch (e) { if (box) box.innerHTML = '<div class="settings-hint text-critical">Erreur : ' + escapeHtml(e.message) + '</div>'; }
 }
 async function selectRushProduct(id, title) {
   try {
@@ -4266,12 +4678,12 @@ const FOMO_LOCALE_LABELS = { fr: 'FR (r\u00e9f\u00e9rence)', en: 'EN', es: 'ES',
 function renderFomoLocaleTabs() {
   const d = state.delais;
   const tabs = ['fr'].concat(d.fomoLocales);
-  return '<div class="tabs" style="margin-bottom:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);padding:0;background:none;">' +
+  return '<div class="tabs plain" role="tablist">' +
     tabs.map(function (loc) {
       const active = state.delais.fomoLocaleTab === loc;
       const hasOverride = loc !== 'fr' && d.fomoTranslations[loc] && d.fomoTranslations[loc].value;
-      return '<button class="tab-btn' + (active ? ' active' : '') + '" onclick="switchFomoLocaleTab(\'' + loc + '\')">' +
-        FOMO_LOCALE_LABELS[loc] + (hasOverride ? ' \u2022' : '') + '</button>';
+      return '<button role="tab" aria-selected="' + active + '" class="tab-btn' + (active ? ' active' : '') + '" onclick="switchFomoLocaleTab(\'' + loc + '\')"' + (hasOverride ? ' title="Texte spécifique enregistré"' : '') + '>' +
+        FOMO_LOCALE_LABELS[loc] + (hasOverride ? ' <span class="dot" style="--dot:var(--primary)"></span>' : '') + '</button>';
     }).join('') +
     '</div>';
 }
@@ -4282,13 +4694,13 @@ function renderFomoLocaleEditor() {
   const isFr = loc === 'fr';
   const value = isFr ? d.fomoTexte : (d.fomoTranslations[loc] ? d.fomoTranslations[loc].value : '');
   const hint = isFr
-    ? 'Texte de r\u00e9f\u00e9rence, utilis\u00e9 par toutes les langues qui n\u2019ont pas leur propre texte ci-dessous.'
-    : 'Laisser vide pour retomber automatiquement sur le texte FR ci-dessus.' +
-      (d.fomoTranslations[loc] && d.fomoTranslations[loc].outdated ? ' <strong style="color:var(--critical, #d82c0d)">Le texte FR a chang\u00e9 depuis cette traduction \u2014 pense \u00e0 la relire.</strong>' : '');
-  return '<div class="form-group"><label>Texte de l\u2019offre \u2014 ' + FOMO_LOCALE_LABELS[loc] + '</label>' +
-    '<input type="text" id="df-fomo-texte-locale" value="' + escapeHtml(value) + '" placeholder="ex: -5% sur ta personnalisation !"></div>' +
-    '<div class="settings-hint" style="margin-bottom:8px;">' + hint + '</div>' +
-    '<button class="btn btn-primary" onclick="saveFomoTexte()">Enregistrer ce texte</button>';
+    ? 'Texte de référence, utilisé par toutes les langues qui n’ont pas leur propre texte.'
+    : 'Laisser vide pour retomber automatiquement sur le texte FR.' +
+      (d.fomoTranslations[loc] && d.fomoTranslations[loc].outdated ? ' <strong class="text-critical">Le texte FR a changé depuis cette traduction — pense à la relire.</strong>' : '');
+  return '<div class="form-group"><label for="df-fomo-texte-locale">Texte de l’offre — ' + FOMO_LOCALE_LABELS[loc] + '</label>' +
+    '<input type="text" id="df-fomo-texte-locale" value="' + escapeHtml(value) + '" placeholder="ex : -5% sur ta personnalisation !">' +
+    '<div class="settings-hint">' + hint + '</div></div>' +
+    '<div class="form-actions"><button class="btn btn-primary" onclick="saveFomoTexte()">' + icon('save') + 'Enregistrer ce texte</button></div>';
 }
 
 function switchFomoLocaleTab(loc) {
@@ -4368,7 +4780,7 @@ async function deletePeriode(id) {
 // webhook est bien cree par l'app prep-orders (meme secret que la verification HMAC).
 async function setupOrderWebhook() {
   const box = document.getElementById('df-webhook-status');
-  box.innerHTML = 'V\u00e9rification...';
+  box.innerHTML = '<div class="status-line muted">V\u00e9rification\u2026</div>';
   const callbackUrl = window.location.origin + '/api/order-delai-webhook';
   try {
     const existing = await gql('query { webhookSubscriptions(first: 50, topics: [ORDERS_CREATE]) { edges { node { id endpoint { __typename ... on WebhookHttpEndpoint { callbackUrl } } } } } }');
@@ -4376,7 +4788,7 @@ async function setupOrderWebhook() {
       return e.node.endpoint && e.node.endpoint.callbackUrl === callbackUrl;
     });
     if (already) {
-      box.innerHTML = '<span style="color:#2d7a35">D\u00e9j\u00e0 actif sur ' + escapeHtml(callbackUrl) + '</span>';
+      box.innerHTML = '<div class="status-line text-success">' + icon('checkCircle') + 'D\u00e9j\u00e0 actif sur ' + escapeHtml(callbackUrl) + '</div>';
       return;
     }
     const data = await gql(
@@ -4384,11 +4796,11 @@ async function setupOrderWebhook() {
       { topic: 'ORDERS_CREATE', sub: { callbackUrl: callbackUrl, format: 'JSON' } }
     );
     const errs = data.webhookSubscriptionCreate.userErrors;
-    if (errs && errs.length) { box.innerHTML = '<span style="color:var(--critical,#c0392b)">Erreur: ' + escapeHtml(errs.map(function (e) { return e.message; }).join(', ')) + '</span>'; return; }
-    box.innerHTML = '<span style="color:#2d7a35">Webhook activ\u00e9 sur ' + escapeHtml(callbackUrl) + '</span>';
+    if (errs && errs.length) { box.innerHTML = '<div class="status-line text-critical">' + icon('xCircle') + 'Erreur : ' + escapeHtml(errs.map(function (e) { return e.message; }).join(', ')) + '</div>'; return; }
+    box.innerHTML = '<div class="status-line text-success">' + icon('checkCircle') + 'Webhook activ\u00e9 sur ' + escapeHtml(callbackUrl) + '</div>';
     showToast('Webhook activ\u00e9');
   } catch (e) {
-    box.innerHTML = '<span style="color:var(--critical,#c0392b)">Erreur: ' + escapeHtml(e.message) + '</span>';
+    box.innerHTML = '<div class="status-line text-critical">' + icon('xCircle') + 'Erreur : ' + escapeHtml(e.message) + '</div>';
   }
 }
 
