@@ -283,7 +283,8 @@
     #order-sticky { padding: 18px 20px; border-radius: 0 0 16px 16px; display: flex; flex-direction: column; gap: 14px; }
     .order-sticky-top { gap: 12px; margin-bottom: 0; }
     .order-sticky-top h2 { font-size: 40px; line-height: 1; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
-    .order-sticky-top .badge { min-height: 32px; padding: 0 12px; font-size: 14px; }
+    .order-sticky-top .badge { min-height: 32px; padding: 0 12px; font-size: 14px; gap: 6px; }
+    .order-sticky-top .badge .ico { font-size: 16px; stroke-width: 2.4; }
     .pill { height: 36px; padding: 0 14px; border-radius: 18px; font-size: 15px; font-weight: 700; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 6px; color: #fff; }
     .pill .ico { font-size: 16px; stroke-width: 2.5; }
     .pill-urgent { background: var(--critical); }
@@ -291,14 +292,14 @@
     .co-shopify { margin-left: auto; min-height: 48px; padding: 0 18px; border: 1px solid #c9cccf; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 16px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
     .co-shopify .ico { font-size: 18px; }
     .co-info-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; }
-    .co-deadline { flex: 1 1 320px; display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-radius: 12px; border: 1px solid; }
+    .co-deadline { flex: 0 1 auto; display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 12px; border: 1px solid; white-space: nowrap; }
     .co-deadline .ico { font-size: 28px; }
-    .co-deadline b { display: block; font-size: 22px; line-height: 1.2; }
-    .co-deadline span { font-size: 16px; font-weight: 600; }
+    .co-deadline b { font-size: 22px; line-height: 1.2; }
+    .co-deadline span { font-size: 18px; font-weight: 600; }
     .co-deadline.tone-critical { background: var(--critical-bg); border-color: var(--critical-border); color: #b8260b; }
     .co-deadline.tone-warning { background: var(--warning-bg); border-color: #f1c84b; color: #6b4700; }
     .co-deadline.tone-info { background: var(--info-bg); border-color: var(--border); color: var(--text); }
-    .co-meta { margin: 0; flex: 1 1 480px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 12px; }
+    .co-meta { margin: 0; flex: 1 1 420px; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--border); border-radius: 12px; }
     .co-meta > div { padding: 10px 16px; border-right: 1px solid var(--border); min-width: 0; }
     .co-meta > div:last-child { border-right: 0; }
     .co-meta dt { font-size: 14px; color: var(--text-sub); }
@@ -314,6 +315,15 @@
     #order-sticky .prep-list { gap: 10px; }
     #order-sticky .prep-label { font-size: 15px; font-weight: 700; }
     #order-sticky .prep-item { min-height: 40px; padding: 0 16px; font-size: 16px; display: inline-flex; align-items: center; gap: 6px; }
+    #order-sticky.compact { padding: 10px 20px; gap: 8px; }
+    #order-sticky.compact .order-sticky-top h2 { font-size: 28px; }
+    #order-sticky.compact .co-meta, #order-sticky.compact .prep-list, #order-sticky.compact .order-sticky-top .badge { display: none; }
+    #order-sticky.compact .co-deadline { padding: 6px 14px; }
+    #order-sticky.compact .co-deadline b { font-size: 18px; }
+    #order-sticky.compact .co-deadline span { font-size: 16px; }
+    #order-sticky.compact .co-deadline .ico { font-size: 22px; }
+    #order-sticky.compact .co-note { padding: 8px 14px; font-size: 16px; }
+    #order-sticky.compact .co-note .alert-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .co-item { border-radius: 16px; padding: 22px 24px; }
     .co-item .lineitem-grid { grid-template-columns: 88px minmax(0, 1fr) clamp(240px, 30%, 300px); gap: 24px; }
     .co-item .qty-num { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -339,7 +349,8 @@
     @media (max-width: 600px) {
       .co-item .lineitem-grid { grid-template-columns: 48px 1fr; gap: 10px; }
       .co-item .qty-num { font-size: 30px; }
-      .co-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .co-meta { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .co-deadline { white-space: normal; }
       .order-sticky-top h2 { font-size: 30px; }
     }
     @media (max-width: 900px) { :root { --rail-w: 120px; } .co-search { min-width: 0; flex: 1 1 100%; margin-left: 0; } }
@@ -758,6 +769,13 @@ function showToast(msg, type = 'success') {
   t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800);
 }
 window.addEventListener('scroll', () => document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 200));
+// En-tête de commande compact au défilement : se réduit après 140 px, se réagrandit sous 20 px.
+window.addEventListener('scroll', () => {
+  const sticky = document.getElementById('order-sticky');
+  if (!sticky) return;
+  if (window.scrollY > 140) sticky.classList.add('compact');
+  else if (window.scrollY < 20) sticky.classList.remove('compact');
+}, { passive: true });
 // ── Modale image plein écran — navigation entre les visuels d'une même commande ──
 // items: [{url, title}], index: position de depart dans items.
 // Retro-compatible : openImgModal('https://...') (une seule image, appel historique) marche toujours.
@@ -1625,7 +1643,7 @@ function goToCustom(urgent) { state.filterUrgent = urgent; switchTab('custom'); 
 const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName }
   dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
   estRush: metafield(namespace: "custom", key: "est_rush") { value }
-  lineItems(first: 250) { edges { node { id title quantity currentQuantity
+  lineItems(first: 250) { edges { node { id title quantity currentQuantity requiresShipping
     variant { title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
       imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value }
@@ -1702,22 +1720,22 @@ function getOrderStatusBadges(tags) {
   const printTag = tags.find(t => /^print_\d{8}$/.test(t));
   if (printTag) {
     const d = printTag.replace('print_','');
-    badges.push({ label: `✅ Imprimé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'success' });
+    badges.push({ label: `Imprimé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'success', icon: 'check' });
   } else if (tags.includes('TODOPRINT')) {
-    badges.push({ label: '🖨️ Impression à lancer', tone: 'warning' });
+    badges.push({ label: 'Impression à lancer', tone: 'warning', icon: 'printer' });
   }
 
   // ── Statut commande fournisseur ──
   const orderTag = tags.find(t => /^order_\d{8}$/.test(t));
   if (orderTag) {
     const d = orderTag.replace('order_','');
-    badges.push({ label: `📦 Commandé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'info' });
+    badges.push({ label: `Textile commandé le ${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`, tone: 'info', icon: 'box' });
   } else if (tags.includes('TOORDER')) {
-    badges.push({ label: '⏳ À commander fournisseur', tone: 'warning' });
+    badges.push({ label: 'Textile à commander', tone: 'warning', icon: 'clock' });
   }
 
   // Si aucun statut
-  if (badges.length === 0) badges.push({ label: '🆕 Nouvelle commande', tone: 'info' });
+  if (badges.length === 0) badges.push({ label: 'Nouvelle commande', tone: 'info', icon: 'star' });
 
   return badges;
 }
@@ -1727,7 +1745,7 @@ function renderStatusBadges(tags) {
   const borders = { success: '#95c9b4', warning: '#f1c84b', info: 'var(--border)' };
   const texts = { success: 'var(--success)', warning: 'var(--warning)', info: 'var(--text)' };
   return getOrderStatusBadges(tags).map(s =>
-    `<span class="badge" style="background:${colors[s.tone]};border-color:${borders[s.tone]};color:${texts[s.tone]}">${s.label}</span>`
+    `<span class="badge" style="background:${colors[s.tone]};border-color:${borders[s.tone]};color:${texts[s.tone]}">${s.icon && ICO[s.icon] ? ICO[s.icon] : ''}${s.label}</span>`
   ).join('');
 }
 
@@ -1742,8 +1760,19 @@ const ICO = {
   next: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>',
   prev: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>',
   box: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>',
+  check: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>',
+  printer: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+  star: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7z"/></svg>',
   list: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>'
 };
+
+// Titre court pour la préparation : retire la parenthèse « (Compétition de type …) »
+// des produits compétition. Les autres parenthèses éventuelles sont conservées.
+function shortProductTitle(title) {
+  return String(title || '').replace(/\s*\([^)]*comp[ée]tition[^)]*\)/gi, '').trim();
+}
+// Lignes sans expédition (frais de réimpression, etc.) : rien à préparer physiquement.
+function isPhysicalLine(li) { return li.requiresShipping !== false; }
 
 function renderOrderView() {
   const c = document.getElementById('content');
@@ -1794,9 +1823,10 @@ function renderOrderView() {
   const ageInDays = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 86400000);
   const ageTone = ageInDays < 5 ? 'success' : ageInDays <= 10 ? 'warning' : 'critical';
   const ageLabel = ageInDays < 5 ? 'Récente' : ageInDays <= 10 ? 'En retard' : 'Critique';
-  const prepItems = activeItems.map(({node:li}) => {
+  const physicalItems = activeItems.filter(({node:li}) => isPhysicalLine(li));
+  const prepItems = physicalItems.map(({node:li}) => {
     const v = li.variant?.title; const sv = v && v!=='Default Title';
-    return `<span class="prep-item"><strong>${li.currentQuantity}×</strong> ${li.title}${sv?` — ${v}`:''}</span>`;
+    return `<span class="prep-item"><strong>${li.currentQuantity}×</strong> ${shortProductTitle(li.title)}${sv?` — ${v}`:''}</span>`;
   }).join('');
 
   // ── Délai de traitement (rempli par le webhook order-delai-webhook) ──
@@ -1805,9 +1835,9 @@ function renderOrderView() {
     const dateLimite = new Date(order.dateLimiteTraitement.value + 'T00:00:00');
     const joursRestants = Math.ceil((dateLimite.getTime() - Date.now()) / 86400000);
     const delaiTone = joursRestants < 0 ? 'critical' : joursRestants <= 2 ? 'warning' : 'info';
-    const dateLabel = dateLimite.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
+    const dateLabel = dateLimite.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit' });
     const joursLabel = joursRestants < 0 ? `en retard de ${Math.abs(joursRestants)} j` : joursRestants === 0 ? "aujourd\u2019hui" : `dans ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`;
-    delaiBlock = `<div class="co-deadline tone-${delaiTone}">${ICO.clock}<div><b>À traiter avant le ${dateLabel}</b><span>${joursLabel}</span></div></div>`;
+    delaiBlock = `<div class="co-deadline tone-${delaiTone}">${ICO.clock}<b>Avant le ${dateLabel}</b><span>\u00b7 ${joursLabel}</span></div>`;
   }
   const estRushBadge = order.estRush?.value === 'true' ? `<span class="pill pill-rush">${ICO.bolt}RUSH</span>` : '';
 
@@ -1823,9 +1853,8 @@ function renderOrderView() {
       ${delaiBlock}
       <dl class="co-meta">
         <div><dt>Client</dt><dd>${escapeHtml(customerName || '-')}</dd></div>
-        <div><dt>Commandée</dt><dd>${orderDate}</dd></div>
-        <div><dt>Âge</dt><dd class="tone-${ageTone}">${ageInDays} j<small>${ageLabel}</small></dd></div>
-        <div><dt>Articles</dt><dd>${totalQty}</dd></div>
+        <div><dt>Passée le</dt><dd>${orderDate}</dd></div>
+        <div><dt>Âge</dt>${delaiBlock ? `<dd>${ageInDays} j</dd>` : `<dd class="tone-${ageTone}">${ageInDays} j<small>${ageLabel}</small></dd>`}</div>
       </dl>
     </div>
     ${hasNote ? `<div class="co-note">${ICO.note}<div><strong>Note client : </strong><span class="alert-text">${order.note}</span></div></div>` : ''}
@@ -1850,6 +1879,7 @@ function renderOrderView() {
 
   let imgItemIndex = -1;
   for (const {node:li} of activeItems) {
+    if (!isPhysicalLine(li)) continue;
     const variant = li.variant?.title || '';
     const showVariant = variant && variant !== 'Default Title';
     const imgAttr = li.customAttributes.find(a => a.key === '_customization_image');
@@ -1863,7 +1893,7 @@ function renderOrderView() {
     html += `<div class="card co-item"><div class="lineitem-grid">
       <div class="qty-cell"><div class="qty-num">${li.currentQuantity}</div><div class="qty-label">Qté</div></div>
       <div>
-        <div class="product-title">${li.title}</div>
+        <div class="product-title">${shortProductTitle(li.title)}</div>
         ${showVariant ? renderVariantBig(variant) : ''}
         ${sku ? `<div class="product-sku">SKU: ${sku}</div>` : ''}
         ${textAttrs.length ? `<dl class="perso-list">${textAttrs.map(a => `<dt>${escapeHtml(a.key.replace(/\s*:\s*$/, ''))}</dt><dd>${escapeHtml(a.value)}</dd>`).join('')}</dl>` : ''}
