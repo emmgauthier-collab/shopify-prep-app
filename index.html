@@ -1120,6 +1120,188 @@ async function callGas(orders) {
   return json;
 }
 
+
+// ════════════════════════════════════════════
+// DOSSIER DTF LOCAL — écrit les fichiers d'un lot, déjà dézippés,
+// dans <dossier DTF>/print_AAAAMMJJ/ (Chrome/Edge, File System Access API).
+// Le navigateur télécharge lui-même les fichiers (CDN Teeinblue autorise le CORS)
+// avec EXACTEMENT le même nommage que le GAS (script Illustrator dépend du nom).
+// ════════════════════════════════════════════
+function dtfIdb(mode, fn) {
+  return new Promise(function (resolve, reject) {
+    const req = indexedDB.open('rxwear-fs', 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore('handles'); };
+    req.onerror = function () { reject(req.error); };
+    req.onsuccess = function () {
+      const tx = req.result.transaction('handles', mode);
+      const r = fn(tx.objectStore('handles'));
+      tx.oncomplete = function () { resolve(r && r.result); };
+      tx.onerror = function () { reject(tx.error); };
+    };
+  });
+}
+async function loadDtfDirHandle() {
+  if (!window.showDirectoryPicker) return null;
+  if (state.dtfDir) return state.dtfDir;
+  try { state.dtfDir = (await dtfIdb('readonly', function (st) { return st.get('dtf'); })) || null; } catch (e) { state.dtfDir = null; }
+  return state.dtfDir;
+}
+// À appeler DIRECTEMENT dans un clic (permission navigateur). Renvoie null si annulé / non supporté.
+async function ensureDtfDir(forcePick) {
+  if (!window.showDirectoryPicker) return null;
+  let h = forcePick ? null : await loadDtfDirHandle();
+  if (h) {
+    let perm = await h.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') perm = await h.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') return h;
+  }
+  try {
+    h = await window.showDirectoryPicker({ id: 'rxwear-dtf', mode: 'readwrite' });
+  } catch (e) { return null; } // annulé
+  state.dtfDir = h;
+  try { await dtfIdb('readwrite', function (st) { return st.put(h, 'dtf'); }); } catch (e) {}
+  return h;
+}
+async function changeDtfDir() {
+  const h = await ensureDtfDir(true);
+  if (h) { showToast('\u{1F4C1} Dossier DTF : ' + h.name); if (state.activeTab === 'print') renderPrintView(); }
+}
+function printTagForDate(d) {
+  return 'print_' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+// Sous-dossier du lot : print_AAAAMMJJ, ou print_AAAAMMJJ_2, _3… s'il existe déjà et n'est pas vide
+async function makeLotFolder(baseDir, name) {
+  for (let i = 1; i < 50; i++) {
+    const candidate = i === 1 ? name : name + '_' + i;
+    let existing = null;
+    try { existing = await baseDir.getDirectoryHandle(candidate); } catch (e) { existing = null; }
+    if (!existing) return baseDir.getDirectoryHandle(candidate, { create: true });
+    let empty = true;
+    for await (const _ of existing.keys()) { empty = false; break; }
+    if (empty) return existing;
+  }
+  throw new Error('Impossible de créer le dossier ' + name);
+}
+// Réplique du nommage GAS (generateZips) — garder synchronisé avec le script Apps Script.
+function buildPrintFileList(orders) {
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const nameCounts = {}, lineCounters = {}, files = [];
+  function slugifyProduct(title) {
+    if (!title) return 'PRODUIT';
+    const slug = String(title).split('(')[0].trim().toUpperCase()
+      .replace(/[À-Å]/g, 'A').replace(/[È-Ë]/g, 'E').replace(/[Ì-Ï]/g, 'I')
+      .replace(/[Ò-Ö]/g, 'O').replace(/[Ù-Ü]/g, 'U').replace(/Ç/g, 'C')
+      .replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return slug || 'PRODUIT';
+  }
+  function getExt(url) {
+    const clean = String(url).split('?')[0];
+    const dot = clean.lastIndexOf('.');
+    if (dot === -1) return '';
+    const ext = clean.slice(dot).toLowerCase();
+    return ext.length <= 6 ? ext : '';
+  }
+  function buildName(orderStr, qtyStr, type, lineNum, ext, slug) {
+    const noExt = orderStr + '_x' + qtyStr + '_' + type + '_L' + lineNum + (slug ? '_' + slug : '');
+    const base = noExt + (ext || '');
+    if (!nameCounts[base]) { nameCounts[base] = 1; return base; }
+    nameCounts[base]++;
+    return noExt + '_' + ('0' + (nameCounts[base] - 1)).slice(-2) + (ext || '');
+  }
+  function extractAnnexeUrls(jsonText) {
+    if (!jsonText) return [];
+    let out = [];
+    try {
+      const obj = JSON.parse(jsonText);
+      for (const k in obj) {
+        const v = obj[k];
+        if (typeof v === 'string' && /^https?:\/\//i.test(v) && /\.(png|svg)(\?.*)?$/i.test(v)) out.push(v);
+      }
+    } catch (e) {
+      out = (jsonText.match(/https?:\/\/[^\s"'<>]+?\.(?:png|svg)(?:\?[^\s"'<>]*)?/ig) || []);
+    }
+    return out.filter(function (u, i) { return out.indexOf(u) === i; });
+  }
+  // notes.txt
+  const notes = ['NOTES DE COMMANDES — ' + dateStr, '='.repeat(40), ''];
+  let hasNotes = false;
+  orders.forEach(function (o) {
+    if (o.note && o.note.trim()) { notes.push('Commande : ' + o.orderName, 'Note     : ' + o.note.trim(), ''); hasNotes = true; }
+  });
+  if (!hasNotes) notes.push('Aucune note sur les commandes sélectionnées.');
+  files.push({ name: 'notes.txt', text: notes.join('\n') });
+  orders.forEach(function (o) {
+    const orderStr = String(o.orderName).replace(/[^0-9A-Za-z]/g, '');
+    const qtyStr = String(o.quantity || 1);
+    const slug = slugifyProduct(o.productTitle);
+    lineCounters[orderStr] = (lineCounters[orderStr] || 0) + 1;
+    const lineNum = lineCounters[orderStr];
+    function push(url, type) {
+      if (!url || !/^https?:\/\//i.test(url)) return;
+      // le nom est réservé dans l'ordre, comme côté GAS
+      files.push({ url: url.replace(/_large/g, '_master'), name: buildName(orderStr, qtyStr, type, lineNum, getExt(url), slug), order: o.orderName });
+    }
+    (o.designUrls || []).forEach(function (u) { push(u, 'design'); });
+    extractAnnexeUrls(o.customizationJson || '').forEach(function (u) { push(u, 'annexe'); });
+  });
+  return files;
+}
+// Télécharge et écrit les fichiers dans baseDir/folderName. onProgress(done, total)
+async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress) {
+  const lotDir = await makeLotFolder(baseDir, folderName);
+  const files = buildPrintFileList(gasOrders);
+  const failed = [];
+  let done = 0, written = 0;
+  async function writeOne(f) {
+    try {
+      let blob;
+      if (f.text != null) blob = new Blob([f.text], { type: 'text/plain' });
+      else {
+        const r = await fetch(f.url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        blob = await r.blob();
+      }
+      const fh = await lotDir.getFileHandle(f.name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob); await w.close();
+      written++;
+    } catch (e) {
+      failed.push({ name: f.name, url: f.url, order: f.order, error: e.message });
+    } finally {
+      done++; if (onProgress) onProgress(done, files.length);
+    }
+  }
+  const queue = files.slice();
+  const workers = [];
+  for (let i = 0; i < 4; i++) workers.push((async function () { while (queue.length) await writeOne(queue.shift()); })());
+  await Promise.all(workers);
+  return { folder: baseDir.name + '/' + lotDir.name, written: written, total: files.length, failed: failed };
+}
+function dtfResultHtml(local) {
+  if (!local) return '';
+  if (local.error) return '<div class="zip-title" style="color:var(--critical);">' + icon('alert') + 'Dossier DTF : ' + escapeHtml(local.error) + '</div>';
+  let h = '<div class="zip-title">' + icon('folder') + 'Dézippé dans ' + escapeHtml(local.folder) + ' — ' + local.written + '/' + local.total + ' fichiers</div>';
+  if (local.failed.length) {
+    h += '<div style="color:var(--critical);font-size:13px;">' + icon('alert') + local.failed.length + ' fichier(s) non téléchargé(s) — ils sont dans le ZIP Drive :</div>' +
+      local.failed.map(function (f) { return f.url ? '<a href="' + escapeHtml(f.url) + '" target="_blank" rel="noopener">' + icon('download') + escapeHtml(f.name) + '</a>' : '<span>' + escapeHtml(f.name) + '</span>'; }).join('');
+  }
+  return h;
+}
+function zipLinksHtml(zips) {
+  return (zips || []).map(function (z) {
+    const dl = z.id ? ' <a href="https://drive.google.com/uc?export=download&id=' + encodeURIComponent(z.id) + '" title="Télécharger directement">' + icon('download') + 'Télécharger</a>' : '';
+    return '<div style="display:flex;gap:14px;flex-wrap:wrap;"><a href="' + z.url + '" target="_blank" rel="noopener">' + icon('archive') + escapeHtml(z.name) + icon('external') + '</a>' + dl + '</div>';
+  }).join('');
+}
+function dtfSettingLine() {
+  if (!window.showDirectoryPicker) return '<div class="step-desc" style="margin-top:10px;">Enregistrement local indisponible (Chrome ou Edge requis) : seul le ZIP Drive sera créé.</div>';
+  const name = state.dtfDir ? state.dtfDir.name : null;
+  return '<div class="step-desc" style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + icon('folder') +
+    (name ? 'Fichiers dézippés aussi dans <strong>' + escapeHtml(name) + '/print_AAAAMMJJ</strong>' : 'Au 1er clic, choisis ton dossier <strong>DTF</strong> : les fichiers y seront écrits dézippés') +
+    ' <button class="btn btn-sm" onclick="changeDtfDir()">' + (name ? 'Changer' : 'Choisir') + '</button></div>';
+}
+
 // ════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════
@@ -1150,6 +1332,7 @@ else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPr
 // ════════════════════════════════════════════
 // ── Icônes au trait (même famille que la vue commande) — icon('nom') renvoie un <svg class="ico"> ──
 const ICONS = {
+  folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
@@ -2800,6 +2983,7 @@ async function regenPrintLotZip(lotId) {
   if (!lot) return;
   const zone = document.getElementById(`lot-zip-result-${lotId}`);
   const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'R\u00e9g\u00e9n\u00e9ration\u2026';
+  const dtfDir = await ensureDtfDir(false);
   try {
     const data = await gql(`query($ids:[ID!]!){ nodes(ids:$ids){ ... on Order {
       id name note
@@ -2825,9 +3009,14 @@ async function regenPrintLotZip(lotId) {
         gasOrders.push({ orderName: order.name, quantity: li.currentQuantity, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
       }
     }
-    const result = await callGas(gasOrders);
-    const zipLinks = result.zips.map(z => `<a href="${z.url}" target="_blank" rel="noopener">${icon('archive')}${escapeHtml(z.name)}${icon('external')}</a>`).join('');
-    if (zone) zone.innerHTML = `<div class="zip-result" style="margin-top:8px;">${zipLinks}</div>`;
+    const localP = dtfDir
+      ? saveLotToDtf(dtfDir, lot.tag || printTagForDate(new Date(lot.dateGeneration)), gasOrders, function (d, t) { btn.textContent = 'DTF ' + d + '/' + t + '\u2026'; })
+          .catch(function (e) { return { error: e.message }; })
+      : Promise.resolve(null);
+    const [gasR, local] = await Promise.all([callGas(gasOrders).then(r => ({ ok: r }), e => ({ err: e })), localP]);
+    if (gasR.err && !(local && !local.error && local.written > 0)) throw gasR.err;
+    const gasErr = gasR.err ? `<div class="zip-title" style="color:var(--critical);">${icon('alert')}ZIP Drive en erreur : ${escapeHtml(gasR.err.message)}</div>` : '';
+    if (zone) zone.innerHTML = `<div class="zip-result" style="margin-top:8px;">${dtfResultHtml(local)}${gasErr}${zipLinksHtml(gasR.ok && gasR.ok.zips)}</div>`;
     showToast('✅ ZIP régénéré');
   } catch (e) {
     if (zone) zone.innerHTML = `<div style="margin-top:8px;">${errorBlock(e.message)}</div>`;
@@ -2900,12 +3089,15 @@ async function renderPrintTab() {
   const c = document.getElementById('content');
   c.innerHTML = pageHead('Impression', '') + loadingBlock('Chargement des commandes TODOPRINT…');
   try {
+    loadDtfDirHandle().catch(function () {});
     const orders = await fetchTodoPrintOrders();
     state.printOrders = orders;
     state.printSelected = new Set(orders.map(o => o.id));
     state.printZipDone = false;
     state.printZipOrderIds = [];
     state.printZipZips = [];
+    state.printZipLocal = null;
+    state.printZipGasError = null;
     state.printWizardStep = 1;
     try { state.printLots = await fetchPrintLots(); state.printLotsLoaded = true; }
     catch (e) { state.printLots = []; state.printLotsLoaded = false; console.log('Erreur chargement lots impression:', e.message); }
@@ -2984,9 +3176,9 @@ function renderPrintView() {
       </div>` : ''}`;
   } else if (cur === 2) {
     if (zipDone) {
-      const links = (state.printZipZips || []).map(z =>
-        `<a href="${z.url}" target="_blank" rel="noopener">${icon('archive')}${escapeHtml(z.name)}${icon('external')}</a>`).join('');
-      body = `<div class="zip-result"><div class="zip-title">${icon('checkCircle')}ZIP généré dans ton Drive — ${plural(zipCount, 'commande')}</div>${links}</div>`;
+      const links = zipLinksHtml(state.printZipZips);
+      const zipTitle = state.printZipZips && state.printZipZips.length ? `<div class="zip-title">${icon('checkCircle')}ZIP généré dans ton Drive — ${plural(zipCount, 'commande')}</div>` : (state.printZipGasError ? `<div class="zip-title" style="color:var(--critical);">${icon('alert')}ZIP Drive en erreur : ${escapeHtml(state.printZipGasError)}</div>` : '');
+      body = `<div class="zip-result">${dtfResultHtml(state.printZipLocal)}${zipTitle}${links}</div>`;
     } else {
       body = `<div class="step-desc" style="margin-bottom:14px;">Télécharge les fichiers design + annexes et crée l'archive dans ton Drive (1 à 2 min).</div>
         <div id="zip-generate-zone">
@@ -2994,6 +3186,7 @@ function renderPrintView() {
             ${icon('archive')}<span>Générer le ZIP (<span id="zip-count">${selectedCount}</span> commande${selectedCount>1?'s':''})</span>
           </button>
         </div>
+        ${dtfSettingLine()}
         <div id="zip-result-zone"></div>`;
     }
   } else {
@@ -3065,7 +3258,10 @@ function printDeselectAll() { state.printSelected.clear(); renderPrintView(); }
 
 async function generatePrintZip() {
   const btn = event.target.closest('button');
-  btn.disabled = true; btn.textContent = 'G\u00e9n\u00e9ration en cours\u2026 (1 \u00e0 2 min)';
+  btn.disabled = true;
+  // Dossier DTF local : demandé tout de suite (le navigateur exige un clic récent)
+  const dtfDir = await ensureDtfDir(false);
+  btn.textContent = 'G\u00e9n\u00e9ration en cours\u2026 (1 \u00e0 2 min)';
 
   const selectedOrders = state.printOrders.filter(o => state.printSelected.has(o.id));
 
@@ -3100,13 +3296,21 @@ async function generatePrintZip() {
   if (gasOrders[0]) console.log('First order designUrls:', gasOrders[0].designUrls);
 
   try {
-    const result = await callGas(gasOrders);
+    const localP = dtfDir
+      ? saveLotToDtf(dtfDir, printTagForDate(new Date()), gasOrders, function (d, t) { btn.textContent = 'G\u00e9n\u00e9ration\u2026 DTF ' + d + '/' + t + ' fichiers, ZIP Drive en cours'; })
+          .catch(function (e) { return { error: e.message }; })
+      : Promise.resolve(null);
+    const [gasR, local] = await Promise.all([callGas(gasOrders).then(r => ({ ok: r }), e => ({ err: e })), localP]);
+    // Échec total seulement si ni le Drive ni le dossier local n'ont marché
+    if (gasR.err && !(local && !local.error && local.written > 0)) throw gasR.err;
     state.printZipDone = true;
     state.printZipOrderIds = selectedOrders.map(o => o.id);
-    state.printZipZips = result.zips || [];
+    state.printZipZips = gasR.ok ? (gasR.ok.zips || []) : [];
+    state.printZipGasError = gasR.err ? gasR.err.message : null;
+    state.printZipLocal = local;
     // Les liens restent affichés dans l'étape 2, l'étape 3 se déverrouille
     renderPrintView();
-    showToast('✅ ZIP généré avec succès !');
+    showToast(local && !local.error && !local.failed.length ? '✅ Lot prêt dans ' + local.folder : '✅ ZIP généré', local && (local.error || local.failed.length) ? 'warning' : 'success');
   } catch(e) {
     btn.disabled = false; btn.innerHTML = `${icon('archive')}<span>Générer le ZIP (<span id="zip-count">${state.printSelected.size}</span> commande${state.printSelected.size>1?'s':''})</span>`;
     document.getElementById('zip-result-zone').innerHTML = `<div style="margin-top:12px;">${errorBlock(e.message)}</div>`;
