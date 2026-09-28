@@ -1289,7 +1289,7 @@ function buildPrintFileList(orders) {
     const qtyStr = String(o.quantity || 1);
     const slug = slugifyProduct(o.productTitle);
     lineCounters[orderStr] = (lineCounters[orderStr] || 0) + 1;
-    const lineNum = lineCounters[orderStr];
+    const lineNum = o.lineNum || lineCounters[orderStr];
     function push(url, type) {
       if (!url || !/^https?:\/\//i.test(url)) return;
       // le nom est réservé dans l'ordre, comme côté GAS
@@ -1376,8 +1376,8 @@ function switchTab(tab) {
   }
   if (tab === 'custom') {
     // Si on a déjà des commandes en mémoire, on re-render sans recharger Shopify
-    if (state.orders.length > 0) renderOrderView();
-    else renderCustomTab(false);
+    if (state.orders.length > 0 && !state.customStale) renderOrderView();
+    else { state.customStale = false; renderCustomTab(true); }
     return;
   }
 else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab, pro: renderProTab, incidents: renderIncidentsTab })[tab]?.();
@@ -2396,6 +2396,7 @@ async function fetchCustomOrders(urgent = false) {
     cursor = data.orders.pageInfo.endCursor;
   }
   state.orders = sortOrdersByDeadline(orders);
+  state.customStale = false;
   state.currentIndex = 0;
   // Liste rechargée = plus de recherche en cours (sinon le n° cherché et le ✕ restaient affichés)
   state.orderSearchActive = false; state.orderSearchQuery = '';
@@ -2695,14 +2696,19 @@ function savLinesFor(order, kind, lotTag) {
   return out;
 }
 // Remplace activeLineItemEdges dans les exports : lignes SAV seules si la commande en a en attente.
+// Chaque ligne porte lineNum = sa position (1, 2, 3…) parmi les lignes actives de la commande :
+// c'est le « L5 » des noms de fichiers, qui doit rester le même pour une ligne réimprimée seule.
 function prodLineEdges(order, kind, lotTag) {
   const sav = savLinesFor(order, kind, lotTag);
-  if (!sav.length) return activeLineItemEdges(order);
+  const active = activeLineItemEdges(order);
+  const pos = {};
+  active.forEach(function (x, i) { pos[x.node.id] = i + 1; });
+  if (!sav.length) return active.map(function (x, i) { return { node: Object.assign({}, x.node, { lineNum: i + 1 }) }; });
   const byId = {};
   (order.lineItems && order.lineItems.edges || []).forEach(function (x) { byId[x.node.id] = x.node; });
   return sav.map(function (x) {
     const li = byId[x.l.lineId] || { id: x.l.lineId, title: x.l.title, customAttributes: [], variant: { title: x.l.variantTitle || '' } };
-    const node = Object.assign({}, li, { currentQuantity: x.l.qty, savMotif: x.e.motif });
+    const node = Object.assign({}, li, { currentQuantity: x.l.qty, savMotif: x.e.motif, lineNum: pos[x.l.lineId] || 1 });
     if (kind === 'sup' && x.l.newVariant) node.variant = Object.assign({}, li.variant || {}, { title: x.l.newVariant.title, imbretexSku: { value: x.l.newVariant.sku || '' } });
     return { node: node };
   });
@@ -3417,6 +3423,7 @@ async function validateSupplierOrders(orderIds) {
   await savMarkLot(state.supplierOrders.filter(o => orderIds.includes(o.id)), 'sup', newTag);
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
+  refreshProdBadges();
   state.supplierSnapshot = [];
   state.supplierStep = null;
   // Recharge complète du tab pour refléter le nouvel état
@@ -3561,7 +3568,7 @@ async function regenPrintLotZip(lotId) {
             .filter(([k, v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
             .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {})
         );
-        gasOrders.push({ orderName: order.name, quantity: li.currentQuantity, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
+        gasOrders.push({ orderName: order.name, quantity: li.currentQuantity, lineNum: li.lineNum, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
       }
     }
     const localP = dtfDir
@@ -3840,6 +3847,7 @@ async function generatePrintZip() {
       gasOrders.push({
         orderName: order.name,
         quantity: li.currentQuantity,
+        lineNum: li.lineNum,
         note: [savNoteFor(order, 'print'), order.note || ''].filter(Boolean).join('\n'),
         productTitle: li.title || '',
         designUrls,
@@ -3908,6 +3916,7 @@ async function validatePrintOrders() {
     showToast('⚠️ Tag posé mais erreur sauvegarde historique lot: ' + e.message, 'warning');
   }
 
+  refreshProdBadges();
   // Spinner pendant le rechargement
   document.getElementById('content').innerHTML = pageHead('Impression', '') + loadingBlock('Mise \u00e0 jour\u2026');
   // Petit délai pour laisser Shopify indexer les tags
@@ -3974,7 +3983,7 @@ async function checkCurrentOrderDone() {
       : ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
 
     if (!stillCustom || fulfilled) {
-      if (fulfilled && savOpen(order).length) { try { await savCloseAll(order.id, 'Exp\u00e9di\u00e9 (auto)'); } catch (e) { console.log('SAV auto-close:', e.message); } }
+      if (fulfilled && savOpen(order).length) { try { await savCloseAll(order.id, 'Exp\u00e9di\u00e9 (auto)'); refreshProdBadges(); } catch (e) { console.log('SAV auto-close:', e.message); } }
       launchConfetti();
       playDoneSound();
       showToast('🎉 Commande traitée — suivante !');
@@ -5886,15 +5895,31 @@ async function proToggleTag(tag, add) {
   } catch (err) { showToast('⚠️ ' + err.message, 'warning'); }
 }
 // Met à jour les badges Fournisseur / Impression après un ajout/retrait de balise.
-async function refreshProdBadges() {
+// Rafraîchit TOUS les compteurs du menu après une action (incident, balise pro, validation de lot…).
+// La recherche Shopify met quelques secondes à indexer les nouvelles balises : on relit
+// tout de suite, puis à +3 s et +8 s pour rattraper ce délai (appels regroupés si on enchaîne).
+// Marque aussi la liste « Commandes custom » à recharger au prochain passage.
+function refreshProdBadges() {
+  state.customStale = true;
+  clearTimeout(refreshProdBadges._t1); clearTimeout(refreshProdBadges._t2);
+  refreshAllBadgesNow();
+  refreshProdBadges._t1 = setTimeout(refreshAllBadgesNow, 3000);
+  refreshProdBadges._t2 = setTimeout(refreshAllBadgesNow, 8000);
+}
+async function refreshAllBadgesNow() {
   try {
-    const d = await gql('query{ a: ordersCount(query:"tag:TOORDER AND (status:open OR tag:INCIDENT)"){count} b: ordersCount(query:"tag:TODOPRINT AND (status:open OR tag:INCIDENT)"){count} }');
-    [['tab-supplier-badge', d.a.count], ['tab-print-badge', d.b.count]].forEach(function (x) {
+    const d = await gql('query{' +
+      ' custom: ordersCount(query:"(tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)) OR tag:REEXPEDIER"){count}' +
+      ' urgent: ordersCount(query:"tag:urgent AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)"){count}' +
+      ' toorder: ordersCount(query:"tag:TOORDER AND (status:open OR tag:INCIDENT)"){count}' +
+      ' todoprint: ordersCount(query:"tag:TODOPRINT AND (status:open OR tag:INCIDENT)"){count} }');
+    [['tab-custom-badge-total', d.custom.count], ['tab-custom-badge', d.urgent.count], ['tab-supplier-badge', d.toorder.count], ['tab-print-badge', d.todoprint.count]].forEach(function (x) {
       const el = document.getElementById(x[0]); if (!el) return;
       el.style.display = x[1] > 0 ? '' : 'none'; if (x[1] > 0) el.textContent = x[1];
     });
-  } catch (e) { console.log('Badges prod:', e.message); }
+  } catch (e) { console.log('Badges:', e.message); }
   incRefreshBadge();
+  if (typeof proRefreshBadgeSilently === 'function' && proState.loaded) proRefreshBadgeSilently();
 }
 // Ouvre la fiche pro d'une commande (depuis Fournisseur / Impression), ou propose d'en créer une.
 async function proOpenByOrder(orderId) {
