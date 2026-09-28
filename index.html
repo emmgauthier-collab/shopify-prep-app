@@ -856,9 +856,45 @@
   .pro-brief-hint { color: var(--text-sub); display: inline-flex; }
   .pro-badge-warn { background: var(--warning-bg); color: var(--warning); border: 1px solid #f1c84b; }
   .pro-badge-ok { background: var(--success-bg); color: var(--success); border: 1px solid #95c9b4; }
+  .pro-prod-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
+  .pro-prod-row + .pro-prod-row { border-top: 1px solid var(--border); }
+  .pro-prod-row .pro-prod-label { font-weight: 600; min-width: 92px; }
+  .pro-prod-row .btn { margin-left: auto; }
+  .badge-pro { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; cursor: pointer; }
   .pro-more { width: 100%; }
   #pro-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8800; align-items: center; justify-content: center; padding: 16px; }
   #pro-modal.open { display: flex; }
+  #sav-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 8800; align-items: center; justify-content: center; padding: 16px; }
+  #sav-modal.open { display: flex; }
+  .sav-body { padding: 8px 22px 16px; }
+  .sav-section-title { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-sub); margin: 14px 0 8px; }
+  .sav-motifs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sav-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 22px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; cursor: pointer; }
+  .sav-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .sav-chip:disabled { opacity: .45; cursor: not-allowed; }
+  .sav-lines { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .sav-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; }
+  .sav-line.on { border-color: var(--primary); background: var(--success-bg); }
+  .sav-line-toggle { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--primary); cursor: pointer; flex: none; }
+  .sav-line.on .sav-line-toggle { border-color: var(--primary); }
+  .sav-line-main { flex: 1; min-width: 180px; display: flex; flex-direction: column; cursor: pointer; }
+  .sav-line-main span, .sav-line-main small { color: var(--text-sub); }
+  .sav-line-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; padding-left: 52px; }
+  .sav-qty { display: inline-flex; align-items: center; gap: 4px; }
+  .sav-qty button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: 22px; cursor: pointer; }
+  .sav-qty b { min-width: 28px; text-align: center; font-size: 18px; }
+  .sav-variant { min-height: 44px; max-width: 260px; }
+  .sav-entry { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; background: var(--surface); }
+  .sav-entry.closed { opacity: .6; }
+  .sav-entry-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sav-entry-head .btn { margin-left: auto; }
+  .sav-entry-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+  .sav-entry-line > span:first-child { flex: 1; min-width: 180px; }
+  .sav-entry-note { font-size: 13px; color: var(--text-sub); font-style: italic; }
+  .co-sav { padding: 12px 16px; border-radius: 12px; background: #ede9fe; border: 1px solid #c4b5fd; color: #3b0764; }
+  .co-sav-head { display: flex; align-items: center; gap: 10px; font-size: 18px; margin-bottom: 8px; flex-wrap: wrap; }
+  .co-sav-head .ico { font-size: 24px; }
+  .badge-sav { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
   .pro-box { background: var(--surface); border-radius: 12px; width: min(920px, 100%); max-height: 92vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.2); }
   .pro-box-head { display: flex; align-items: center; gap: 8px; padding: 18px 22px 6px; }
   .pro-box-head h2 { font-size: 18px; flex: 1; }
@@ -1248,9 +1284,14 @@ function buildPrintFileList(orders) {
   return files;
 }
 // Télécharge et écrit les fichiers dans baseDir/folderName. onProgress(done, total)
-async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress) {
+async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress, extraFiles) {
   const lotDir = await makeLotFolder(baseDir, folderName);
-  const files = buildPrintFileList(gasOrders);
+  const files = buildPrintFileList(gasOrders).concat(extraFiles || []);
+  async function subDir(path) {
+    let h = lotDir;
+    for (const part of String(path || '').split('/').filter(Boolean)) h = await h.getDirectoryHandle(part, { create: true });
+    return h;
+  }
   const failed = [];
   let done = 0, written = 0;
   async function writeOne(f) {
@@ -1262,12 +1303,12 @@ async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         blob = await r.blob();
       }
-      const fh = await lotDir.getFileHandle(f.name, { create: true });
+      const fh = await (f.dir ? await subDir(f.dir) : lotDir).getFileHandle(f.name, { create: true });
       const w = await fh.createWritable();
       await w.write(blob); await w.close();
       written++;
     } catch (e) {
-      failed.push({ name: f.name, url: f.url, order: f.order, error: e.message });
+      failed.push({ name: (f.dir ? f.dir + '/' : '') + f.name, url: f.url, order: f.order, error: e.message });
     } finally {
       done++; if (onProgress) onProgress(done, files.length);
     }
@@ -1479,6 +1520,7 @@ document.addEventListener('keydown', e => {
   if (state.activeTab !== 'custom') return;
   if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)) return;
   if (document.getElementById('note-modal')?.classList.contains('open')) return;
+  if (document.getElementById('sav-modal')?.classList.contains('open')) { if (e.key === 'Escape') closeSavModal(); return; }
   const k = e.key;
   // Liste des commandes ouverte : seules Échap et / la referment
   if (document.getElementById('co-sheet')) {
@@ -2184,9 +2226,9 @@ async function renderDashboard() {
 
     const [countsData, notesData, calendarData, delayAlerts, processingBuckets] = await Promise.all([
       gql(`query {
-        custom: ordersCount(query: "tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
-        toorder: ordersCount(query: "tag:TOORDER AND status:open") { count }
-        todoprint: ordersCount(query: "tag:TODOPRINT AND status:open") { count }
+        custom: ordersCount(query: "(tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)) OR tag:SAV") { count }
+        toorder: ordersCount(query: "tag:TOORDER AND (status:open OR tag:SAV)") { count }
+        todoprint: ordersCount(query: "tag:TODOPRINT AND (status:open OR tag:SAV)") { count }
         urgent: ordersCount(query: "tag:urgent AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
       }`),
       gql(`query {
@@ -2286,8 +2328,9 @@ const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName 
   fulfillments(first: 5) { createdAt trackingInfo(first: 1) { number url } }
   dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
   estRush: metafield(namespace: "custom", key: "est_rush") { value }
+  savMf: metafield(namespace: "custom", key: "sav") { value }
   lineItems(first: 250) { edges { node { id title quantity currentQuantity requiresShipping
-    variant { title
+    variant { id title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
       imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value }
     }
@@ -2318,7 +2361,8 @@ function sortOrdersByDeadline(orders) {
 
 async function fetchCustomOrders(urgent = false) {
   const base = 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)';
-  const q = urgent ? `${base} AND tag:urgent` : base;
+  // Les commandes avec un SAV ouvert (balise SAV) reviennent en préparation, même déjà expédiées
+  const q = urgent ? `(${base}) AND tag:urgent` : `(${base}) OR tag:SAV`;
   let orders = [], hasNext = true, cursor = null;
   while (hasNext) {
     const data = await gql(`query($first: Int!, $after: String, $q: String!) {
@@ -2485,7 +2529,8 @@ function renderOrderView() {
   const ageInDays = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 86400000);
   const ageTone = ageInDays < 5 ? 'success' : ageInDays <= 10 ? 'warning' : 'critical';
   const ageLabel = ageInDays < 5 ? 'Récente' : ageInDays <= 10 ? 'En retard' : 'Critique';
-  const physicalItems = activeItems.filter(({node:li}) => isPhysicalLine(li));
+  const savPrep = savOpen(order).length && order.displayFulfillmentStatus === 'FULFILLED';
+  const physicalItems = (savPrep ? savOpenLineEdges(order) : activeItems).filter(({node:li}) => isPhysicalLine(li));
   const prepItems = physicalItems.map(({node:li}) => {
     const v = li.variant?.title; const sv = v && v!=='Default Title';
     return `<span class="prep-item"><strong>${li.currentQuantity}×</strong> ${shortProductTitle(li.title)}${sv?` — ${v}`:''}</span>`;
@@ -2519,7 +2564,9 @@ function renderOrderView() {
       ${isUrgent && !shipState ? `<span class="pill pill-urgent">${ICO.alert}URGENT</span>` : ''}
       ${estRushBadge}
       ${renderStatusBadges(order.tags)}
-      <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="co-shopify">${ICO.ext}Voir dans Shopify</a>
+      ${savOpen(order).length ? '<span class="pill" style="background:#7c3aed">SAV</span>' : ''}
+      <button class="btn" onclick="openSavModal()" style="margin-left:auto;min-height:44px;">${ICO.alert} SAV</button>
+      <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="co-shopify" style="margin-left:0">${ICO.ext}Voir dans Shopify</a>
     </div>
     <div class="co-info-row">
       ${delaiBlock}
@@ -2529,8 +2576,9 @@ function renderOrderView() {
         <div><dt>Âge</dt>${delaiBlock ? `<dd>${ageInDays} j</dd>` : `<dd class="tone-${ageTone}">${ageInDays} j<small>${ageLabel}</small></dd>`}</div>
       </dl>
     </div>
+    ${savBannerHtml(order)}
     ${hasNote ? `<div class="co-note">${ICO.note}<div><strong>Note client : </strong><span class="alert-text">${order.note}</span></div></div>` : ''}
-    <div class="prep-list"><span class="prep-label">${shipState ? 'Contenu' : 'À préparer'}</span>${prepItems}</div>
+    <div class="prep-list"><span class="prep-label">${savPrep ? 'SAV à préparer' : shipState ? 'Contenu' : 'À préparer'}</span>${prepItems}</div>
   </div>
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
@@ -2581,6 +2629,327 @@ function renderOrderView() {
   html += `<div class="co-keys"><span><kbd>0-9</kbd>n° de commande</span><span><kbd>Entrée</kbd>ouvrir / suivante</span><span><kbd>+</kbd>suivante</span><span><kbd>−</kbd>précédente</span><span><kbd>*</kbd>urgentes / toutes</span><span><kbd>/</kbd>liste</span><span><kbd>.</kbd>Sendcloud</span><span><kbd>Échap</kbd>annuler</span></div>`;
   c.innerHTML = html;
   updateTypedUI();
+}
+
+// ════════════════════════════════════════════
+// SAV — par ligne de commande
+// Stockage : metafield de commande custom.sav (JSON), une entrée par déclaration SAV :
+//   { id, date, motif, note, statut:'ouvert'|'clos', closedAt, annule, historique:[],
+//     lines:[{ lineId, title, variantTitle, qty, print:bool, sup:bool, newVariant:{id,title,sku}|null,
+//              printLot:'print_AAAAMMJJ'|'', supLot:'order_AAAAMMJJ'|'' }] }
+// Balises : SAV tant qu'une entrée est ouverte ; TODOPRINT / TOORDER posées pour les lignes
+// à refaire. Dans les onglets Impression / Fournisseur, une commande avec des lignes SAV en
+// attente n'exporte QUE ces lignes (quantité SAV, variante de remplacement éventuelle).
+// La validation d'un lot renseigne printLot / supLot ; l'expédition clôt le SAV.
+// ════════════════════════════════════════════
+const SAV_MOTIFS = [
+  { k: 'impression', label: 'Erreur d’impression', print: true, sup: false },
+  { k: 'pressage', label: 'Erreur de pressage / flocage', print: true, sup: true },
+  { k: 'client_produit', label: 'Client : produit / taille', print: true, sup: true },
+  { k: 'client_placement', label: 'Client : placement / logo', print: true, sup: true },
+  { k: 'textile', label: 'Défaut textile', print: true, sup: true },
+  { k: 'transport', label: 'Perdu / abîmé transport', print: true, sup: true },
+  { k: 'autre', label: 'Autre', print: true, sup: false }
+];
+const SAV_MF = 'savMf: metafield(namespace:"custom", key:"sav"){ value }';
+const savState = { order: null, sel: {}, motif: '', note: '', variants: {}, loading: false, saving: false };
+
+function savMotifLabel(k) { const m = SAV_MOTIFS.find(function (x) { return x.k === k; }); return m ? m.label : (k || ''); }
+function savList(order) {
+  try { const v = order && order.savMf && order.savMf.value; const l = v ? JSON.parse(v) : []; return Array.isArray(l) ? l : []; }
+  catch (e) { return []; }
+}
+function savOpen(order) { return savList(order).filter(function (e) { return e.statut !== 'clos'; }); }
+// Lignes SAV d'un type ('print' | 'sup') : en attente (lotTag absent) ou rattachées à un lot donné.
+function savLinesFor(order, kind, lotTag) {
+  const out = [];
+  savList(order).forEach(function (e) {
+    (e.lines || []).forEach(function (l) {
+      if (!l[kind]) return;
+      const lot = kind === 'print' ? l.printLot : l.supLot;
+      if (lotTag ? lot === lotTag : (!lot && e.statut !== 'clos')) out.push({ e: e, l: l });
+    });
+  });
+  return out;
+}
+// Remplace activeLineItemEdges dans les exports : lignes SAV seules si la commande en a en attente.
+function prodLineEdges(order, kind, lotTag) {
+  const sav = savLinesFor(order, kind, lotTag);
+  if (!sav.length) return activeLineItemEdges(order);
+  const byId = {};
+  (order.lineItems && order.lineItems.edges || []).forEach(function (x) { byId[x.node.id] = x.node; });
+  return sav.map(function (x) {
+    const li = byId[x.l.lineId] || { id: x.l.lineId, title: x.l.title, customAttributes: [], variant: { title: x.l.variantTitle || '' } };
+    const node = Object.assign({}, li, { currentQuantity: x.l.qty, savMotif: x.e.motif });
+    if (kind === 'sup' && x.l.newVariant) node.variant = Object.assign({}, li.variant || {}, { title: x.l.newVariant.title, imbretexSku: { value: x.l.newVariant.sku || '' } });
+    return { node: node };
+  });
+}
+// Toutes les lignes des SAV ouverts (pour l'affichage « SAV à préparer »), quantité SAV.
+function savOpenLineEdges(order) {
+  const byId = {}, seen = {}, out = [];
+  (order.lineItems && order.lineItems.edges || []).forEach(function (x) { byId[x.node.id] = x.node; });
+  savOpen(order).forEach(function (e) {
+    (e.lines || []).forEach(function (l) {
+      const li = byId[l.lineId]; if (!li || seen[l.lineId]) return; seen[l.lineId] = 1;
+      const node = Object.assign({}, li, { currentQuantity: l.qty });
+      if (l.newVariant) node.variant = Object.assign({}, li.variant || {}, { title: l.newVariant.title });
+      out.push({ node: node });
+    });
+  });
+  return out;
+}
+function savNoteFor(order, kind) {
+  const s = savLinesFor(order, kind);
+  if (!s.length) return '';
+  return 'SAV : ' + s.map(function (x) { return x.l.qty + '× ' + shortProductTitle(x.l.title) + ' (' + savMotifLabel(x.e.motif) + (x.e.note ? ' — ' + x.e.note : '') + ')'; }).join(' ; ');
+}
+function savBadge(order, kind) {
+  if (!savOpen(order).length) return '';
+  const n = kind ? savLinesFor(order, kind).length : 0;
+  return '<span class="badge badge-sav" title="' + escapeHtml(savNoteFor(order, kind || 'print') || 'SAV en cours') + '">SAV' + (n ? ' · ' + n + ' ligne' + (n > 1 ? 's' : '') : '') + '</span>';
+}
+
+// Relit la commande, applique la modification, écrit, relit pour vérifier.
+async function savWrite(orderId, mutator) {
+  const read = 'query($id:ID!){ order(id:$id){ id tags ' + SAV_MF + ' } }';
+  const r = await gql(read, { id: orderId });
+  const list = savList(r.order);
+  const next = mutator(list, r.order) || list;
+  const m = await gql('mutation($mf:[MetafieldsSetInput!]!){ metafieldsSet(metafields:$mf){ metafields{ id } userErrors{ message } } }',
+    { mf: [{ ownerId: orderId, namespace: 'custom', key: 'sav', type: 'json', value: JSON.stringify(next) }] });
+  const errs = m.metafieldsSet.userErrors;
+  if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
+  const check = await gql(read, { id: orderId });
+  const got = savList(check.order);
+  if (got.length !== next.length) throw new Error('Vérification SAV échouée (' + got.length + ' au lieu de ' + next.length + ')');
+  return { list: got, tags: check.order.tags || [] };
+}
+// Aligne les balises sur l'état SAV. touched.print / touched.sup : ne gère TODOPRINT / TOORDER que si le SAV les concerne.
+async function savSyncTags(orderId, list, tags, touched) {
+  const fake = { savMf: { value: JSON.stringify(list) } };
+  const want = { SAV: savOpen(fake).length > 0 };
+  if (touched.print) want.TODOPRINT = savLinesFor(fake, 'print').length > 0;
+  if (touched.sup) want.TOORDER = savLinesFor(fake, 'sup').length > 0;
+  const add = [], rem = [];
+  Object.keys(want).forEach(function (t) { const has = tags.indexOf(t) > -1; if (want[t] && !has) add.push(t); if (!want[t] && has) rem.push(t); });
+  if (add.length) await gql('mutation($id:ID!,$tags:[String!]!){tagsAdd(id:$id,tags:$tags){userErrors{message}}}', { id: orderId, tags: add });
+  if (rem.length) await gql('mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){userErrors{message}}}', { id: orderId, tags: rem });
+}
+function savLog(e, texte) { e.historique = e.historique || []; e.historique.unshift({ date: new Date().toISOString(), texte: texte }); }
+
+// Appelé à la validation d'un lot (impression ou fournisseur) : rattache les lignes SAV en attente au lot.
+async function savMarkLot(orders, kind, tag) {
+  for (const o of orders) {
+    if (!savLinesFor(o, kind).length) continue;
+    try {
+      await savWrite(o.id, function (list) {
+        list.forEach(function (e) {
+          if (e.statut === 'clos') return;
+          let n = 0;
+          (e.lines || []).forEach(function (l) {
+            if (!l[kind]) return;
+            if (kind === 'print' && !l.printLot) { l.printLot = tag; n++; }
+            if (kind === 'sup' && !l.supLot) { l.supLot = tag; n++; }
+          });
+          if (n) savLog(e, (kind === 'print' ? 'Réimprimé' : 'Recommandé') + ' (' + tag + ')');
+        });
+        return list;
+      });
+    } catch (err) { showToast('⚠️ SAV ' + o.name + ' : ' + err.message, 'warning'); }
+  }
+}
+// Clôt les SAV ouverts d'une commande (expédition) ; annule ce qui restait en attente.
+async function savCloseAll(orderId, why) {
+  let touched = { print: false, sup: false };
+  const res = await savWrite(orderId, function (list) {
+    list.forEach(function (e) {
+      if (e.statut === 'clos') return;
+      (e.lines || []).forEach(function (l) { if (l.print && !l.printLot) touched.print = true; if (l.sup && !l.supLot) touched.sup = true; });
+      e.statut = 'clos'; e.closedAt = new Date().toISOString(); savLog(e, why || 'Expédié');
+    });
+    return list;
+  });
+  await savSyncTags(orderId, res.list, res.tags, touched);
+}
+
+// ── Modale SAV (vue commande) ──
+async function openSavModal() {
+  const order = state.orders[state.currentIndex];
+  if (!order) return;
+  savState.order = order; savState.sel = {}; savState.motif = ''; savState.note = ''; savState.variants = {}; savState.loading = true;
+  savRender();
+  try {
+    const r = await gql('query($id:ID!){ order(id:$id){ id tags ' + SAV_MF + ' lineItems(first:100){ nodes{ id variant{ id product{ variants(first:100){ nodes{ id title imbretexSku: metafield(namespace:"custom", key:"imbretex_sku"){ value } } } } } } } } }', { id: order.id });
+    order.savMf = r.order.savMf; order.tags = r.order.tags;
+    (r.order.lineItems.nodes || []).forEach(function (n) { savState.variants[n.id] = n.variant && n.variant.product ? n.variant.product.variants.nodes : []; });
+  } catch (e) { showToast('⚠️ ' + e.message, 'warning'); }
+  savState.loading = false;
+  savRender();
+}
+function closeSavModal() { if (savState.saving) return; const m = document.getElementById('sav-modal'); if (m) m.classList.remove('open'); savState.order = null; }
+function savPickMotif(k) {
+  savState.motif = k;
+  const m = SAV_MOTIFS.find(function (x) { return x.k === k; });
+  Object.keys(savState.sel).forEach(function (id) { const s = savState.sel[id]; if (s.on && !s.touched) { s.print = m.print && !s.printLocked; s.sup = m.sup && !s.supLocked; } });
+  savRender();
+}
+function savToggleLine(id) {
+  const order = savState.order;
+  const li = activeLineItemEdges(order).map(function (x) { return x.node; }).find(function (n) { return n.id === id; });
+  let s = savState.sel[id];
+  if (!s) {
+    const m = SAV_MOTIFS.find(function (x) { return x.k === savState.motif; }) || { print: true, sup: false };
+    const printLocked = (order.tags || []).indexOf('TODOPRINT') > -1 && !savLinesFor(order, 'print').length;
+    const supLocked = (order.tags || []).indexOf('TOORDER') > -1 && !savLinesFor(order, 'sup').length;
+    s = savState.sel[id] = { on: false, qty: li ? li.currentQuantity : 1, print: m.print && !printLocked, sup: m.sup && !supLocked, variantId: li && li.variant ? li.variant.id || '' : '', printLocked: printLocked, supLocked: supLocked, touched: false };
+  }
+  s.on = !s.on;
+  savRender();
+}
+function savSet(id, field, value) {
+  const s = savState.sel[id]; if (!s) return;
+  if (field === 'qty') { const max = s.max || 99; s.qty = Math.max(1, Math.min(max, value)); }
+  else { s[field] = value; s.touched = true; }
+  savRender();
+}
+function savLineStatusHtml(e, l) {
+  const out = [];
+  if (l.print) out.push(l.printLot ? '<span class="badge pro-badge-ok">' + icon('check') + 'Impr. ' + escapeHtml(l.printLot.replace('print_', '')) + '</span>' : (e.statut === 'clos' ? '<span class="badge badge-muted">Impr. annulée</span>' : '<span class="badge pro-badge-warn">Impr. à faire</span>'));
+  if (l.sup) out.push(l.supLot ? '<span class="badge pro-badge-ok">' + icon('check') + 'Produit ' + escapeHtml(l.supLot.replace('order_', '')) + '</span>' : (e.statut === 'clos' ? '<span class="badge badge-muted">Produit annulé</span>' : '<span class="badge pro-badge-warn">Produit à commander</span>'));
+  return out.join(' ');
+}
+function savEntriesHtml(order, onlyOpen) {
+  const list = savList(order).filter(function (e) { return !onlyOpen || e.statut !== 'clos'; });
+  return list.map(function (e) {
+    return '<div class="sav-entry' + (e.statut === 'clos' ? ' closed' : '') + '"><div class="sav-entry-head"><b>' + escapeHtml(savMotifLabel(e.motif)) + '</b><span class="muted">' + proFmtDate(e.date) + (e.statut === 'clos' ? ' · ' + (e.annule ? 'annulé' : 'clos') + ' le ' + proFmtDate(e.closedAt) : '') + '</span>' +
+      (e.statut !== 'clos' && !onlyOpen ? '<button class="btn btn-sm" onclick="savCancelEntry(\'' + e.id + '\')">Annuler ce SAV</button>' : '') + '</div>' +
+      (e.lines || []).map(function (l) {
+        return '<div class="sav-entry-line"><span><b>' + l.qty + '×</b> ' + escapeHtml(shortProductTitle(l.title)) + (l.variantTitle && l.variantTitle !== 'Default Title' ? ' — ' + escapeHtml(l.variantTitle) : '') + (l.newVariant ? ' → <b>' + escapeHtml(l.newVariant.title) + '</b>' : '') + '</span>' + savLineStatusHtml(e, l) + '</div>';
+      }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + '</div>';
+  }).join('');
+}
+function savRender() {
+  const order = savState.order; if (!order) return;
+  let m = document.getElementById('sav-modal');
+  if (!m) { m = document.createElement('div'); m.id = 'sav-modal'; m.addEventListener('click', function (ev) { if (ev.target === m) closeSavModal(); }); document.body.appendChild(m); }
+  let h = '<div class="pro-box" onclick="event.stopPropagation()"><div class="pro-box-head"><h2>SAV — ' + escapeHtml(order.name) + '</h2><button class="btn btn-icon btn-sm" onclick="closeSavModal()" title="Fermer">' + icon('x') + '</button></div><div class="sav-body">';
+  if (savState.loading) { h += loadingBlock('Chargement…') + '</div></div>'; m.innerHTML = h; m.classList.add('open'); return; }
+  const existing = savEntriesHtml(order, false);
+  if (existing) h += '<div class="sav-section-title">SAV déclarés</div>' + existing;
+  h += '<div class="sav-section-title">Nouveau SAV</div>';
+  h += '<div class="sav-motifs">' + SAV_MOTIFS.map(function (x) { return '<button class="sav-chip' + (savState.motif === x.k ? ' on' : '') + '" onclick="savPickMotif(\'' + x.k + '\')">' + escapeHtml(x.label) + '</button>'; }).join('') + '</div>';
+  h += '<div class="sav-lines">';
+  activeLineItemEdges(order).forEach(function (x) {
+    const li = x.node;
+    if (!isPhysicalLine(li)) return;
+    const s = savState.sel[li.id];
+    const on = !!(s && s.on);
+    if (s) s.max = li.currentQuantity;
+    const v = li.variant && li.variant.title && li.variant.title !== 'Default Title' ? li.variant.title : '';
+    h += '<div class="sav-line' + (on ? ' on' : '') + '"><button class="sav-line-toggle" onclick="savToggleLine(\'' + li.id + '\')">' + (on ? icon('check') : '') + '</button>' +
+      '<div class="sav-line-main" onclick="savToggleLine(\'' + li.id + '\')"><b>' + escapeHtml(shortProductTitle(li.title)) + '</b>' + (v ? '<span>' + escapeHtml(v) + '</span>' : '') + '<small>' + li.currentQuantity + ' commandé' + (li.currentQuantity > 1 ? 's' : '') + '</small></div>';
+    if (on) {
+      const variants = savState.variants[li.id] || [];
+      h += '<div class="sav-line-opts">' +
+        '<div class="sav-qty"><button onclick="savSet(\'' + li.id + '\',\'qty\',' + (s.qty - 1) + ')">−</button><b>' + s.qty + '</b><button onclick="savSet(\'' + li.id + '\',\'qty\',' + (s.qty + 1) + ')">+</button></div>' +
+        '<button class="sav-chip' + (s.print ? ' on' : '') + '"' + (s.printLocked ? ' disabled title="Déjà en attente d’impression (lot normal)"' : '') + ' onclick="savSet(\'' + li.id + '\',\'print\',' + !s.print + ')">' + icon('printer') + 'Réimpression</button>' +
+        '<button class="sav-chip' + (s.sup ? ' on' : '') + '"' + (s.supLocked ? ' disabled title="Déjà en attente de commande fournisseur"' : '') + ' onclick="savSet(\'' + li.id + '\',\'sup\',' + !s.sup + ')">' + icon('package') + 'Produit</button>' +
+        (s.sup && variants.length > 1 ? '<select class="input sav-variant" onchange="savSet(\'' + li.id + '\',\'variantId\',this.value)">' + variants.map(function (vv) { return '<option value="' + vv.id + '"' + (vv.id === s.variantId ? ' selected' : '') + '>' + escapeHtml(vv.title) + (li.variant && vv.id === li.variant.id ? ' (même)' : '') + (vv.imbretexSku && vv.imbretexSku.value ? '' : ' — sans réf IMBRETEX') + '</option>'; }).join('') + '</select>' : '') +
+        '</div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '<div class="form-group" style="margin-top:12px;"><label for="sav-note">Note <span class="pro-opt">(optionnel)</span></label><textarea id="sav-note" rows="2" placeholder="ex. logo décalé de 2 cm, client prévenu…" oninput="savState.note=this.value">' + escapeHtml(savState.note) + '</textarea></div>';
+  h += '</div><div class="pro-box-foot"><span style="flex:1"></span><button class="btn" onclick="closeSavModal()">Fermer</button><button class="btn btn-primary" id="sav-save-btn" onclick="savSubmit()">' + icon('save') + 'Créer le SAV</button></div></div>';
+  m.innerHTML = h;
+  m.classList.add('open');
+}
+async function savSubmit() {
+  const order = savState.order; if (!order) return;
+  if (!savState.motif) { showToast('Choisis un motif', 'warning'); return; }
+  const lis = {}; activeLineItemEdges(order).forEach(function (x) { lis[x.node.id] = x.node; });
+  const lines = [];
+  Object.keys(savState.sel).forEach(function (id) {
+    const s = savState.sel[id]; const li = lis[id];
+    if (!s.on || !li || (!s.print && !s.sup)) return;
+    let nv = null;
+    if (s.sup && li.variant && s.variantId && s.variantId !== li.variant.id) {
+      const vv = (savState.variants[id] || []).find(function (x) { return x.id === s.variantId; });
+      if (vv) nv = { id: vv.id, title: vv.title, sku: vv.imbretexSku ? vv.imbretexSku.value : '' };
+    }
+    lines.push({ lineId: id, title: li.title, variantTitle: li.variant ? li.variant.title : '', qty: s.qty, print: !!s.print, sup: !!s.sup, newVariant: nv, printLot: '', supLot: '' });
+  });
+  if (!lines.length) { showToast('Sélectionne au moins une ligne avec réimpression et/ou produit', 'warning'); return; }
+  const btn = document.getElementById('sav-save-btn'); if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  savState.saving = true;
+  try {
+    const entry = { id: 's' + Date.now().toString(36), date: new Date().toISOString(), motif: savState.motif, note: (savState.note || '').trim(), statut: 'ouvert', lines: lines, historique: [] };
+    savLog(entry, 'Déclaré');
+    const res = await savWrite(order.id, function (list) { list.push(entry); return list; });
+    await savSyncTags(order.id, res.list, res.tags, { print: lines.some(function (l) { return l.print; }), sup: lines.some(function (l) { return l.sup; }) });
+    savState.saving = false;
+    showToast('✅ SAV créé — ' + lines.length + ' ligne' + (lines.length > 1 ? 's' : '') + ' remise' + (lines.length > 1 ? 's' : '') + ' en production');
+    closeSavModal();
+    await savReloadCurrentOrder(order.id);
+    refreshProdBadges();
+  } catch (e) {
+    savState.saving = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = icon('save') + 'Créer le SAV'; }
+    showToast('⚠️ ' + e.message, 'warning');
+  }
+}
+async function savCancelEntry(entryId) {
+  const order = savState.order; if (!order) return;
+  try {
+    let touched = { print: false, sup: false };
+    const res = await savWrite(order.id, function (list) {
+      list.forEach(function (e) {
+        if (e.id !== entryId || e.statut === 'clos') return;
+        (e.lines || []).forEach(function (l) { if (l.print && !l.printLot) touched.print = true; if (l.sup && !l.supLot) touched.sup = true; });
+        e.statut = 'clos'; e.annule = true; e.closedAt = new Date().toISOString(); savLog(e, 'Annulé');
+      });
+      return list;
+    });
+    await savSyncTags(order.id, res.list, res.tags, touched);
+    order.savMf = { value: JSON.stringify(res.list) };
+    showToast('SAV annulé');
+    savRender();
+    savReloadCurrentOrder(order.id);
+    refreshProdBadges();
+  } catch (e) { showToast('⚠️ ' + e.message, 'warning'); }
+}
+async function savShipped() {
+  const order = state.orders[state.currentIndex]; if (!order) return;
+  const pending = savLinesFor(order, 'print').length + savLinesFor(order, 'sup').length;
+  if (pending && !window.__savForce) {
+    window.__savForce = true; setTimeout(function () { window.__savForce = false; }, 4000);
+    showToast('⚠️ Des lignes SAV ne sont pas encore imprimées / commandées — reclique pour clore quand même', 'warning');
+    return;
+  }
+  window.__savForce = false;
+  try {
+    await savCloseAll(order.id, 'Expédié');
+    launchConfetti(); showToast('✅ SAV ' + order.name + ' clos');
+    refreshProdBadges();
+    renderCustomTab(false);
+  } catch (e) { showToast('⚠️ ' + e.message, 'warning'); }
+}
+async function savReloadCurrentOrder(orderId) {
+  try {
+    const r = await gql('query($id:ID!){ order(id:$id){ ' + ORDER_FIELDS + ' } }', { id: orderId });
+    const i = state.orders.findIndex(function (o) { return o.id === orderId; });
+    if (r.order && i > -1) state.orders[i] = r.order;
+    if (state.activeTab === 'custom') renderOrderView();
+  } catch (e) { console.log('SAV reload:', e.message); }
+}
+// Bandeau dans la vue commande
+function savBannerHtml(order) {
+  if (!savOpen(order).length) return '';
+  return '<div class="co-sav"><div class="co-sav-head">' + ICO.alert + '<b>SAV en cours</b><span style="flex:1"></span>' +
+    '<button class="btn" onclick="openSavModal()">Gérer</button><button class="btn btn-primary" onclick="savShipped()">' + icon('check') + 'SAV expédié</button></div>' +
+    savEntriesHtml(order, true) + '</div>';
 }
 
 function renderVariantBig(variant) {
@@ -2701,7 +3070,7 @@ async function clearOrderSearch() {
 async function fetchToOrderOrders() {
   let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
-    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND status:open'});
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}savMf:metafield(namespace:"custom",key:"sav"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND (status:open OR tag:SAV)'});
     orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
   return orders;
@@ -2738,7 +3107,7 @@ async function renderSupplierTab() {
 function renderSupplierView() {
   const count = state.supplierOrders.length;
   const step1Done = state.supplierSnapshot.length > 0;
-  const units = state.supplierOrders.reduce((s, o) => s + activeLineItemEdges(o).reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
+  const units = state.supplierOrders.reduce((s, o) => s + prodLineEdges(o, 'sup').reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
   const sub = count === 0 ? 'Aucune commande à passer chez le fournisseur'
     : `<span class="num">${count}</span> commande${count>1?'s':''} avec la balise TOORDER · <span class="num">${units}</span> article${units>1?'s':''}`;
 
@@ -2759,6 +3128,7 @@ function renderSupplierView() {
       </div>
       ${step1Done ? `<div class="empty-inline ok step-status">${icon('checkCircle')}${state.supplierSnapshot.length} commande${state.supplierSnapshot.length>1?'s':''} exportée${state.supplierSnapshot.length>1?'s':''} — passe à l'étape 2 une fois la commande fournisseur passée.</div>` : ''}
       ${renderDelaiWarnings(state.supplierOrders)}
+      ${renderSupplierProBlock(state.supplierOrders)}
       ${renderSupplierNotes(state.supplierOrders)}`;
   } else {
     body = `<div id="step2-preview"><button class="btn btn-primary" onclick="previewStep2()">${icon('search')}Vérifier avant de valider</button></div>`;
@@ -2775,6 +3145,24 @@ function renderSupplierView() {
       <div class="card-title">${icon('history')} Historique des commandes fournisseur</div>
       <div id="history-content"><div class="empty-inline">Chargement…</div></div>
     </div>`;
+}
+
+function renderSupplierProBlock(orders) {
+  const pros = orders.filter(isProOrder);
+  if (!pros.length) return '';
+  const rows = pros.map(o => {
+    const customer = `${o.customer?.firstName||''} ${o.customer?.lastName||''}`.trim() || '\u2014';
+    const units = activeLineItemEdges(o).reduce((t, { node: li }) => t + li.currentQuantity, 0);
+    return `<div class="supplier-note-row">
+      <span class="supplier-note-order num">${escapeHtml(o.name)} ${proOrderBadge(o)}</span>
+      <span class="supplier-note-client">${escapeHtml(customer)} \u00b7 ${units} article${units>1?'s':''}</span>
+      <button class="btn btn-sm" onclick="proOpenByOrder('${o.id}')">${icon('external')}Fiche</button>
+    </div>`;
+  }).join('');
+  return `<div class="supplier-notes-block">
+    <div class="supplier-notes-header">${icon('star')}${pros.length} commande${pros.length>1?'s':''} pro dans ce lot \u2014 v\u00e9rifie les r\u00e9fs / quantit\u00e9s (les lignes sans r\u00e9f IMBRETEX ne sont pas dans l\u2019export)</div>
+    ${rows}
+  </div>`;
 }
 
 function renderDelaiWarnings(orders) {
@@ -2861,6 +3249,7 @@ async function validateSupplierOrders(orderIds) {
     try { await gql(removeMut,{id,tags:['TOORDER']}); await gql(addMut,{id,tags:[newTag]}); ok++; }
     catch(e) { errors.push(id); }
   }
+  await savMarkLot(state.supplierOrders.filter(o => orderIds.includes(o.id)), 'sup', newTag);
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
   state.supplierSnapshot = [];
@@ -2878,9 +3267,9 @@ async function validateSupplierOrders(orderIds) {
   loadHistory();
 }
 
-function generateImbretex(orders, dateOverride = null) {
+function generateImbretex(orders, dateOverride = null, lotTag = null) {
   const skuMap = new Map();
-  orders.forEach(o => activeLineItemEdges(o).forEach(({node:li}) => {
+  orders.forEach(o => prodLineEdges(o, 'sup', lotTag).forEach(({node:li}) => {
     const sku = li.variant?.imbretexSku?.value; if (sku) skuMap.set(sku, (skuMap.get(sku)||0) + li.currentQuantity);
   }));
   const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
@@ -2890,13 +3279,13 @@ function generateImbretex(orders, dateOverride = null) {
   return { url: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`, filename: `commande-imbretex-${dateStr}.csv` };
 }
 
-function generateComplete(orders, dateOverride = null) {
+function generateComplete(orders, dateOverride = null, lotTag = null) {
   let csv = 'Numéro commande;Date;Client;Produit;Variant;Quantité;imbretex_sku;Notes commande\n';
   orders.forEach(o => {
     const date = new Date(o.createdAt).toLocaleDateString('fr-FR');
     const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
     const notes = (o.note||'').replace(/;/g,',').replace(/\n/g,' ');
-    activeLineItemEdges(o).forEach(({node:li}) => { csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.currentQuantity};${li.variant?.imbretexSku?.value||''};${notes}\n`; });
+    prodLineEdges(o, 'sup', lotTag).forEach(({node:li}) => { const n = (li.savMotif ? '[SAV ' + savMotifLabel(li.savMotif) + '] ' : '') + notes; csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.currentQuantity};${li.variant?.imbretexSku?.value||''};${n}\n`; });
   });
   const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
@@ -2919,9 +3308,9 @@ async function loadHistory() {
 async function regenAndDownload(tag, type) {
   try {
     let orders=[], hasNext=true, cursor=null;
-    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}savMf:metafield(namespace:"custom",key:"sav"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
     const dateStr = tag.replace('order_','');
-    const {url,filename} = type==='imbretex'?generateImbretex(orders,dateStr):generateComplete(orders,dateStr);
+    const {url,filename} = type==='imbretex'?generateImbretex(orders,dateStr,tag):generateComplete(orders,dateStr,tag);
     const a=document.createElement('a');a.href=url;a.download=filename;a.click();
     showToast(`✅ Téléchargé`);
   } catch(e) { showToast('Erreur: '+e.message,'error'); }
@@ -2986,7 +3375,8 @@ async function regenPrintLotZip(lotId) {
   const dtfDir = await ensureDtfDir(false);
   try {
     const data = await gql(`query($ids:[ID!]!){ nodes(ids:$ids){ ... on Order {
-      id name note
+      id name note tags
+      savMf: metafield(namespace:"custom", key:"sav"){ value }
       lineItems(first:250){edges{node{
         id title quantity currentQuantity
         customAttributes{key value}
@@ -2995,7 +3385,7 @@ async function regenPrintLotZip(lotId) {
     const orders = (data.nodes || []).filter(Boolean);
     const gasOrders = [];
     for (const order of orders) {
-      for (const { node: li } of activeLineItemEdges(order)) {
+      for (const { node: li } of prodLineEdges(order, 'print', lot.tag)) {
         const liAttrs = Object.fromEntries((li.customAttributes || []).map(a => [a.key, a.value]));
         const designUrls = Object.entries(liAttrs)
           .filter(([k]) => k.startsWith('_tib_design_link_'))
@@ -3010,7 +3400,7 @@ async function regenPrintLotZip(lotId) {
       }
     }
     const localP = dtfDir
-      ? saveLotToDtf(dtfDir, lot.tag || printTagForDate(new Date(lot.dateGeneration)), gasOrders, function (d, t) { btn.textContent = 'DTF ' + d + '/' + t + '\u2026'; })
+      ? proExtraFilesFor(orders).then(extra => saveLotToDtf(dtfDir, lot.tag || printTagForDate(new Date(lot.dateGeneration)), gasOrders, function (d, t) { btn.textContent = 'DTF ' + d + '/' + t + '\u2026'; }, extra))
           .catch(function (e) { return { error: e.message }; })
       : Promise.resolve(null);
     const [gasR, local] = await Promise.all([callGas(gasOrders).then(r => ({ ok: r }), e => ({ err: e })), localP]);
@@ -3070,6 +3460,7 @@ async function fetchTodoPrintOrders() {
         edges{node{
           id name createdAt note tags
           customer{firstName lastName}
+          savMf: metafield(namespace:"custom", key:"sav"){ value }
           lineItems(first:250){edges{node{
             id title quantity currentQuantity
             variant{title}
@@ -3078,7 +3469,7 @@ async function fetchTodoPrintOrders() {
         }}
         pageInfo{hasNextPage endCursor}
       }
-    }`, {first:50,after:cursor,q:'tag:TODOPRINT AND status:open'});
+    }`, {first:50,after:cursor,q:'tag:TODOPRINT AND (status:open OR tag:SAV)'});
     orders.push(...data.orders.edges.map(e=>e.node));
     hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
@@ -3144,7 +3535,7 @@ function renderPrintView() {
       const isSelected = state.printSelected.has(o.id);
       const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
       const ageInDays = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 86400000);
-      const activeItems = activeLineItemEdges(o);
+      const activeItems = prodLineEdges(o, 'print');
       const totalQty = activeItems.reduce((s,{node:li})=>s+li.currentQuantity,0);
       const fileCount = activeItems.reduce((s,{node:li}) => {
         const attrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value])); const designs = (attrs['All designs']||'').split(/[\s,]+/).filter(u=>u.startsWith('http'));
@@ -3154,8 +3545,8 @@ function renderPrintView() {
       return `<label class="print-order-item ${!isSelected?'deselected':''}" id="print-item-${o.id}">
         <input type="checkbox" ${isSelected?'checked':''} ${zipDone ? 'disabled' : ''} onchange="togglePrintOrder(this.dataset.id, this.checked)" data-id="${o.id}" />
         <div class="print-order-info">
-          <div class="print-order-name"><span class="num">${escapeHtml(o.name)}</span> <span class="badge badge-info num">${totalQty} art.</span> <span class="badge badge-info num" title="Commande passée il y a ${ageInDays} jour${ageInDays>1?'s':''}">${ageInDays}j</span></div>
-          <div class="print-order-detail">${escapeHtml(customer||'—')} · ${plural(activeItems.length, 'ligne')} · ${plural(fileCount, 'fichier')}</div>
+          <div class="print-order-name"><span class="num">${escapeHtml(o.name)}</span> ${proOrderBadge(o)} ${savBadge(o, 'print')} <span class="badge badge-info num">${totalQty} art.</span> <span class="badge badge-info num" title="Commande passée il y a ${ageInDays} jour${ageInDays>1?'s':''}">${ageInDays}j</span></div>
+          <div class="print-order-detail">${escapeHtml(customer||'—')} · ${plural(activeItems.length, 'ligne')} · ${isProOrder(o) ? 'fichiers de la fiche pro \u2192 dossier PRO/' : plural(fileCount, 'fichier')}</div>
           ${o.note?.trim() ? `<div class="print-order-note">${icon('note')}<span>${escapeHtml(o.note)}</span></div>` : ''}
         </div>
       </label>`;
@@ -3194,7 +3585,7 @@ function renderPrintView() {
       <button class="btn btn-primary" onclick="validatePrintOrders()">${icon('check')}Supprimer TODOPRINT (${plural(zipCount, 'commande')})</button>`;
   }
 
-  const units = orders.reduce((s, o) => s + activeLineItemEdges(o).reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
+  const units = orders.reduce((s, o) => s + prodLineEdges(o, 'print').reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
   c.innerHTML = `
     ${pageHead('Impression', `<span class="num">${orders.length}</span> commande${orders.length>1?'s':''} à imprimer · <span class="num">${units}</span> article${units>1?'s':''}`, refreshBtn)}
     <div class="card wizard">
@@ -3268,7 +3659,7 @@ async function generatePrintZip() {
   // Prépare les données pour le GAS
   const gasOrders = [];
   for (const order of selectedOrders) {
-    for (const {node:li} of activeLineItemEdges(order)) {
+    for (const {node:li} of prodLineEdges(order, 'print')) {
       const liAttrs = Object.fromEntries((li.customAttributes||[]).map(a=>[a.key,a.value]));
       // Les URLs de design sont dans _tib_design_link_1, _tib_design_link_2, etc.
       const designUrls = Object.entries(liAttrs)
@@ -3284,7 +3675,7 @@ async function generatePrintZip() {
       gasOrders.push({
         orderName: order.name,
         quantity: li.currentQuantity,
-        note: order.note || '',
+        note: [savNoteFor(order, 'print'), order.note || ''].filter(Boolean).join('\n'),
         productTitle: li.title || '',
         designUrls,
         customizationJson: annexeJson,
@@ -3297,7 +3688,7 @@ async function generatePrintZip() {
 
   try {
     const localP = dtfDir
-      ? saveLotToDtf(dtfDir, printTagForDate(new Date()), gasOrders, function (d, t) { btn.textContent = 'G\u00e9n\u00e9ration\u2026 DTF ' + d + '/' + t + ' fichiers, ZIP Drive en cours'; })
+      ? proExtraFilesFor(selectedOrders).then(extra => saveLotToDtf(dtfDir, printTagForDate(new Date()), gasOrders, function (d, t) { btn.textContent = 'G\u00e9n\u00e9ration\u2026 DTF ' + d + '/' + t + ' fichiers, ZIP Drive en cours'; }, extra))
           .catch(function (e) { return { error: e.message }; })
       : Promise.resolve(null);
     const [gasR, local] = await Promise.all([callGas(gasOrders).then(r => ({ ok: r }), e => ({ err: e })), localP]);
@@ -3332,6 +3723,7 @@ async function validatePrintOrders() {
     }
     catch(e) { errors.push(id); }
   }
+  await savMarkLot(state.printOrders.filter(o => state.printZipOrderIds.includes(o.id)), 'print', printTag);
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
   else showToast(`✅ ${ok} commande(s) archivées — tag ${printTag} ajouté`);
 
@@ -3417,6 +3809,7 @@ async function checkCurrentOrderDone() {
       : ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
 
     if (!stillCustom || fulfilled) {
+      if (fulfilled && savOpen(order).length) { try { await savCloseAll(order.id, 'Exp\u00e9di\u00e9 (auto)'); } catch (e) { console.log('SAV auto-close:', e.message); } }
       launchConfetti();
       playDoneSound();
       showToast('🎉 Commande traitée — suivante !');
@@ -5264,6 +5657,118 @@ async function proAutoSync() {
   } catch (e) { console.log('Pro auto-sync:', e.message); }
 }
 
+// ── Production (fournisseur / impression) : état lu dans les balises Shopify ──
+// TOORDER → à commander ; order_AAAAMMJJ → commandé ; TODOPRINT → à imprimer ; print_AAAAMMJJ → imprimé.
+// Les onglets Fournisseur / Impression gèrent ces balises comme pour les commandes custom.
+function proTagDate(tags, prefix) {
+  let last = '';
+  (tags || []).forEach(function (t) { const m = new RegExp('^' + prefix + '_(\\d{8})$').exec(t); if (m && m[1] > last) last = m[1]; });
+  return last ? last.slice(6, 8) + '/' + last.slice(4, 6) : '';
+}
+function proProdState(order) {
+  const tags = (order && order.tags) || [];
+  function one(todoTag, prefix) {
+    if (tags.indexOf(todoTag) > -1) return { s: 'todo', date: '' };
+    const d = proTagDate(tags, prefix);
+    return d ? { s: 'done', date: d } : { s: 'none', date: '' };
+  }
+  return { sup: one('TOORDER', 'order'), prt: one('TODOPRINT', 'print') };
+}
+function proProdChips(order) {
+  if (!order || order.displayFulfillmentStatus === 'FULFILLED') return [];
+  const st = proProdState(order), out = [];
+  [['sup', 'Fourn.', 'à commander', 'commandé'], ['prt', 'Impr.', 'à imprimer', 'imprimé']].forEach(function (k) {
+    const x = st[k[0]];
+    if (x.s === 'todo') out.push('<span class="badge pro-badge-warn">' + k[1] + ' ' + k[2] + '</span>');
+    else if (x.s === 'done') out.push('<span class="badge pro-badge-ok">' + icon('check') + k[1] + ' ' + x.date + '</span>');
+  });
+  return out;
+}
+function proProdPanelHtml(order) {
+  if (!order) return '';
+  const st = proProdState(order);
+  function row(key, label, todoTag, txtTodo, txtDone, btnAdd, btnRedo) {
+    const x = st[key];
+    let badge, btn;
+    if (x.s === 'todo') { badge = '<span class="badge pro-badge-warn">' + txtTodo + '</span>'; btn = '<button class="btn btn-sm" onclick="proToggleTag(\'' + todoTag + '\', false)">Retirer</button>'; }
+    else if (x.s === 'done') { badge = '<span class="badge pro-badge-ok">' + icon('check') + txtDone + ' le ' + x.date + '</span>'; btn = '<button class="btn btn-sm" onclick="proToggleTag(\'' + todoTag + '\', true)">' + btnRedo + '</button>'; }
+    else { badge = '<span class="badge badge-muted">Pas prévu</span>'; btn = '<button class="btn btn-sm btn-primary" onclick="proToggleTag(\'' + todoTag + '\', true)">' + icon('plus') + btnAdd + '</button>'; }
+    return '<div class="pro-prod-row"><span class="pro-prod-label">' + label + '</span>' + badge + btn + '</div>';
+  }
+  return '<div class="pro-panel"><div class="pro-panel-title">' + icon('printer') + 'Production</div>' +
+    row('sup', 'Fournisseur', 'TOORDER', 'À commander', 'Commandé', 'Ajouter à la commande fournisseur', 'Recommander') +
+    row('prt', 'Impression', 'TODOPRINT', 'À imprimer', 'Imprimé', 'Ajouter au prochain lot', 'Réimprimer') +
+    '<div class="field-hint">Remonte dans les onglets Fournisseur / Impression avec les commandes custom ; la validation du lot passe l’état à fait.</div></div>';
+}
+async function proToggleTag(tag, add) {
+  const e = proState.edit;
+  if (!e || !e.orderId) return;
+  const mut = add ? 'mutation($id:ID!,$tags:[String!]!){tagsAdd(id:$id,tags:$tags){node{id}userErrors{message}}}'
+                  : 'mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}';
+  try {
+    const r = await gql(mut, { id: e.orderId, tags: [tag] });
+    const res = r.tagsAdd || r.tagsRemove;
+    if (res.userErrors && res.userErrors.length) throw new Error(res.userErrors[0].message);
+    const o = proState.byId[e.orderId];
+    if (o) {
+      o.tags = (o.tags || []).filter(function (t) { return t !== tag; });
+      if (add) o.tags.push(tag);
+    }
+    showToast((add ? '✅ ' : '') + tag + (add ? ' ajouté' : ' retiré') + ' sur ' + (e.orderName || 'la commande'));
+    proRenderModal();
+    proRerenderColumns();
+    refreshProdBadges();
+  } catch (err) { showToast('⚠️ ' + err.message, 'warning'); }
+}
+// Met à jour les badges Fournisseur / Impression après un ajout/retrait de balise.
+async function refreshProdBadges() {
+  try {
+    const d = await gql('query{ a: ordersCount(query:"tag:TOORDER AND (status:open OR tag:SAV)"){count} b: ordersCount(query:"tag:TODOPRINT AND (status:open OR tag:SAV)"){count} }');
+    [['tab-supplier-badge', d.a.count], ['tab-print-badge', d.b.count]].forEach(function (x) {
+      const el = document.getElementById(x[0]); if (!el) return;
+      el.style.display = x[1] > 0 ? '' : 'none'; if (x[1] > 0) el.textContent = x[1];
+    });
+  } catch (e) { console.log('Badges prod:', e.message); }
+}
+// Ouvre la fiche pro d'une commande (depuis Fournisseur / Impression), ou propose d'en créer une.
+async function proOpenByOrder(orderId) {
+  try {
+    if (!proState.loaded) await proLoad();
+    const d = proState.demandes.find(function (x) { return x.orderId === orderId; });
+    if (d) return proOpen(d.id);
+    if (!proState.byId[orderId]) {
+      const r = await gql('query($id:ID!){ node(id:$id){ ... on Order{ ' + PRO_ORDER_FIELDS + ' } } }', { id: orderId });
+      if (r.node) proState.byId[orderId] = r.node;
+    }
+    proAdoptOrphan(orderId);
+  } catch (e) { showToast('⚠️ ' + e.message, 'warning'); }
+}
+function isProOrder(o) { return !!(o && (o.tags || []).indexOf('custompro') > -1); }
+function proOrderBadge(o) {
+  return isProOrder(o) ? '<span class="badge badge-pro" title="Ouvrir la fiche pro" onclick="event.preventDefault();event.stopPropagation();proOpenByOrder(\'' + o.id + '\')">PRO</span>' : '';
+}
+// Fichiers joints aux fiches pro des commandes données → fichiers à écrire dans PRO/<n°>/
+async function proExtraFilesFor(orders) {
+  const pros = orders.filter(isProOrder);
+  if (!pros.length) return [];
+  let demandes = [];
+  try { demandes = await proFetchDemandes(); } catch (e) { return []; }
+  const out = [];
+  pros.forEach(function (o) {
+    const d = demandes.find(function (x) { return x.orderId === o.id; });
+    const dir = 'PRO/' + String(o.name).replace(/[^0-9A-Za-z]/g, '');
+    const used = {};
+    ((d && d.fichiers) || []).forEach(function (f) {
+      if (!f.url) return;
+      let n = (f.name || 'fichier').replace(/[\\/:*?"<>|]/g, '_');
+      if (used[n]) { const dot = n.lastIndexOf('.'); n = (dot > 0 ? n.slice(0, dot) : n) + '_' + (++used[n]) + (dot > 0 ? n.slice(dot) : ''); } else used[n] = 1;
+      out.push({ url: f.url, name: n, dir: dir, order: o.name });
+    });
+    if (d && d.canva) out.push({ text: '[InternetShortcut]\r\nURL=' + d.canva + '\r\n', name: 'Canva.url', dir: dir, order: o.name });
+  });
+  return out;
+}
+
 function proLog(d, texte) {
   d.historique = d.historique || [];
   d.historique.unshift({ date: new Date().toISOString(), texte: texte });
@@ -5368,6 +5873,7 @@ function proCardHtml(c) {
   if (c.draft) chips.push('<a class="pro-link" href="' + proAdminUrl(c.draft.id) + '" target="_blank" onclick="event.stopPropagation()">' + icon('file') + escapeHtml(c.draft.name) + (c.order ? '' : ' · brouillon') + '</a>');
   if (c.order) chips.push('<a class="pro-link real" href="' + proAdminUrl(c.order.id) + '" target="_blank" onclick="event.stopPropagation()">' + icon('package') + escapeHtml(c.order.name) + (c.order.displayFulfillmentStatus === 'FULFILLED' ? ' · expédiée' : ' · réelle') + '</a>');
   if (d && d.canva) chips.push('<a class="pro-link" href="' + escapeHtml(d.canva) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + icon('palette') + 'Canva</a>');
+  proProdChips(c.order).forEach(function (x) { chips.push(x); });
   if (d && d.fichiers && d.fichiers.length) chips.push('<span class="pro-link muted">' + icon('file') + d.fichiers.length + ' fichier' + (d.fichiers.length > 1 ? 's' : '') + '</span>');
   if (chips.length) h += '<div class="pro-card-links">' + chips.join('') + '</div>';
   const foot = [];
@@ -5493,6 +5999,8 @@ function proRenderModal() {
     h += '<div class="pro-linked-actions">' + proLinkSelectHtml('order') + '<div class="field-hint">Rempli automatiquement quand le brouillon est payé.</div></div>';
   }
   h += '</div>';
+  if (order && !e._new) h += proProdPanelHtml(order);
+  else if (order && e._new) h += '<div class="field-hint">Enregistre la fiche pour g\u00e9rer fournisseur / impression.</div>';
 
   if (e.historique && e.historique.length) {
     h += '<div class="pro-panel"><div class="pro-panel-title">' + icon('history') + 'Historique</div><ul class="pro-histo">' +
