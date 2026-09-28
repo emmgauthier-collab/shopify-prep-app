@@ -895,6 +895,12 @@
   .co-sav-head { display: flex; align-items: center; gap: 10px; font-size: 18px; margin-bottom: 8px; flex-wrap: wrap; }
   .co-sav-head .ico { font-size: 24px; }
   .badge-sav { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+  .pill-past-inc { background: #ede9fe !important; color: #5b21b6 !important; border: 1px solid #c4b5fd; cursor: pointer; }
+  .sav-journal { margin-top: 6px; font-size: 13px; }
+  .sav-journal summary { cursor: pointer; color: var(--text-sub); display: inline-flex; align-items: center; gap: 6px; }
+  .sav-journal ol { margin: 6px 0 0 0; padding-left: 18px; }
+  .sav-journal li { margin: 2px 0; }
+  .sav-journal li span { color: var(--text-sub); margin-right: 8px; font-variant-numeric: tabular-nums; }
   .sav-group { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
   .sav-group-label { min-width: 96px; padding-top: 12px; font-weight: 700; color: var(--text-sub); }
   .sav-reexp { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
@@ -2585,7 +2591,7 @@ function renderOrderView() {
       ${isUrgent && !shipState ? `<span class="pill pill-urgent">${ICO.alert}URGENT</span>` : ''}
       ${estRushBadge}
       ${renderStatusBadges(order.tags)}
-      ${savOpen(order).length ? '<span class="pill" style="background:#7c3aed">INCIDENT</span>' : ''}
+      ${savOpen(order).length ? '<span class="pill" style="background:#7c3aed">INCIDENT</span>' : savPastBadge(order)}
       <button class="btn" onclick="openSavModal()" style="margin-left:auto;min-height:44px;">${ICO.alert} Incident</button>
       <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="co-shopify" style="margin-left:0">${ICO.ext}Voir dans Shopify</a>
     </div>
@@ -2852,6 +2858,24 @@ function savLineStatusHtml(e, l) {
   if (l.sup) out.push(l.supLot ? '<span class="badge pro-badge-ok">' + icon('check') + 'Produit ' + escapeHtml(l.supLot.replace('order_', '')) + '</span>' : (e.statut === 'clos' ? '<span class="badge badge-muted">Produit annulé</span>' : '<span class="badge pro-badge-warn">Produit à commander</span>'));
   return out.join(' ');
 }
+// Journal d'un incident (Déclaré → Réimprimé → Recommandé → Clos), du plus ancien au plus récent.
+function savJournalHtml(e) {
+  const h = (e.historique || []).slice().reverse();
+  if (!h.length) return '';
+  return '<details class="sav-journal"><summary>' + icon('history') + 'Journal (' + h.length + ')</summary><ol>' +
+    h.map(function (x) {
+      const d = new Date(x.date);
+      return '<li><span>' + (isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })) + '</span>' + escapeHtml(x.texte) + '</li>';
+    }).join('') + '</ol></details>';
+}
+// Badge « incidents passés » dans la vue commande (tous clos)
+function savPastBadge(order) {
+  const all = savList(order);
+  if (!all.length || savOpen(order).length) return '';
+  const n = all.filter(function (e) { return !e.annule; }).length;
+  if (!n) return '';
+  return '<button class="pill pill-past-inc" onclick="openSavModal()" title="Voir l\u2019historique des incidents">' + ICO.alert + n + ' incident' + (n > 1 ? 's' : '') + ' pass\u00e9' + (n > 1 ? 's' : '') + '</button>';
+}
 function savEntriesHtml(order, onlyOpen) {
   const list = savList(order).filter(function (e) { return !onlyOpen || e.statut !== 'clos'; });
   return list.map(function (e) {
@@ -2860,7 +2884,7 @@ function savEntriesHtml(order, onlyOpen) {
       (e.statut !== 'clos' && !onlyOpen ? '<button class="btn btn-sm" onclick="savCancelEntry(\'' + e.id + '\')">Annuler cet incident</button>' : '') + '</div>' +
       (e.lines || []).map(function (l) {
         return '<div class="sav-entry-line"><span><b>' + l.qty + '×</b> ' + escapeHtml(shortProductTitle(l.title)) + (l.variantTitle && l.variantTitle !== 'Default Title' ? ' — ' + escapeHtml(l.variantTitle) : '') + (l.newVariant ? ' → <b>' + escapeHtml(l.newVariant.title) + '</b>' : '') + '</span>' + savLineStatusHtml(e, l) + '</div>';
-      }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + '</div>';
+      }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + (onlyOpen ? '' : savJournalHtml(e)) + '</div>';
   }).join('');
 }
 function savRender() {
@@ -3053,7 +3077,7 @@ function incCardHtml(r) {
     '<div><b>' + escapeHtml(savMotifFull(e.motif)) + '</b> <span class="muted">· déclaré le ' + proFmtDate(e.date) + '</span></div>' +
     (e.lines || []).map(function (l) {
       return '<div class="sav-entry-line"><span><b>' + l.qty + '×</b> ' + escapeHtml(shortProductTitle(l.title)) + (l.variantTitle && l.variantTitle !== 'Default Title' ? ' — ' + escapeHtml(l.variantTitle) : '') + (l.newVariant ? ' → <b>' + escapeHtml(l.newVariant.title) + '</b>' : '') + '</span>' + savLineStatusHtml(e, l) + '</div>';
-    }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + '</div>';
+    }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + savJournalHtml(e) + '</div>';
 }
 function incStatsHtml() {
   const since = Date.now() - incState.days * 86400000;
@@ -3280,11 +3304,11 @@ function renderSupplierView() {
   const step1Done = state.supplierSnapshot.length > 0;
   const units = state.supplierOrders.reduce((s, o) => s + prodLineEdges(o, 'sup').reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
   const sub = count === 0 ? 'Aucune commande à passer chez le fournisseur'
-    : `<span class="num">${count}</span> commande${count>1?'s':''} avec la balise TOORDER · <span class="num">${units}</span> article${units>1?'s':''}`;
+    : `<span class="num">${count}</span> commande${count>1?'s':''} à passer chez le fournisseur · <span class="num">${units}</span> article${units>1?'s':''}`;
 
   const steps = [
     { title: 'Télécharger les fichiers', desc: 'Fichiers à intégrer dans le panier fournisseur', done: step1Done, unlocked: true },
-    { title: 'Valider la commande', desc: 'Supprime TOORDER sur les commandes exportées', done: false, unlocked: step1Done },
+    { title: 'Marquer comme commandé', desc: 'Une fois la commande passée chez le fournisseur', done: false, unlocked: step1Done },
   ];
   let cur = state.supplierStep || (step1Done ? 2 : 1);
   if (!steps[cur - 1] || !steps[cur - 1].unlocked) cur = 1;
@@ -3292,7 +3316,7 @@ function renderSupplierView() {
 
   let body;
   if (cur === 1) {
-    body = count === 0 ? `<div class="empty-inline ok">${icon('checkCircle')}Aucune commande avec la balise TOORDER.</div>` : `
+    body = count === 0 ? `<div class="empty-inline ok">${icon('checkCircle')}Aucune commande à passer chez le fournisseur.</div>` : `
       <div class="btn-group">
         <button class="btn btn-primary" onclick="downloadAndSnapshot('imbretex')">${icon('download')}Export IMBRETEX</button>
         <button class="btn" onclick="downloadAndSnapshot('complete')">${icon('download')}Export complet</button>
@@ -3403,8 +3427,8 @@ async function previewStep2() {
     if (newOrders.length > 0) {
       html += `<div class="alert alert-warning">${icon('alert')}<div><strong>${newOrders.length} nouvelle${newOrders.length>1?'s':''} commande${newOrders.length>1?'s':''}</strong><span class="alert-text"> arrivée${newOrders.length>1?'s':''} depuis l'export, exclue${newOrders.length>1?'s':''} de cette validation : ${newOrders.map(o=>`<strong>${escapeHtml(o.name)}</strong>`).join(', ')}</span></div></div>`;
     }
-    html += `<div style="margin-bottom:12px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span><strong class="num">${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à valider :</span>${toValidate.map(o=>`<span class="badge badge-info num">${escapeHtml(o.name)}</span>`).join('')}</div>`;
-    if (toValidate.length > 0) html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>${icon('check')}Valider ${toValidate.length} commande${toValidate.length>1?'s':''}</button>`;
+    html += `<div style="margin-bottom:12px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span><strong class="num">${toValidate.length}</strong> commande${toValidate.length>1?'s':''} à marquer comme commandée${toValidate.length>1?'s':''} :</span>${toValidate.map(o=>`<span class="badge badge-info num">${escapeHtml(o.name)}</span>`).join('')}</div>`;
+    if (toValidate.length > 0) html += `<button class="btn btn-primary" onclick='validateSupplierOrders(${JSON.stringify(toValidate.map(o=>o.id))})'>${icon('check')}Marquer ${toValidate.length} commande${toValidate.length>1?'s':''} comme commandée${toValidate.length>1?'s':''}</button>`;
     preview.innerHTML = html;
   } catch(e) { preview.innerHTML = errorBlock(e.message, 'previewStep2()'); }
 }
@@ -3422,7 +3446,7 @@ async function validateSupplierOrders(orderIds) {
   }
   await savMarkLot(state.supplierOrders.filter(o => orderIds.includes(o.id)), 'sup', newTag);
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
-  else showToast(`✅ ${ok} commande(s) validée(s) — tag ${newTag} ajouté`);
+  else showToast(`✅ ${ok} commande${ok>1?'s':''} marquée${ok>1?'s':''} commandée${ok>1?'s':''} — lot du ${newTag.slice(12,14)}/${newTag.slice(10,12)}`);
   refreshProdBadges();
   state.supplierSnapshot = [];
   state.supplierStep = null;
@@ -3650,7 +3674,7 @@ async function fetchTodoPrintOrders() {
 
 async function renderPrintTab() {
   const c = document.getElementById('content');
-  c.innerHTML = pageHead('Impression', '') + loadingBlock('Chargement des commandes TODOPRINT…');
+  c.innerHTML = pageHead('Impression', '') + loadingBlock('Chargement des commandes à imprimer…');
   try {
     loadDtfDirHandle().catch(function () {});
     const orders = await fetchTodoPrintOrders();
@@ -3681,7 +3705,7 @@ function renderPrintView() {
   const refreshBtn = `<button class="btn" onclick="renderPrintTab()">${icon('refresh')}Actualiser</button>`;
   if (!orders.length) {
     c.innerHTML = pageHead('Impression', 'Aucune commande à imprimer', refreshBtn) +
-      `<div class="card"><div class="empty-inline ok">${icon('checkCircle')}Aucune commande avec la balise TODOPRINT.</div></div>${renderPrintLotsSection()}`;
+      `<div class="card"><div class="empty-inline ok">${icon('checkCircle')}Aucune commande à imprimer.</div></div>${renderPrintLotsSection()}`;
     return;
   }
 
@@ -3694,7 +3718,7 @@ function renderPrintView() {
   const steps = [
     { title: 'Sélection', desc: `${selectedCount} commande${selectedCount>1?'s':''} sur ${orders.length}`, done: selectedCount > 0 && state.printWizardStep > 1, unlocked: true },
     { title: 'Génération du ZIP', desc: zipDone ? `ZIP prêt — ${plural(zipCount, 'commande')}` : 'Fichiers + archive dans ton Drive', done: zipDone, unlocked: selectedCount > 0 },
-    { title: 'Validation', desc: 'Supprime TODOPRINT et enregistre le lot', done: false, unlocked: zipDone },
+    { title: 'Marquer comme imprimé', desc: 'Sort les commandes de la liste et range le lot', done: false, unlocked: zipDone },
   ];
   let cur = state.printWizardStep || 1;
   if (!steps[cur - 1].unlocked) cur = zipDone ? 3 : (selectedCount > 0 ? 2 : 1);
@@ -3725,7 +3749,7 @@ function renderPrintView() {
     }).join('');
     body = `
       <div class="card-head">
-        <div class="step-desc" id="print-step1-desc">${plural(orders.length, 'commande')} avec balise TODOPRINT — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
+        <div class="step-desc" id="print-step1-desc">${plural(orders.length, 'commande')} à imprimer — ${selectedCount} sélectionnée${selectedCount>1?'s':''}</div>
         ${zipDone ? '' : `<div class="card-actions">
           <button class="btn btn-sm" onclick="printSelectAll()">${icon('squareCheck')}Tout sélectionner</button>
           <button class="btn btn-sm" onclick="printDeselectAll()">${icon('square')}Tout désélectionner</button>
@@ -3753,8 +3777,8 @@ function renderPrintView() {
         <div id="zip-result-zone"></div>`;
     }
   } else {
-    body = `<div class="step-desc" style="margin-bottom:14px;">Supprime TODOPRINT uniquement sur les commandes zippées et enregistre le lot dans l'historique.</div>
-      <button class="btn btn-primary" onclick="validatePrintOrders()">${icon('check')}Supprimer TODOPRINT (${plural(zipCount, 'commande')})</button>`;
+    body = `<div class="step-desc" style="margin-bottom:14px;">Une fois le lot lancé à l'impression, marque ces commandes comme imprimées : elles sortent de la liste « à imprimer » et le lot est rangé dans l'historique ci-dessous.</div>
+      <button class="btn btn-primary" onclick="validatePrintOrders()">${icon('check')}Marquer ${plural(zipCount, 'commande')} comme imprimée${zipCount>1?'s':''}</button>`;
   }
 
   const units = orders.reduce((s, o) => s + prodLineEdges(o, 'print').reduce((t, { node: li }) => t + li.currentQuantity, 0), 0);
@@ -3807,7 +3831,7 @@ function updatePrintCounter() {
   const total = state.printOrders.length;
   // Header étape 1
   const desc = document.getElementById('print-step1-desc');
-  if (desc) desc.textContent = `${total} commande${total>1?'s':''} avec balise TODOPRINT — ${n} sélectionnée${n>1?'s':''}`;
+  if (desc) desc.textContent = `${total} commande${total>1?'s':''} à imprimer — ${n} sélectionnée${n>1?'s':''}`;
   // Bouton générer
   const genBtn = document.getElementById('generate-zip-btn');
   if (genBtn) {
@@ -3882,7 +3906,7 @@ async function generatePrintZip() {
 }
 
 async function validatePrintOrders() {
-  const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'Suppression en cours\u2026';
+  const btn = event.target.closest('button'); btn.disabled = true; btn.textContent = 'Enregistrement\u2026';
   const today = new Date();
   const printTag = `print_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const removeMut = `mutation($id:ID!,$tags:[String!]!){tagsRemove(id:$id,tags:$tags){node{id}userErrors{message}}}`;
@@ -3898,7 +3922,7 @@ async function validatePrintOrders() {
   }
   await savMarkLot(state.printOrders.filter(o => state.printZipOrderIds.includes(o.id)), 'print', printTag);
   if (errors.length) showToast(`⚠️ Erreurs sur ${errors.length} commande(s)`, 'warning');
-  else showToast(`✅ ${ok} commande(s) archivées — tag ${printTag} ajouté`);
+  else showToast(`✅ ${ok} commande${ok>1?'s':''} marquée${ok>1?'s':''} imprimée${ok>1?'s':''} — lot du ${printTag.slice(12,14)}/${printTag.slice(10,12)} rangé dans l'historique`);
 
   // Enregistre le lot d'impression (historique + commentaire éventuel)
   try {
@@ -5444,8 +5468,8 @@ function renderDelaisUI() {
     '<div class="card">' +
     '<div class="card-title">' + icon('bell') + ' Alertes de retard</div>' +
     '<p class="card-desc">Signale, sur le tableau de bord et les onglets concernés, les commandes dont l’échéance approche alors que l’impression ou la commande fournisseur n’a pas encore été faite.</p>' +
-    '<div class="form-group field-narrow"><label for="df-alerte-impression">Seuil alerte impression</label><input type="number" step="0.5" min="0" id="df-alerte-impression" value="' + escapeHtml(d.alerteImpression) + '"><div class="settings-hint">Jours avant échéance. Alerte si la commande a encore la balise TODOPRINT.</div></div>' +
-    '<div class="form-group field-narrow"><label for="df-alerte-fournisseur">Seuil alerte commande fournisseur</label><input type="number" step="0.5" min="0" id="df-alerte-fournisseur" value="' + escapeHtml(d.alerteFournisseur) + '"><div class="settings-hint">Jours avant échéance. Alerte si la commande a encore la balise TOORDER.</div></div>' +
+    '<div class="form-group field-narrow"><label for="df-alerte-impression">Seuil alerte impression</label><input type="number" step="0.5" min="0" id="df-alerte-impression" value="' + escapeHtml(d.alerteImpression) + '"><div class="settings-hint">Jours avant échéance. Alerte si la commande n\u2019est pas encore imprimée.</div></div>' +
+    '<div class="form-group field-narrow"><label for="df-alerte-fournisseur">Seuil alerte commande fournisseur</label><input type="number" step="0.5" min="0" id="df-alerte-fournisseur" value="' + escapeHtml(d.alerteFournisseur) + '"><div class="settings-hint">Jours avant échéance. Alerte si la commande n\u2019est pas encore commandée chez le fournisseur.</div></div>' +
     '<div class="form-actions"><button class="btn btn-primary" onclick="saveAlertesRetard()">' + icon('save') + 'Enregistrer les alertes</button></div>' +
     '</div>' +
 
