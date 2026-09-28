@@ -470,7 +470,7 @@
 
     #scroll-top { position: fixed; bottom: 24px; right: 24px; width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,128,96,.4); display: none; align-items: center; justify-content: center; z-index: 300; }
     #scroll-top.visible { display: flex; }
-    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: all .25s; z-index: 500; pointer-events: none; }
+    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: all .25s; z-index: 9600; pointer-events: none; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 600px) {
@@ -895,6 +895,22 @@
   .co-sav-head { display: flex; align-items: center; gap: 10px; font-size: 18px; margin-bottom: 8px; flex-wrap: wrap; }
   .co-sav-head .ico { font-size: 24px; }
   .badge-sav { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+  .sav-group { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+  .sav-group-label { min-width: 96px; padding-top: 12px; font-weight: 700; color: var(--text-sub); }
+  .sav-reexp { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .sav-err { color: var(--critical); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .inc-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: var(--surface); }
+  .inc-card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .inc-card-head h3 { font-size: 17px; margin: 0; }
+  .inc-card-head .btn { margin-left: auto; }
+  .inc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .inc-kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .inc-kpi { flex: 1; min-width: 130px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .inc-kpi b { display: block; font-size: 24px; }
+  .inc-kpi span { color: var(--text-sub); font-size: 13px; }
+  .inc-bar { display: grid; grid-template-columns: 170px 1fr 34px; align-items: center; gap: 8px; font-size: 13px; margin: 4px 0; }
+  .inc-bar i { display: block; height: 10px; border-radius: 5px; background: #8b5cf6; }
+  .inc-bar i.atelier { background: #f59e0b; }
   .pro-box { background: var(--surface); border-radius: 12px; width: min(920px, 100%); max-height: 92vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.2); }
   .pro-box-head { display: flex; align-items: center; gap: 8px; padding: 18px 22px 6px; }
   .pro-box-head h2 { font-size: 18px; flex: 1; }
@@ -1001,6 +1017,7 @@
         <button class="sb-item active" data-tab="dashboard" onclick="switchTab('dashboard')" title="Tableau de bord"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="sb-label">Tableau de bord</span></button>
         <button class="sb-item" data-tab="custom" onclick="switchTab('custom')" title="Commandes custom"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 .55.45 1 1 1h10c.55 0 1-.45 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></span><span class="sb-label">Commandes custom</span><span id="tab-custom-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span class="sb-badges"><span id="tab-custom-badge" class="sb-badge urgent" style="display:none"></span><span id="tab-custom-badge-total" class="sb-badge" style="display:none"></span></span></button>
         <button class="sb-item" data-tab="pro" onclick="switchTab('pro')" title="Commandes pro"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span><span class="sb-label">Commandes pro</span><span id="tab-pro-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-pro-badge" class="sb-badge" style="display:none"></span></button>
+        <button class="sb-item" data-tab="incidents" onclick="switchTab('incidents')" title="Incidents"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span class="sb-label">Incidents</span><span id="tab-incidents-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-incidents-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="supplier" onclick="switchTab('supplier')" title="Commande fournisseur"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span><span class="sb-label">Commande fournisseur</span><span id="tab-supplier-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-supplier-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="print" onclick="switchTab('print')" title="Impression"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="sb-label">Impression</span><span id="tab-print-alert-dot" class="sb-alert-dot" style="display:none;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 5.5 6.9 11.5H5.1L12 7.5zM11 10v4h2v-4h-2zm0 5.5v2h2v-2h-2z"/></svg></span><span id="tab-print-badge" class="sb-badge" style="display:none"></span></button>
         <button class="sb-item" data-tab="gallery" onclick="switchTab('gallery')" title="Galerie"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="sb-label">Galerie</span></button>
@@ -1363,7 +1380,7 @@ function switchTab(tab) {
     else renderCustomTab(false);
     return;
   }
-else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab, pro: renderProTab })[tab]?.();
+else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPrintTab, gallery: renderGalleryTab, delaisfomo: renderDelaisFomoTab, pro: renderProTab, incidents: renderIncidentsTab })[tab]?.();
 }
 
 // ── Sidebar : rail fixe, plus de mode replié/déplié (voir #sidebar en CSS) ──
@@ -1373,6 +1390,7 @@ else ({ dashboard: renderDashboard, supplier: renderSupplierTab, print: renderPr
 // ════════════════════════════════════════════
 // ── Icônes au trait (même famille que la vue commande) — icon('nom') renvoie un <svg class="ico"> ──
 const ICONS = {
+  chart: '<path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-3"/>',
   folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
@@ -2226,9 +2244,10 @@ async function renderDashboard() {
 
     const [countsData, notesData, calendarData, delayAlerts, processingBuckets] = await Promise.all([
       gql(`query {
-        custom: ordersCount(query: "(tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)) OR tag:SAV") { count }
-        toorder: ordersCount(query: "tag:TOORDER AND (status:open OR tag:SAV)") { count }
-        todoprint: ordersCount(query: "tag:TODOPRINT AND (status:open OR tag:SAV)") { count }
+        custom: ordersCount(query: "(tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)) OR tag:REEXPEDIER") { count }
+        incidents: ordersCount(query: "tag:INCIDENT") { count }
+        toorder: ordersCount(query: "tag:TOORDER AND (status:open OR tag:INCIDENT)") { count }
+        todoprint: ordersCount(query: "tag:TODOPRINT AND (status:open OR tag:INCIDENT)") { count }
         urgent: ordersCount(query: "tag:urgent AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)") { count }
       }`),
       gql(`query {
@@ -2245,6 +2264,7 @@ async function renderDashboard() {
     state.dashboardDelayAlerts = delayAlerts;
     state.dashboardProcessingBuckets = processingBuckets;
 
+    setIncidentBadge(countsData.incidents.count); incRefreshBadge();
     const counts = { custom: countsData.custom.count, toorder: countsData.toorder.count, todoprint: countsData.todoprint.count, urgent: countsData.urgent.count };
     state.customCounts = { all: counts.custom, urgent: counts.urgent };
     // ── Badges tous les onglets ──
@@ -2328,7 +2348,7 @@ const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName 
   fulfillments(first: 5) { createdAt trackingInfo(first: 1) { number url } }
   dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
   estRush: metafield(namespace: "custom", key: "est_rush") { value }
-  savMf: metafield(namespace: "custom", key: "sav") { value }
+  savMf: metafield(namespace: "custom", key: "incident") { value }
   lineItems(first: 250) { edges { node { id title quantity currentQuantity requiresShipping
     variant { id title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
@@ -2361,8 +2381,8 @@ function sortOrdersByDeadline(orders) {
 
 async function fetchCustomOrders(urgent = false) {
   const base = 'tag:custom AND status:open AND (fulfillment_status:unshipped OR fulfillment_status:partial)';
-  // Les commandes avec un SAV ouvert (balise SAV) reviennent en préparation, même déjà expédiées
-  const q = urgent ? `(${base}) AND tag:urgent` : `(${base}) OR tag:SAV`;
+  // Les commandes avec un incident à réexpédier (balise REEXPEDIER) reviennent en préparation, même déjà expédiées
+  const q = urgent ? `(${base}) AND tag:urgent` : `(${base}) OR tag:REEXPEDIER`;
   let orders = [], hasNext = true, cursor = null;
   while (hasNext) {
     const data = await gql(`query($first: Int!, $after: String, $q: String!) {
@@ -2529,7 +2549,7 @@ function renderOrderView() {
   const ageInDays = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 86400000);
   const ageTone = ageInDays < 5 ? 'success' : ageInDays <= 10 ? 'warning' : 'critical';
   const ageLabel = ageInDays < 5 ? 'Récente' : ageInDays <= 10 ? 'En retard' : 'Critique';
-  const savPrep = savOpen(order).length && order.displayFulfillmentStatus === 'FULFILLED';
+  const savPrep = savOpen(order).some(e => e.reexp) && order.displayFulfillmentStatus === 'FULFILLED';
   const physicalItems = (savPrep ? savOpenLineEdges(order) : activeItems).filter(({node:li}) => isPhysicalLine(li));
   const prepItems = physicalItems.map(({node:li}) => {
     const v = li.variant?.title; const sv = v && v!=='Default Title';
@@ -2564,8 +2584,8 @@ function renderOrderView() {
       ${isUrgent && !shipState ? `<span class="pill pill-urgent">${ICO.alert}URGENT</span>` : ''}
       ${estRushBadge}
       ${renderStatusBadges(order.tags)}
-      ${savOpen(order).length ? '<span class="pill" style="background:#7c3aed">SAV</span>' : ''}
-      <button class="btn" onclick="openSavModal()" style="margin-left:auto;min-height:44px;">${ICO.alert} SAV</button>
+      ${savOpen(order).length ? '<span class="pill" style="background:#7c3aed">INCIDENT</span>' : ''}
+      <button class="btn" onclick="openSavModal()" style="margin-left:auto;min-height:44px;">${ICO.alert} Incident</button>
       <a href="https://therxshop.myshopify.com/admin/orders/${order.id.split('/').pop()}" target="_blank" class="co-shopify" style="margin-left:0">${ICO.ext}Voir dans Shopify</a>
     </div>
     <div class="co-info-row">
@@ -2578,7 +2598,7 @@ function renderOrderView() {
     </div>
     ${savBannerHtml(order)}
     ${hasNote ? `<div class="co-note">${ICO.note}<div><strong>Note client : </strong><span class="alert-text">${order.note}</span></div></div>` : ''}
-    <div class="prep-list"><span class="prep-label">${savPrep ? 'SAV à préparer' : shipState ? 'Contenu' : 'À préparer'}</span>${prepItems}</div>
+    <div class="prep-list"><span class="prep-label">${savPrep ? 'À réexpédier' : shipState ? 'Contenu' : 'À préparer'}</span>${prepItems}</div>
   </div>
   <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">`;
 
@@ -2643,17 +2663,19 @@ function renderOrderView() {
 // La validation d'un lot renseigne printLot / supLot ; l'expédition clôt le SAV.
 // ════════════════════════════════════════════
 const SAV_MOTIFS = [
-  { k: 'impression', label: 'Erreur d’impression', print: true, sup: false },
-  { k: 'pressage', label: 'Erreur de pressage / flocage', print: true, sup: true },
-  { k: 'client_produit', label: 'Client : produit / taille', print: true, sup: true },
-  { k: 'client_placement', label: 'Client : placement / logo', print: true, sup: true },
-  { k: 'textile', label: 'Défaut textile', print: true, sup: true },
-  { k: 'transport', label: 'Perdu / abîmé transport', print: true, sup: true },
-  { k: 'autre', label: 'Autre', print: true, sup: false }
+  { k: 'impression', g: 'atelier', label: 'Erreur d’impression', print: true, sup: false },
+  { k: 'pressage', g: 'atelier', label: 'Erreur de pressage / flocage', print: true, sup: true },
+  { k: 'textile', g: 'atelier', label: 'Défaut textile', print: true, sup: true },
+  { k: 'client_produit', g: 'client', label: 'Produit / taille', print: true, sup: true },
+  { k: 'client_placement', g: 'client', label: 'Placement / logo', print: true, sup: true },
+  { k: 'transport', g: 'client', label: 'Perdu / abîmé transport', print: true, sup: true },
+  { k: 'autre', g: 'client', label: 'Autre', print: true, sup: false }
 ];
-const SAV_MF = 'savMf: metafield(namespace:"custom", key:"sav"){ value }';
-const savState = { order: null, sel: {}, motif: '', note: '', variants: {}, loading: false, saving: false };
+const SAV_GROUPS = { atelier: 'Atelier', client: 'Client / SAV' };
+const SAV_MF = 'savMf: metafield(namespace:"custom", key:"incident"){ value }';
+const savState = { order: null, sel: {}, motif: '', note: '', reexp: false, variants: {}, loading: false, saving: false, err: '' };
 
+function savMotifFull(k) { const m = SAV_MOTIFS.find(function (x) { return x.k === k; }); return m ? SAV_GROUPS[m.g] + ' \u00b7 ' + m.label : (k || ''); }
 function savMotifLabel(k) { const m = SAV_MOTIFS.find(function (x) { return x.k === k; }); return m ? m.label : (k || ''); }
 function savList(order) {
   try { const v = order && order.savMf && order.savMf.value; const l = v ? JSON.parse(v) : []; return Array.isArray(l) ? l : []; }
@@ -2702,12 +2724,12 @@ function savOpenLineEdges(order) {
 function savNoteFor(order, kind) {
   const s = savLinesFor(order, kind);
   if (!s.length) return '';
-  return 'SAV : ' + s.map(function (x) { return x.l.qty + '× ' + shortProductTitle(x.l.title) + ' (' + savMotifLabel(x.e.motif) + (x.e.note ? ' — ' + x.e.note : '') + ')'; }).join(' ; ');
+  return 'INCIDENT : ' + s.map(function (x) { return x.l.qty + '× ' + shortProductTitle(x.l.title) + ' (' + savMotifLabel(x.e.motif) + (x.e.note ? ' — ' + x.e.note : '') + ')'; }).join(' ; ');
 }
 function savBadge(order, kind) {
   if (!savOpen(order).length) return '';
   const n = kind ? savLinesFor(order, kind).length : 0;
-  return '<span class="badge badge-sav" title="' + escapeHtml(savNoteFor(order, kind || 'print') || 'SAV en cours') + '">SAV' + (n ? ' · ' + n + ' ligne' + (n > 1 ? 's' : '') : '') + '</span>';
+  return '<span class="badge badge-sav" title="' + escapeHtml(savNoteFor(order, kind || 'print') || 'Incident en cours') + '">Incident' + (n ? ' · ' + n + ' ligne' + (n > 1 ? 's' : '') : '') + '</span>';
 }
 
 // Relit la commande, applique la modification, écrit, relit pour vérifier.
@@ -2717,18 +2739,19 @@ async function savWrite(orderId, mutator) {
   const list = savList(r.order);
   const next = mutator(list, r.order) || list;
   const m = await gql('mutation($mf:[MetafieldsSetInput!]!){ metafieldsSet(metafields:$mf){ metafields{ id } userErrors{ message } } }',
-    { mf: [{ ownerId: orderId, namespace: 'custom', key: 'sav', type: 'json', value: JSON.stringify(next) }] });
+    { mf: [{ ownerId: orderId, namespace: 'custom', key: 'incident', type: 'json', value: JSON.stringify(next) }] });
   const errs = m.metafieldsSet.userErrors;
   if (errs && errs.length) throw new Error(errs.map(function (e) { return e.message; }).join(', '));
   const check = await gql(read, { id: orderId });
   const got = savList(check.order);
-  if (got.length !== next.length) throw new Error('Vérification SAV échouée (' + got.length + ' au lieu de ' + next.length + ')');
+  if (got.length !== next.length) throw new Error('Vérification incident échouée (' + got.length + ' au lieu de ' + next.length + ')');
   return { list: got, tags: check.order.tags || [] };
 }
 // Aligne les balises sur l'état SAV. touched.print / touched.sup : ne gère TODOPRINT / TOORDER que si le SAV les concerne.
 async function savSyncTags(orderId, list, tags, touched) {
   const fake = { savMf: { value: JSON.stringify(list) } };
-  const want = { SAV: savOpen(fake).length > 0 };
+  const open = savOpen(fake);
+  const want = { INCIDENT: open.length > 0, REEXPEDIER: open.some(function (e) { return e.reexp; }), incident_hist: list.length > 0 };
   if (touched.print) want.TODOPRINT = savLinesFor(fake, 'print').length > 0;
   if (touched.sup) want.TOORDER = savLinesFor(fake, 'sup').length > 0;
   const add = [], rem = [];
@@ -2743,7 +2766,7 @@ async function savMarkLot(orders, kind, tag) {
   for (const o of orders) {
     if (!savLinesFor(o, kind).length) continue;
     try {
-      await savWrite(o.id, function (list) {
+      const res = await savWrite(o.id, function (list) {
         list.forEach(function (e) {
           if (e.statut === 'clos') return;
           let n = 0;
@@ -2753,10 +2776,13 @@ async function savMarkLot(orders, kind, tag) {
             if (kind === 'sup' && !l.supLot) { l.supLot = tag; n++; }
           });
           if (n) savLog(e, (kind === 'print' ? 'Réimprimé' : 'Recommandé') + ' (' + tag + ')');
+          const allDone = (e.lines || []).every(function (l) { return (!l.print || l.printLot) && (!l.sup || l.supLot); });
+          if (n && allDone && !e.reexp) { e.statut = 'clos'; e.closedAt = new Date().toISOString(); savLog(e, 'Clos (tout refait, pas de réexpédition)'); }
         });
         return list;
       });
-    } catch (err) { showToast('⚠️ SAV ' + o.name + ' : ' + err.message, 'warning'); }
+      await savSyncTags(o.id, res.list, res.tags, { print: false, sup: false });
+    } catch (err) { showToast('⚠️ Incident ' + o.name + ' : ' + err.message, 'warning'); }
   }
 }
 // Clôt les SAV ouverts d'une commande (expédition) ; annule ce qui restait en attente.
@@ -2777,7 +2803,8 @@ async function savCloseAll(orderId, why) {
 async function openSavModal() {
   const order = state.orders[state.currentIndex];
   if (!order) return;
-  savState.order = order; savState.sel = {}; savState.motif = ''; savState.note = ''; savState.variants = {}; savState.loading = true;
+  savState.order = order; savState.sel = {}; savState.motif = ''; savState.note = ''; savState.variants = {}; savState.loading = true; savState.err = '';
+  savState.reexp = order.displayFulfillmentStatus === 'FULFILLED' || order.displayFulfillmentStatus === 'PARTIALLY_FULFILLED';
   savRender();
   try {
     const r = await gql('query($id:ID!){ order(id:$id){ id tags ' + SAV_MF + ' lineItems(first:100){ nodes{ id variant{ id product{ variants(first:100){ nodes{ id title imbretexSku: metafield(namespace:"custom", key:"imbretex_sku"){ value } } } } } } } } }', { id: order.id });
@@ -2789,7 +2816,7 @@ async function openSavModal() {
 }
 function closeSavModal() { if (savState.saving) return; const m = document.getElementById('sav-modal'); if (m) m.classList.remove('open'); savState.order = null; }
 function savPickMotif(k) {
-  savState.motif = k;
+  savState.motif = k; savState.err = '';
   const m = SAV_MOTIFS.find(function (x) { return x.k === k; });
   Object.keys(savState.sel).forEach(function (id) { const s = savState.sel[id]; if (s.on && !s.touched) { s.print = m.print && !s.printLocked; s.sup = m.sup && !s.supLocked; } });
   savRender();
@@ -2822,8 +2849,9 @@ function savLineStatusHtml(e, l) {
 function savEntriesHtml(order, onlyOpen) {
   const list = savList(order).filter(function (e) { return !onlyOpen || e.statut !== 'clos'; });
   return list.map(function (e) {
-    return '<div class="sav-entry' + (e.statut === 'clos' ? ' closed' : '') + '"><div class="sav-entry-head"><b>' + escapeHtml(savMotifLabel(e.motif)) + '</b><span class="muted">' + proFmtDate(e.date) + (e.statut === 'clos' ? ' · ' + (e.annule ? 'annulé' : 'clos') + ' le ' + proFmtDate(e.closedAt) : '') + '</span>' +
-      (e.statut !== 'clos' && !onlyOpen ? '<button class="btn btn-sm" onclick="savCancelEntry(\'' + e.id + '\')">Annuler ce SAV</button>' : '') + '</div>' +
+    return '<div class="sav-entry' + (e.statut === 'clos' ? ' closed' : '') + '"><div class="sav-entry-head"><b>' + escapeHtml(savMotifFull(e.motif)) + '</b><span class="muted">' + proFmtDate(e.date) + (e.statut === 'clos' ? ' · ' + (e.annule ? 'annulé' : 'clos') + ' le ' + proFmtDate(e.closedAt) : '') + '</span>' +
+      (e.reexp ? '<span class="badge badge-sav">' + icon('package') + 'R\u00e9exp\u00e9dition</span>' : '') +
+      (e.statut !== 'clos' && !onlyOpen ? '<button class="btn btn-sm" onclick="savCancelEntry(\'' + e.id + '\')">Annuler cet incident</button>' : '') + '</div>' +
       (e.lines || []).map(function (l) {
         return '<div class="sav-entry-line"><span><b>' + l.qty + '×</b> ' + escapeHtml(shortProductTitle(l.title)) + (l.variantTitle && l.variantTitle !== 'Default Title' ? ' — ' + escapeHtml(l.variantTitle) : '') + (l.newVariant ? ' → <b>' + escapeHtml(l.newVariant.title) + '</b>' : '') + '</span>' + savLineStatusHtml(e, l) + '</div>';
       }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + '</div>';
@@ -2833,12 +2861,14 @@ function savRender() {
   const order = savState.order; if (!order) return;
   let m = document.getElementById('sav-modal');
   if (!m) { m = document.createElement('div'); m.id = 'sav-modal'; m.addEventListener('click', function (ev) { if (ev.target === m) closeSavModal(); }); document.body.appendChild(m); }
-  let h = '<div class="pro-box" onclick="event.stopPropagation()"><div class="pro-box-head"><h2>SAV — ' + escapeHtml(order.name) + '</h2><button class="btn btn-icon btn-sm" onclick="closeSavModal()" title="Fermer">' + icon('x') + '</button></div><div class="sav-body">';
+  let h = '<div class="pro-box" onclick="event.stopPropagation()"><div class="pro-box-head"><h2>Incident — ' + escapeHtml(order.name) + '</h2><button class="btn btn-icon btn-sm" onclick="closeSavModal()" title="Fermer">' + icon('x') + '</button></div><div class="sav-body">';
   if (savState.loading) { h += loadingBlock('Chargement…') + '</div></div>'; m.innerHTML = h; m.classList.add('open'); return; }
   const existing = savEntriesHtml(order, false);
-  if (existing) h += '<div class="sav-section-title">SAV déclarés</div>' + existing;
-  h += '<div class="sav-section-title">Nouveau SAV</div>';
-  h += '<div class="sav-motifs">' + SAV_MOTIFS.map(function (x) { return '<button class="sav-chip' + (savState.motif === x.k ? ' on' : '') + '" onclick="savPickMotif(\'' + x.k + '\')">' + escapeHtml(x.label) + '</button>'; }).join('') + '</div>';
+  if (existing) h += '<div class="sav-section-title">Incidents déclarés</div>' + existing;
+  h += '<div class="sav-section-title">Nouvel incident</div>';
+  Object.keys(SAV_GROUPS).forEach(function (g) {
+    h += '<div class="sav-group"><span class="sav-group-label">' + SAV_GROUPS[g] + '</span><div class="sav-motifs">' + SAV_MOTIFS.filter(function (x) { return x.g === g; }).map(function (x) { return '<button class="sav-chip' + (savState.motif === x.k ? ' on' : '') + '" onclick="savPickMotif(\'' + x.k + '\')">' + escapeHtml(x.label) + '</button>'; }).join('') + '</div></div>';
+  });
   h += '<div class="sav-lines">';
   activeLineItemEdges(order).forEach(function (x) {
     const li = x.node;
@@ -2861,14 +2891,16 @@ function savRender() {
     h += '</div>';
   });
   h += '</div>';
+  h += '<div class="sav-reexp"><button class="sav-chip' + (savState.reexp ? ' on' : '') + '" onclick="savState.reexp=!savState.reexp;savRender()">' + (savState.reexp ? icon('check') : '') + 'R\u00e9exp\u00e9dition n\u00e9cessaire</button><span class="field-hint" style="margin:0">' + (savState.reexp ? 'La commande revient dans \u00ab Commandes custom \u00bb jusqu\u2019\u00e0 la r\u00e9exp\u00e9dition.' : 'L\u2019incident se cl\u00f4t tout seul une fois tout refait (ou \u00e0 l\u2019exp\u00e9dition normale de la commande).') + '</span></div>';
   h += '<div class="form-group" style="margin-top:12px;"><label for="sav-note">Note <span class="pro-opt">(optionnel)</span></label><textarea id="sav-note" rows="2" placeholder="ex. logo décalé de 2 cm, client prévenu…" oninput="savState.note=this.value">' + escapeHtml(savState.note) + '</textarea></div>';
-  h += '</div><div class="pro-box-foot"><span style="flex:1"></span><button class="btn" onclick="closeSavModal()">Fermer</button><button class="btn btn-primary" id="sav-save-btn" onclick="savSubmit()">' + icon('save') + 'Créer le SAV</button></div></div>';
+  h += '</div><div class="pro-box-foot"><span class="sav-err" id="sav-err">' + (savState.err ? icon('alert') + escapeHtml(savState.err) : '') + '</span><span style="flex:1"></span><button class="btn" onclick="closeSavModal()">Fermer</button><button class="btn btn-primary" id="sav-save-btn" onclick="savSubmit()">' + icon('save') + 'Déclarer l’incident</button></div></div>';
   m.innerHTML = h;
   m.classList.add('open');
 }
 async function savSubmit() {
   const order = savState.order; if (!order) return;
-  if (!savState.motif) { showToast('Choisis un motif', 'warning'); return; }
+  function fail(msg) { savState.err = msg; const el = document.getElementById('sav-err'); if (el) el.innerHTML = icon('alert') + escapeHtml(msg); showToast(msg, 'warning'); }
+  if (!savState.motif) { fail('Choisis un motif (Atelier ou Client)'); return; }
   const lis = {}; activeLineItemEdges(order).forEach(function (x) { lis[x.node.id] = x.node; });
   const lines = [];
   Object.keys(savState.sel).forEach(function (id) {
@@ -2881,23 +2913,24 @@ async function savSubmit() {
     }
     lines.push({ lineId: id, title: li.title, variantTitle: li.variant ? li.variant.title : '', qty: s.qty, print: !!s.print, sup: !!s.sup, newVariant: nv, printLot: '', supLot: '' });
   });
-  if (!lines.length) { showToast('Sélectionne au moins une ligne avec réimpression et/ou produit', 'warning'); return; }
+  if (!lines.length) { fail('Sélectionne au moins une ligne avec Réimpression et/ou Produit'); return; }
   const btn = document.getElementById('sav-save-btn'); if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
   savState.saving = true;
   try {
-    const entry = { id: 's' + Date.now().toString(36), date: new Date().toISOString(), motif: savState.motif, note: (savState.note || '').trim(), statut: 'ouvert', lines: lines, historique: [] };
+    const entry = { id: 'i' + Date.now().toString(36), date: new Date().toISOString(), motif: savState.motif, note: (savState.note || '').trim(), reexp: !!savState.reexp, statut: 'ouvert', lines: lines, historique: [] };
     savLog(entry, 'Déclaré');
     const res = await savWrite(order.id, function (list) { list.push(entry); return list; });
     await savSyncTags(order.id, res.list, res.tags, { print: lines.some(function (l) { return l.print; }), sup: lines.some(function (l) { return l.sup; }) });
     savState.saving = false;
-    showToast('✅ SAV créé — ' + lines.length + ' ligne' + (lines.length > 1 ? 's' : '') + ' remise' + (lines.length > 1 ? 's' : '') + ' en production');
+    showToast('✅ Incident déclaré — ' + lines.length + ' ligne' + (lines.length > 1 ? 's' : '') + ' remise' + (lines.length > 1 ? 's' : '') + ' en production');
     closeSavModal();
     await savReloadCurrentOrder(order.id);
     refreshProdBadges();
   } catch (e) {
     savState.saving = false;
-    if (btn) { btn.disabled = false; btn.innerHTML = icon('save') + 'Créer le SAV'; }
-    showToast('⚠️ ' + e.message, 'warning');
+    if (btn) { btn.disabled = false; btn.innerHTML = icon('save') + 'Déclarer l’incident'; }
+    console.error('Incident:', e);
+    fail('Erreur : ' + e.message);
   }
 }
 async function savCancelEntry(entryId) {
@@ -2914,7 +2947,7 @@ async function savCancelEntry(entryId) {
     });
     await savSyncTags(order.id, res.list, res.tags, touched);
     order.savMf = { value: JSON.stringify(res.list) };
-    showToast('SAV annulé');
+    showToast('Incident annulé');
     savRender();
     savReloadCurrentOrder(order.id);
     refreshProdBadges();
@@ -2925,13 +2958,13 @@ async function savShipped() {
   const pending = savLinesFor(order, 'print').length + savLinesFor(order, 'sup').length;
   if (pending && !window.__savForce) {
     window.__savForce = true; setTimeout(function () { window.__savForce = false; }, 4000);
-    showToast('⚠️ Des lignes SAV ne sont pas encore imprimées / commandées — reclique pour clore quand même', 'warning');
+    showToast('⚠️ Des lignes ne sont pas encore imprimées / commandées — reclique pour clore quand même', 'warning');
     return;
   }
   window.__savForce = false;
   try {
     await savCloseAll(order.id, 'Expédié');
-    launchConfetti(); showToast('✅ SAV ' + order.name + ' clos');
+    launchConfetti(); showToast('✅ Incident ' + order.name + ' clos');
     refreshProdBadges();
     renderCustomTab(false);
   } catch (e) { showToast('⚠️ ' + e.message, 'warning'); }
@@ -2946,10 +2979,142 @@ async function savReloadCurrentOrder(orderId) {
 }
 // Bandeau dans la vue commande
 function savBannerHtml(order) {
-  if (!savOpen(order).length) return '';
-  return '<div class="co-sav"><div class="co-sav-head">' + ICO.alert + '<b>SAV en cours</b><span style="flex:1"></span>' +
-    '<button class="btn" onclick="openSavModal()">Gérer</button><button class="btn btn-primary" onclick="savShipped()">' + icon('check') + 'SAV expédié</button></div>' +
+  const open = savOpen(order);
+  if (!open.length) return '';
+  const reexp = open.some(function (e) { return e.reexp; });
+  return '<div class="co-sav"><div class="co-sav-head">' + ICO.alert + '<b>Incident en cours</b>' + (reexp ? '<span class="badge badge-sav">' + icon('package') + 'à réexpédier</span>' : '') + '<span style="flex:1"></span>' +
+    '<button class="btn" onclick="openSavModal()">Gérer</button><button class="btn btn-primary" onclick="savShipped()">' + icon('check') + (reexp ? 'Réexpédié' : 'Clore l’incident') + '</button></div>' +
     savEntriesHtml(order, true) + '</div>';
+}
+
+// ════════════════════════════════════════════
+// ONGLET INCIDENTS — suivi des incidents (atelier + client) déclarés par ligne
+// Ouverts : balise INCIDENT. Historique : balise permanente incident_hist.
+// ════════════════════════════════════════════
+const INC_ALERT_DAYS = 7;
+const incState = { open: [], hist: [], days: 90, loaded: false };
+const INC_FIELDS = 'id name createdAt tags displayFulfillmentStatus customer{ firstName lastName } ' + SAV_MF;
+
+function setIncidentBadge(n, late) {
+  const b = document.getElementById('tab-incidents-badge');
+  if (b) { b.style.display = n > 0 ? '' : 'none'; if (n > 0) b.textContent = n; }
+  const d = document.getElementById('tab-incidents-alert-dot');
+  if (d && late !== undefined) d.style.display = late ? '' : 'none';
+}
+function incAgeDays(iso) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+// Étape d'un incident ouvert : à lancer / en production / prêt
+function incStage(e) {
+  const lines = e.lines || [];
+  const pending = lines.filter(function (l) { return (l.print && !l.printLot) || (l.sup && !l.supLot); }).length;
+  const started = lines.some(function (l) { return l.printLot || l.supLot; });
+  if (!pending) return { k: 'pret', label: e.reexp ? 'Prêt à réexpédier' : 'Tout refait', cls: 'pro-badge-ok' };
+  if (started) return { k: 'prod', label: 'En cours (' + pending + ' ligne' + (pending > 1 ? 's' : '') + ' en attente)', cls: 'pro-badge-warn' };
+  return { k: 'lancer', label: 'À lancer', cls: 'badge-solid-critical' };
+}
+async function incFetch(q, max) {
+  let out = [], cursor = null, has = true;
+  while (has && out.length < max) {
+    const d = await gql('query($q:String!,$after:String){ orders(first:100, after:$after, query:$q, sortKey:UPDATED_AT, reverse:true){ nodes{ ' + INC_FIELDS + ' } pageInfo{ hasNextPage endCursor } } }', { q: q, after: cursor });
+    out = out.concat(d.orders.nodes); has = d.orders.pageInfo.hasNextPage; cursor = d.orders.pageInfo.endCursor;
+  }
+  return out;
+}
+async function renderIncidentsTab() {
+  const c = document.getElementById('content');
+  c.innerHTML = pageHead('Incidents', '') + loadingBlock();
+  try {
+    const [open, hist] = await Promise.all([incFetch('tag:INCIDENT', 250), incFetch('tag:incident_hist', 500)]);
+    incState.open = open; incState.hist = hist; incState.loaded = true;
+    renderIncidentsView();
+  } catch (e) { c.innerHTML = pageHead('Incidents', '') + errorBlock(e.message, 'renderIncidentsTab()'); }
+}
+function incOpenEntries() {
+  const rows = [];
+  incState.open.forEach(function (o) { savOpen(o).forEach(function (e) { rows.push({ o: o, e: e }); }); });
+  const order = { lancer: 0, prod: 1, pret: 2 };
+  rows.sort(function (a, b) { return (order[incStage(a.e).k] - order[incStage(b.e).k]) || (a.e.date < b.e.date ? -1 : 1); });
+  return rows;
+}
+function incCardHtml(r) {
+  const o = r.o, e = r.e, st = incStage(e), age = incAgeDays(e.date);
+  const cust = o.customer ? ((o.customer.firstName || '') + ' ' + (o.customer.lastName || '')).trim() : '';
+  return '<div class="inc-card"><div class="inc-card-head"><h3 class="num">' + escapeHtml(o.name) + '</h3>' +
+    '<span class="badge ' + st.cls + '">' + st.label + '</span>' +
+    (e.reexp ? '<span class="badge badge-sav">' + icon('package') + 'Réexpédition</span>' : '') +
+    '<span class="badge ' + (age > INC_ALERT_DAYS ? 'badge-solid-critical' : 'badge-muted') + '">' + icon('clock') + age + ' j</span>' +
+    '<span class="muted">' + escapeHtml(cust) + '</span>' +
+    '<button class="btn btn-sm" onclick="incOpenOrder(\'' + escapeHtml(o.name) + '\')">' + icon('external') + 'Ouvrir la commande</button></div>' +
+    '<div><b>' + escapeHtml(savMotifFull(e.motif)) + '</b> <span class="muted">· déclaré le ' + proFmtDate(e.date) + '</span></div>' +
+    (e.lines || []).map(function (l) {
+      return '<div class="sav-entry-line"><span><b>' + l.qty + '×</b> ' + escapeHtml(shortProductTitle(l.title)) + (l.variantTitle && l.variantTitle !== 'Default Title' ? ' — ' + escapeHtml(l.variantTitle) : '') + (l.newVariant ? ' → <b>' + escapeHtml(l.newVariant.title) + '</b>' : '') + '</span>' + savLineStatusHtml(e, l) + '</div>';
+    }).join('') + (e.note ? '<div class="sav-entry-note">' + escapeHtml(e.note) + '</div>' : '') + '</div>';
+}
+function incStatsHtml() {
+  const since = Date.now() - incState.days * 86400000;
+  const entries = [];
+  incState.hist.forEach(function (o) { savList(o).forEach(function (e) { if (!e.annule && new Date(e.date).getTime() >= since) entries.push({ o: o, e: e }); }); });
+  if (!entries.length) return '<div class="empty-inline">Aucun incident sur les ' + incState.days + ' derniers jours.</div>';
+  let pieces = 0, reprint = 0, reorder = 0, atelier = 0, client = 0;
+  const byMotif = {}, byMonth = {};
+  entries.forEach(function (x) {
+    const m = SAV_MOTIFS.find(function (k) { return k.k === x.e.motif; });
+    if (m && m.g === 'atelier') atelier++; else client++;
+    byMotif[x.e.motif] = (byMotif[x.e.motif] || 0) + 1;
+    const mk = x.e.date.slice(0, 7); byMonth[mk] = (byMonth[mk] || 0) + 1;
+    (x.e.lines || []).forEach(function (l) { pieces += l.qty; if (l.print) reprint += l.qty; if (l.sup) reorder += l.qty; });
+  });
+  const max = Math.max.apply(null, Object.values(byMotif));
+  const bars = SAV_MOTIFS.filter(function (m) { return byMotif[m.k]; }).sort(function (a, b) { return byMotif[b.k] - byMotif[a.k]; }).map(function (m) {
+    return '<div class="inc-bar"><span>' + escapeHtml(SAV_GROUPS[m.g] + ' · ' + m.label) + '</span><i class="' + m.g + '" style="width:' + Math.max(4, Math.round(byMotif[m.k] / max * 100)) + '%"></i><b class="num">' + byMotif[m.k] + '</b></div>';
+  }).join('');
+  const months = Object.keys(byMonth).sort();
+  const maxM = Math.max.apply(null, Object.values(byMonth));
+  const mbars = months.map(function (k) {
+    const d = new Date(k + '-15');
+    return '<div class="inc-bar"><span>' + d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) + '</span><i style="width:' + Math.max(4, Math.round(byMonth[k] / maxM * 100)) + '%"></i><b class="num">' + byMonth[k] + '</b></div>';
+  }).join('');
+  return '<div class="inc-kpis">' +
+    '<div class="inc-kpi"><b class="num">' + entries.length + '</b><span>incidents</span></div>' +
+    '<div class="inc-kpi"><b class="num">' + atelier + ' / ' + client + '</b><span>atelier / client</span></div>' +
+    '<div class="inc-kpi"><b class="num">' + reprint + '</b><span>pièces réimprimées</span></div>' +
+    '<div class="inc-kpi"><b class="num">' + reorder + '</b><span>produits recommandés</span></div></div>' +
+    '<div class="inc-stats"><div><div class="sav-section-title">Par motif</div>' + bars + '</div><div><div class="sav-section-title">Par mois</div>' + mbars + '</div></div>';
+}
+function incHistHtml() {
+  const rows = [];
+  incState.hist.forEach(function (o) { savList(o).forEach(function (e) { if (e.statut === 'clos') rows.push({ o: o, e: e }); }); });
+  rows.sort(function (a, b) { return (b.e.closedAt || '') < (a.e.closedAt || '') ? -1 : 1; });
+  if (!rows.length) return '<div class="empty-inline">Aucun incident clos.</div>';
+  return '<table class="history-table"><thead><tr><th>Commande</th><th>Motif</th><th>Lignes</th><th>Déclaré</th><th>Clos</th></tr></thead><tbody>' +
+    rows.slice(0, 60).map(function (r) {
+      return '<tr><td class="num"><a href="#" onclick="incOpenOrder(\'' + escapeHtml(r.o.name) + '\');return false;">' + escapeHtml(r.o.name) + '</a></td><td>' + escapeHtml(savMotifFull(r.e.motif)) + (r.e.annule ? ' <span class="badge badge-muted">annulé</span>' : '') + '</td><td>' +
+        (r.e.lines || []).map(function (l) { return l.qty + '× ' + escapeHtml(shortProductTitle(l.title)); }).join(', ') + '</td><td>' + proFmtDate(r.e.date) + '</td><td>' + proFmtDate(r.e.closedAt) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+function renderIncidentsView() {
+  if (state.activeTab !== 'incidents') return;
+  const rows = incOpenEntries();
+  const late = rows.some(function (r) { return incAgeDays(r.e.date) > INC_ALERT_DAYS; });
+  setIncidentBadge(incState.open.length, late);
+  const actions = '<select class="input" onchange="incState.days=+this.value;renderIncidentsView()">' + [30, 90, 180, 365].map(function (d) { return '<option value="' + d + '"' + (d === incState.days ? ' selected' : '') + '>' + d + ' jours</option>'; }).join('') + '</select>' +
+    '<button class="btn" onclick="renderIncidentsTab()">' + icon('refresh') + 'Actualiser</button>';
+  document.getElementById('content').innerHTML = pageHead('Incidents', rows.length ? rows.length + ' incident' + (rows.length > 1 ? 's' : '') + ' en cours' : 'Aucun incident en cours', actions) +
+    '<div class="card"><div class="card-title">' + icon('alert') + ' En cours</div>' + (rows.length ? rows.map(incCardHtml).join('') : '<div class="empty-inline ok">' + icon('checkCircle') + 'Rien en cours.</div>') +
+    '<div class="field-hint">On déclare un incident depuis la vue commande (bouton « Incident »).</div></div>' +
+    '<div class="card" style="margin-top:16px;"><div class="card-title">' + icon('chart') + ' Statistiques — ' + incState.days + ' derniers jours</div>' + incStatsHtml() + '</div>' +
+    '<div class="card" style="margin-top:16px;"><div class="card-title">' + icon('history') + ' Historique</div>' + incHistHtml() + '</div>';
+}
+function incOpenOrder(name) {
+  switchTab('custom');
+  state.typedOrderNum = String(name).replace(/^#/, '');
+  searchOrderByNumber();
+}
+async function incRefreshBadge() {
+  try {
+    const open = await incFetch('tag:INCIDENT', 250);
+    const late = open.some(function (o) { return savOpen(o).some(function (e) { return incAgeDays(e.date) > INC_ALERT_DAYS; }); });
+    setIncidentBadge(open.length, late);
+  } catch (e) { console.log('Badge incidents:', e.message); }
 }
 
 function renderVariantBig(variant) {
@@ -3070,7 +3235,7 @@ async function clearOrderSearch() {
 async function fetchToOrderOrders() {
   let orders=[], hasNext=true, cursor=null;
   while (hasNext) {
-    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}savMf:metafield(namespace:"custom",key:"sav"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND (status:open OR tag:SAV)'});
+    const data = await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}dateLimiteTraitement:metafield(namespace:"custom",key:"date_limite_traitement"){value}estRush:metafield(namespace:"custom",key:"est_rush"){value}savMf:metafield(namespace:"custom",key:"incident"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`, {first:250,after:cursor,q:'tag:TOORDER AND (status:open OR tag:INCIDENT)'});
     orders.push(...data.orders.edges.map(e=>e.node)); hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
   return orders;
@@ -3285,7 +3450,7 @@ function generateComplete(orders, dateOverride = null, lotTag = null) {
     const date = new Date(o.createdAt).toLocaleDateString('fr-FR');
     const customer = o.customer ? `${o.customer.firstName||''} ${o.customer.lastName||''}`.trim() : '';
     const notes = (o.note||'').replace(/;/g,',').replace(/\n/g,' ');
-    prodLineEdges(o, 'sup', lotTag).forEach(({node:li}) => { const n = (li.savMotif ? '[SAV ' + savMotifLabel(li.savMotif) + '] ' : '') + notes; csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.currentQuantity};${li.variant?.imbretexSku?.value||''};${n}\n`; });
+    prodLineEdges(o, 'sup', lotTag).forEach(({node:li}) => { const n = (li.savMotif ? '[INCIDENT ' + savMotifFull(li.savMotif) + '] ' : '') + notes; csv += `${o.name};${date};${customer};${li.title};${li.variant?.title||''};${li.currentQuantity};${li.variant?.imbretexSku?.value||''};${n}\n`; });
   });
   const today = dateOverride ? new Date(parseInt(dateOverride.substring(0,4)),parseInt(dateOverride.substring(4,6))-1,parseInt(dateOverride.substring(6,8))) : new Date();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
@@ -3308,7 +3473,7 @@ async function loadHistory() {
 async function regenAndDownload(tag, type) {
   try {
     let orders=[], hasNext=true, cursor=null;
-    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}savMf:metafield(namespace:"custom",key:"sav"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
+    while(hasNext){const data=await gql(`query($first:Int!,$after:String,$q:String!){orders(first:$first,after:$after,query:$q){edges{node{id name createdAt note customer{firstName lastName}savMf:metafield(namespace:"custom",key:"incident"){value}lineItems(first:250){edges{node{id title quantity currentQuantity variant{title imbretexSku:metafield(namespace:"custom",key:"imbretex_sku"){value}}}}}tags}}pageInfo{hasNextPage endCursor}}}`,{first:250,after:cursor,q:`tag:${tag}`});orders.push(...data.orders.edges.map(e=>e.node));hasNext=data.orders.pageInfo.hasNextPage;cursor=data.orders.pageInfo.endCursor;}
     const dateStr = tag.replace('order_','');
     const {url,filename} = type==='imbretex'?generateImbretex(orders,dateStr,tag):generateComplete(orders,dateStr,tag);
     const a=document.createElement('a');a.href=url;a.download=filename;a.click();
@@ -3376,7 +3541,7 @@ async function regenPrintLotZip(lotId) {
   try {
     const data = await gql(`query($ids:[ID!]!){ nodes(ids:$ids){ ... on Order {
       id name note tags
-      savMf: metafield(namespace:"custom", key:"sav"){ value }
+      savMf: metafield(namespace:"custom", key:"incident"){ value }
       lineItems(first:250){edges{node{
         id title quantity currentQuantity
         customAttributes{key value}
@@ -3460,7 +3625,7 @@ async function fetchTodoPrintOrders() {
         edges{node{
           id name createdAt note tags
           customer{firstName lastName}
-          savMf: metafield(namespace:"custom", key:"sav"){ value }
+          savMf: metafield(namespace:"custom", key:"incident"){ value }
           lineItems(first:250){edges{node{
             id title quantity currentQuantity
             variant{title}
@@ -3469,7 +3634,7 @@ async function fetchTodoPrintOrders() {
         }}
         pageInfo{hasNextPage endCursor}
       }
-    }`, {first:50,after:cursor,q:'tag:TODOPRINT AND (status:open OR tag:SAV)'});
+    }`, {first:50,after:cursor,q:'tag:TODOPRINT AND (status:open OR tag:INCIDENT)'});
     orders.push(...data.orders.edges.map(e=>e.node));
     hasNext=data.orders.pageInfo.hasNextPage; cursor=data.orders.pageInfo.endCursor;
   }
@@ -5723,12 +5888,13 @@ async function proToggleTag(tag, add) {
 // Met à jour les badges Fournisseur / Impression après un ajout/retrait de balise.
 async function refreshProdBadges() {
   try {
-    const d = await gql('query{ a: ordersCount(query:"tag:TOORDER AND (status:open OR tag:SAV)"){count} b: ordersCount(query:"tag:TODOPRINT AND (status:open OR tag:SAV)"){count} }');
+    const d = await gql('query{ a: ordersCount(query:"tag:TOORDER AND (status:open OR tag:INCIDENT)"){count} b: ordersCount(query:"tag:TODOPRINT AND (status:open OR tag:INCIDENT)"){count} }');
     [['tab-supplier-badge', d.a.count], ['tab-print-badge', d.b.count]].forEach(function (x) {
       const el = document.getElementById(x[0]); if (!el) return;
       el.style.display = x[1] > 0 ? '' : 'none'; if (x[1] > 0) el.textContent = x[1];
     });
   } catch (e) { console.log('Badges prod:', e.message); }
+  incRefreshBadge();
 }
 // Ouvre la fiche pro d'une commande (depuis Fournisseur / Impression), ou propose d'en créer une.
 async function proOpenByOrder(orderId) {
