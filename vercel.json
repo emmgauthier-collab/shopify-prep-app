@@ -19,6 +19,10 @@
     {
       "source": "/api/create-draft-order",
       "destination": "/api/create-draft-order.js"
+    },
+    {
+      "source": "/api/fulfillment-webhook",
+      "destination": "/api/fulfillment-webhook.js"
     }
   ]
 }

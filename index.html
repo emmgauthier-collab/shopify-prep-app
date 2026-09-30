@@ -5515,9 +5515,9 @@ function renderDelaisUI() {
     '</div>' +
 
     '<div class="card">' +
-    '<div class="card-title">' + icon('link') + ' Webhook commande → date limite</div>' +
-    '<p class="card-desc">Crée (une seule fois) le webhook <code>orders/create</code> qui écrit automatiquement <code>custom.date_limite_traitement</code> et <code>custom.est_rush</code> sur chaque nouvelle commande.</p>' +
-    '<div class="form-actions"><button class="btn" onclick="setupOrderWebhook()">' + icon('search') + 'Vérifier / activer le webhook</button></div>' +
+    '<div class="card-title">' + icon('link') + ' Webhooks commandes</div>' +
+    '<p class="card-desc">Crée (une seule fois) les webhooks : <code>orders/create</code> écrit <code>custom.date_limite_traitement</code> et <code>custom.est_rush</code> sur chaque nouvelle commande ; <code>fulfillments/create</code> marque traitées les lignes RUSH / frais dès que tous les articles physiques sont expédiés.</p>' +
+    '<div class="form-actions"><button class="btn" onclick="setupOrderWebhook()">' + icon('search') + 'Vérifier / activer les webhooks</button></div>' +
     '<div id="df-webhook-status"></div>' +
     '</div>' +
 
@@ -5711,33 +5711,46 @@ async function deletePeriode(id) {
   } catch (e) { showToast('Erreur: ' + e.message, 'error'); }
 }
 
-// Enregistre (ou verifie) le webhook orders/create qui pointe vers
-// /api/order-delai-webhook. Utilise le proxy /api/shopify existant, donc le
-// webhook est bien cree par l'app prep-orders (meme secret que la verification HMAC).
+// Enregistre (ou verifie) les webhooks de l'app prep-orders. Utilise le proxy
+// /api/shopify existant, donc les webhooks sont bien crees par l'app prep-orders
+// (meme secret que la verification HMAC cote Vercel).
+const ORDER_WEBHOOKS = [
+  { topic: 'ORDERS_CREATE', path: '/api/order-delai-webhook', label: 'orders/create' },
+  { topic: 'FULFILLMENTS_CREATE', path: '/api/fulfillment-webhook', label: 'fulfillments/create' }
+];
 async function setupOrderWebhook() {
   const box = document.getElementById('df-webhook-status');
-  box.innerHTML = '<div class="status-line muted">V\u00e9rification\u2026</div>';
-  const callbackUrl = window.location.origin + '/api/order-delai-webhook';
-  try {
-    const existing = await gql('query { webhookSubscriptions(first: 50, topics: [ORDERS_CREATE]) { edges { node { id endpoint { __typename ... on WebhookHttpEndpoint { callbackUrl } } } } } }');
-    const already = (existing.webhookSubscriptions.edges || []).find(function (e) {
-      return e.node.endpoint && e.node.endpoint.callbackUrl === callbackUrl;
-    });
-    if (already) {
-      box.innerHTML = '<div class="status-line text-success">' + icon('checkCircle') + 'D\u00e9j\u00e0 actif sur ' + escapeHtml(callbackUrl) + '</div>';
-      return;
+  box.innerHTML = '<div class="status-line muted">Vérification…</div>';
+  const lines = [];
+  let created = 0;
+  for (const w of ORDER_WEBHOOKS) {
+    const callbackUrl = window.location.origin + w.path;
+    try {
+      const existing = await gql('query($t:[WebhookSubscriptionTopic!]){ webhookSubscriptions(first: 50, topics: $t) { edges { node { id endpoint { __typename ... on WebhookHttpEndpoint { callbackUrl } } } } } }', { t: [w.topic] });
+      const already = (existing.webhookSubscriptions.edges || []).find(function (e) {
+        return e.node.endpoint && e.node.endpoint.callbackUrl === callbackUrl;
+      });
+      if (already) {
+        lines.push('<div class="status-line text-success">' + icon('checkCircle') + escapeHtml(w.label) + ' : déjà actif</div>');
+        continue;
+      }
+      const data = await gql(
+        'mutation($topic:WebhookSubscriptionTopic!, $sub:WebhookSubscriptionInput!){ webhookSubscriptionCreate(topic:$topic, webhookSubscription:$sub){ webhookSubscription{ id } userErrors{ field message } } }',
+        { topic: w.topic, sub: { callbackUrl: callbackUrl, format: 'JSON' } }
+      );
+      const errs = data.webhookSubscriptionCreate.userErrors;
+      if (errs && errs.length) {
+        lines.push('<div class="status-line text-critical">' + icon('xCircle') + escapeHtml(w.label) + ' : ' + escapeHtml(errs.map(function (e) { return e.message; }).join(', ')) + '</div>');
+        continue;
+      }
+      created++;
+      lines.push('<div class="status-line text-success">' + icon('checkCircle') + escapeHtml(w.label) + ' : activé sur ' + escapeHtml(callbackUrl) + '</div>');
+    } catch (e) {
+      lines.push('<div class="status-line text-critical">' + icon('xCircle') + escapeHtml(w.label) + ' : ' + escapeHtml(e.message) + '</div>');
     }
-    const data = await gql(
-      'mutation($topic:WebhookSubscriptionTopic!, $sub:WebhookSubscriptionInput!){ webhookSubscriptionCreate(topic:$topic, webhookSubscription:$sub){ webhookSubscription{ id } userErrors{ field message } } }',
-      { topic: 'ORDERS_CREATE', sub: { callbackUrl: callbackUrl, format: 'JSON' } }
-    );
-    const errs = data.webhookSubscriptionCreate.userErrors;
-    if (errs && errs.length) { box.innerHTML = '<div class="status-line text-critical">' + icon('xCircle') + 'Erreur : ' + escapeHtml(errs.map(function (e) { return e.message; }).join(', ')) + '</div>'; return; }
-    box.innerHTML = '<div class="status-line text-success">' + icon('checkCircle') + 'Webhook activ\u00e9 sur ' + escapeHtml(callbackUrl) + '</div>';
-    showToast('Webhook activ\u00e9');
-  } catch (e) {
-    box.innerHTML = '<div class="status-line text-critical">' + icon('xCircle') + 'Erreur : ' + escapeHtml(e.message) + '</div>';
   }
+  box.innerHTML = lines.join('');
+  if (created) showToast(created > 1 ? 'Webhooks activés' : 'Webhook activé');
 }
 
 
