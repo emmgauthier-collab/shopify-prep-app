@@ -2355,7 +2355,7 @@ const ORDER_FIELDS = `id name createdAt note tags customer { firstName lastName 
   dateLimiteTraitement: metafield(namespace: "custom", key: "date_limite_traitement") { value }
   estRush: metafield(namespace: "custom", key: "est_rush") { value }
   savMf: metafield(namespace: "custom", key: "incident") { value }
-  lineItems(first: 250) { edges { node { id title quantity currentQuantity requiresShipping
+  lineItems(first: 250) { edges { node { id title quantity currentQuantity unfulfilledQuantity requiresShipping
     variant { id title
       customizationImage: metafield(namespace: "teeinblue", key: "customization_image") { value }
       imbretexSku: metafield(namespace: "custom", key: "imbretex_sku") { value }
@@ -2488,13 +2488,28 @@ function shortProductTitle(title) {
 // Lignes sans expédition (frais de réimpression, etc.) : rien à préparer physiquement.
 function isPhysicalLine(li) { return li.requiresShipping !== false; }
 
+// Statut d'expédition calculé sur les seules lignes physiques actives. Les lignes
+// RUSH / frais (sans expédition) sont marquées traitées dès la création par le
+// webhook : Shopify affiche alors « Partiellement traitée » alors que rien n'est parti.
+function physFulfillStatus(order) {
+  const st = order && order.displayFulfillmentStatus;
+  const edges = order && order.lineItems && order.lineItems.edges;
+  if (!edges || st !== 'PARTIALLY_FULFILLED') return st;
+  const phys = edges.map(e => e.node).filter(li => isPhysicalLine(li) && (li.currentQuantity ?? 1) > 0);
+  if (!phys.length || phys.some(li => li.unfulfilledQuantity == null)) return st;
+  const rest = phys.reduce((n, li) => n + li.unfulfilledQuantity, 0);
+  const tot = phys.reduce((n, li) => n + (li.currentQuantity ?? li.quantity ?? 0), 0);
+  if (rest === 0) return 'FULFILLED';
+  return rest >= tot ? 'UNFULFILLED' : 'PARTIALLY_FULFILLED';
+}
+
 // Statut « déjà traitée » d'une commande : expédiée (totalement / partiellement) ou annulée.
 // Renvoie null pour une commande encore à préparer.
 function orderShipState(order) {
   if (!order) return null;
   const fmt = iso => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   if (order.cancelledAt) return { kind: 'cancelled', pill: 'ANNUL\u00c9E', title: `Annul\u00e9e le ${fmt(order.cancelledAt)}`, sub: '' };
-  const st = order.displayFulfillmentStatus;
+  const st = physFulfillStatus(order);
   if (st !== 'FULFILLED' && st !== 'PARTIALLY_FULFILLED') return null;
   const fs = (order.fulfillments || []).filter(f => f.createdAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const last = fs[0];
@@ -2816,7 +2831,7 @@ async function openSavModal() {
   const order = state.orders[state.currentIndex];
   if (!order) return;
   savState.order = order; savState.sel = {}; savState.motif = ''; savState.note = ''; savState.variants = {}; savState.loading = true; savState.err = '';
-  savState.reexp = order.displayFulfillmentStatus === 'FULFILLED' || order.displayFulfillmentStatus === 'PARTIALLY_FULFILLED';
+  savState.reexp = ['FULFILLED','PARTIALLY_FULFILLED'].includes(physFulfillStatus(order));
   savRender();
   try {
     const r = await gql('query($id:ID!){ order(id:$id){ id tags ' + SAV_MF + ' lineItems(first:100){ nodes{ id variant{ id product{ variants(first:100){ nodes{ id title imbretexSku: metafield(namespace:"custom", key:"imbretex_sku"){ value } } } } } } } } }', { id: order.id });
@@ -3991,20 +4006,21 @@ async function checkCurrentOrderDone() {
   if (!order) return;
   // Commande déjà entièrement expédiée ou annulée à l'ouverture (ex. via la recherche) :
   // rien à fêter ni à retirer. Une commande partielle reste suivie (voir plus bas).
-  const wasPartial = order.displayFulfillmentStatus === 'PARTIALLY_FULFILLED';
-  if (order.cancelledAt || order.displayFulfillmentStatus === 'FULFILLED') return;
+  const wasPartial = physFulfillStatus(order) === 'PARTIALLY_FULFILLED';
+  if (order.cancelledAt || physFulfillStatus(order) === 'FULFILLED') return;
 
   try {
-    const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags } }`, { id: order.id });
+    const data = await gql(`query($id:ID!){ order(id:$id){ id displayFulfillmentStatus tags lineItems(first:250){ edges{ node{ requiresShipping currentQuantity unfulfilledQuantity } } } } }`, { id: order.id });
     const current = data?.order;
     if (!current) return;
 
     const stillCustom = current.tags.includes('custom');
     // Commande non expédiée à l'ouverture : toute expédition (même partielle) = traitée, comme avant.
     // Commande déjà partielle à l'ouverture : il faut qu'elle passe entièrement expédiée.
+    const curSt = physFulfillStatus(current);
     const fulfilled = wasPartial
-      ? current.displayFulfillmentStatus === 'FULFILLED'
-      : ['FULFILLED','PARTIALLY_FULFILLED'].includes(current.displayFulfillmentStatus);
+      ? curSt === 'FULFILLED'
+      : ['FULFILLED','PARTIALLY_FULFILLED'].includes(curSt);
 
     if (!stillCustom || fulfilled) {
       if (fulfilled && savOpen(order).length) { try { await savCloseAll(order.id, 'Exp\u00e9di\u00e9 (auto)'); refreshProdBadges(); } catch (e) { console.log('SAV auto-close:', e.message); } }
