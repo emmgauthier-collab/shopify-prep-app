@@ -1275,10 +1275,10 @@ function buildPrintFileList(orders) {
       const obj = JSON.parse(jsonText);
       for (const k in obj) {
         const v = obj[k];
-        if (typeof v === 'string' && /^https?:\/\//i.test(v) && /\.(png|svg)(\?.*)?$/i.test(v)) out.push(v);
+        if (typeof v === 'string' && /^https?:\/\//i.test(v) && /\.(png|svg|jpe?g|webp)(\?.*)?$/i.test(v)) out.push(v);
       }
     } catch (e) {
-      out = (jsonText.match(/https?:\/\/[^\s"'<>]+?\.(?:png|svg)(?:\?[^\s"'<>]*)?/ig) || []);
+      out = (jsonText.match(/https?:\/\/[^\s"'<>]+?\.(?:png|svg|jpe?g|webp)(?:\?[^\s"'<>]*)?/ig) || []);
     }
     return out.filter(function (u, i) { return out.indexOf(u) === i; });
   }
@@ -1298,13 +1298,29 @@ function buildPrintFileList(orders) {
     const lineNum = o.lineNum || lineCounters[orderStr];
     function push(url, type) {
       if (!url || !/^https?:\/\//i.test(url)) return;
+      const ext = getExt(url);
+      const fallbacks = [];
+      if (url.indexOf('_large') !== -1) fallbacks.push(url);
+      const orig = (o.annexeOriginals || {})[url];
+      if (orig && fallbacks.indexOf(orig) === -1) fallbacks.push(orig);
       // le nom est réservé dans l'ordre, comme côté GAS
-      files.push({ url: url.replace(/_large/g, '_master'), name: buildName(orderStr, qtyStr, type, lineNum, getExt(url), slug), order: o.orderName });
+      files.push({ url: url.replace(/_large/g, '_master'), fallbacks: fallbacks, name: buildName(orderStr, qtyStr, type, lineNum, ext, slug), order: o.orderName });
     }
     (o.designUrls || []).forEach(function (u) { push(u, 'design'); });
     extractAnnexeUrls(o.customizationJson || '').forEach(function (u) { push(u, 'annexe'); });
   });
   return files;
+}
+// Annexes d'une ligne : champs visibles contenant une URL (+ fichier original envoyé par le client, champ « _<nom> - original »)
+function lineAnnexes(liAttrs) {
+  const json = {}, originals = {};
+  Object.entries(liAttrs).forEach(function ([k, v]) {
+    if (k.startsWith('_') || !v || !/^https?:\/\//i.test(v)) return;
+    json[k] = v;
+    const orig = liAttrs['_' + k + ' - original'];
+    if (orig && /^https?:\/\//i.test(orig)) originals[v] = orig;
+  });
+  return { customizationJson: JSON.stringify(json), annexeOriginals: originals };
 }
 // Télécharge et écrit les fichiers dans baseDir/folderName. onProgress(done, total)
 async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress, extraFiles) {
@@ -1322,9 +1338,20 @@ async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress, extraFil
       let blob;
       if (f.text != null) blob = new Blob([f.text], { type: 'text/plain' });
       else {
-        const r = await fetch(f.url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        blob = await r.blob();
+        const urls = [f.url].concat(f.fallbacks || []);
+        let lastErr = null;
+        for (const u of urls) {
+          try {
+            const r = await fetch(u);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            blob = await r.blob();
+            // repli sur l'original : on garde sa vraie extension (.png, .jpeg…)
+            const ue = (String(u).split('?')[0].match(/\.[a-z0-9]{1,5}$/i) || [''])[0].toLowerCase();
+            if (ue && !f.name.toLowerCase().endsWith(ue)) f.name = f.name.replace(/\.[a-z0-9]{1,5}$/i, '') + ue;
+            break;
+          } catch (e) { lastErr = e; blob = null; }
+        }
+        if (!blob) throw lastErr || new Error('t\u00e9l\u00e9chargement impossible');
       }
       const fh = await (f.dir ? await subDir(f.dir) : lotDir).getFileHandle(f.name, { create: true });
       const w = await fh.createWritable();
@@ -3602,12 +3629,8 @@ async function regenPrintLotZip(lotId) {
           .filter(([k]) => k.startsWith('_tib_design_link_'))
           .map(([, v]) => v)
           .filter(u => u && u.startsWith('http'));
-        const annexeJson = JSON.stringify(
-          Object.entries(liAttrs)
-            .filter(([k, v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
-            .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {})
-        );
-        gasOrders.push({ orderName: order.name, quantity: li.currentQuantity, lineNum: li.lineNum, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: annexeJson });
+        const ann = lineAnnexes(liAttrs);
+        gasOrders.push({ orderName: order.name, quantity: li.currentQuantity, lineNum: li.lineNum, note: order.note || '', productTitle: li.title || '', designUrls, customizationJson: ann.customizationJson, annexeOriginals: ann.annexeOriginals });
       }
     }
     const localP = dtfDir
@@ -3877,12 +3900,8 @@ async function generatePrintZip() {
         .filter(([k]) => k.startsWith('_tib_design_link_'))
         .map(([,v]) => v)
         .filter(u => u && u.startsWith('http'));
-      // Les annexes PNG/SVG sont dans les valeurs qui sont des URLs (logos uploadés, etc.)
-      const annexeJson = JSON.stringify(
-        Object.entries(liAttrs)
-          .filter(([k,v]) => !k.startsWith('_') && v && /^https?:\/\//i.test(v))
-          .reduce((obj,[k,v]) => { obj[k]=v; return obj; }, {})
-      );
+      // Les annexes (logos SVG, photos client png/jpeg/webp) sont dans les valeurs qui sont des URLs
+      const ann = lineAnnexes(liAttrs);
       gasOrders.push({
         orderName: order.name,
         quantity: li.currentQuantity,
@@ -3890,7 +3909,8 @@ async function generatePrintZip() {
         note: [savNoteFor(order, 'print'), order.note || ''].filter(Boolean).join('\n'),
         productTitle: li.title || '',
         designUrls,
-        customizationJson: annexeJson,
+        customizationJson: ann.customizationJson,
+        annexeOriginals: ann.annexeOriginals,
       });
     }
   }
