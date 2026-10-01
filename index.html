@@ -1298,18 +1298,29 @@ function buildPrintFileList(orders) {
     const lineNum = o.lineNum || lineCounters[orderStr];
     function push(url, type) {
       if (!url || !/^https?:\/\//i.test(url)) return;
-      const ext = getExt(url);
-      const fallbacks = [];
-      if (url.indexOf('_large') !== -1) fallbacks.push(url);
+      // Ordre d'essai : _master, _large, puis l'original envoyé par le client.
       const orig = (o.annexeOriginals || {})[url];
-      if (orig && fallbacks.indexOf(orig) === -1) fallbacks.push(orig);
+      const tries = [url.replace(/_large/g, '_master')];
+      if (url.indexOf('_large') !== -1) tries.push(url);
+      if (orig && tries.indexOf(orig) === -1) tries.push(orig);
+      // .webp : Illustrator ne l'ouvre pas -> converti en .png (sans perte) à l'écriture
+      const ext = getExt(url) === '.webp' ? '.png' : getExt(url);
       // le nom est réservé dans l'ordre, comme côté GAS
-      files.push({ url: url.replace(/_large/g, '_master'), fallbacks: fallbacks, name: buildName(orderStr, qtyStr, type, lineNum, ext, slug), order: o.orderName });
+      files.push({ url: tries[0], fallbacks: tries.slice(1), name: buildName(orderStr, qtyStr, type, lineNum, ext, slug), order: o.orderName });
     }
     (o.designUrls || []).forEach(function (u) { push(u, 'design'); });
     extractAnnexeUrls(o.customizationJson || '').forEach(function (u) { push(u, 'annexe'); });
   });
   return files;
+}
+// Convertit une image WebP en PNG (format sans perte, transparence conservée)
+async function webpToPng(blob) {
+  const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  c.getContext('2d').drawImage(bmp, 0, 0);
+  if (bmp.close) bmp.close();
+  return new Promise(function (res, rej) { c.toBlob(function (b) { b ? res(b) : rej(new Error('conversion PNG impossible')); }, 'image/png'); });
 }
 // Annexes d'une ligne : champs visibles contenant une URL (+ fichier original envoyé par le client, champ « _<nom> - original »)
 function lineAnnexes(liAttrs) {
@@ -1345,8 +1356,10 @@ async function saveLotToDtf(baseDir, folderName, gasOrders, onProgress, extraFil
             const r = await fetch(u);
             if (!r.ok) throw new Error('HTTP ' + r.status);
             blob = await r.blob();
+            let ue = (String(u).split('?')[0].match(/\.[a-z0-9]{1,5}$/i) || [''])[0].toLowerCase();
+            // .webp illisible par Illustrator : converti en PNG (sans perte, transparence conservée)
+            if (ue === '.webp' || blob.type === 'image/webp') { blob = await webpToPng(blob); ue = '.png'; }
             // repli sur l'original : on garde sa vraie extension (.png, .jpeg…)
-            const ue = (String(u).split('?')[0].match(/\.[a-z0-9]{1,5}$/i) || [''])[0].toLowerCase();
             if (ue && !f.name.toLowerCase().endsWith(ue)) f.name = f.name.replace(/\.[a-z0-9]{1,5}$/i, '') + ue;
             break;
           } catch (e) { lastErr = e; blob = null; }
